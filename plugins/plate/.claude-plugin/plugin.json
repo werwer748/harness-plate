@@ -1,0 +1,7 @@
+{
+  "name": "plate",
+  "version": "0.3.0",
+  "description": "개인 하네스. 확인된 실패에만 장치를 하나씩 더한다. 지금은 기본 브랜치에서 묻지 않고 작업하는 것을 막는 브랜치 가드 훅과, 프로젝트 문서 세트(PRD·ARCHITECTURE·ADR)를 처음 만드는 init 스킬과, 세션마다 작업 헌법(AGENTS.md)을 싣는 훅이 있다.",
+  "author": { "name": "hugo" },
+  "repository": "https://github.com/werwer748/harness-plate"
+}

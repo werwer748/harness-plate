@@ -1,0 +1,11 @@
+{
+  "name": "harness-plate",
+  "description": "개인 하네스 plate의 마켓플레이스",
+  "owner": { "name": "hugo" },
+  "plugins": [
+    {
+      "name": "plate",
+      "source": "./plugins/plate"
+    }
+  ]
+}

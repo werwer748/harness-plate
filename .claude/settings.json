@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "harness-plate": {
+      "source": {
+        "source": "github",
+        "repo": "werwer748/harness-plate"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "plate@harness-plate": true
+  }
+}
