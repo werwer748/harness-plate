@@ -145,7 +145,7 @@ docs/PRD.md, docs/ARCHITECTURE.md, docs/ADR.md   # E 묶음에서 2단계 상태
 | `ctx-full` | 빈 폴더에 셋업(화면 없음) |
 | `ctx-part` | 빈 폴더에 셋업(화면 없음) |
 | `ctx-ev` | `~/Desktop/vibe2/excel-viewer` 복제본에 셋업 |
-| `ctx-badak` | `~/Desktop/badak-next-app` 복제본에 셋업 |
+| `ctx-badak` | `~/Desktop/badak-next-app` 복제본에서 루트 `DESIGN.md`를 지워 커밋한 뒤 셋업 (원장 86) |
 | `ctx-fin` | `~/Desktop/finsight` 복제본에 셋업 |
 | `ctx-nosetup` | 빈 폴더, 셋업하지 않음 |
 | `ctx-chain` | 빈 폴더, 셋업하지 않음 |
@@ -176,7 +176,6 @@ docs/PRD.md, docs/ARCHITECTURE.md, docs/ADR.md   # E 묶음에서 2단계 상태
 
 ## 아직 확인하지 못한 것 (구현 중 확인)
 
-- 같은 플러그인 안의 두 스킬이 서로를 이름으로 부르는 것. Codex에서는 프로젝트 스킬이 `plate:setup`을 부르는 것을 한 번 봤을 뿐이다(아래 "확인해 둔 사실"). Claude Code의 헤드리스 실행에서는 보지 않았다. 판정 8, 9에서 확인한다.
 - DESIGN.md 규격은 alpha라 절 구성이 바뀔 수 있다.
 
 ## 구현 중 사용자에게 물을 것
@@ -195,6 +194,12 @@ DESIGN의 토큰에 대한 물음 일곱은 B6에서 물어 정했다(원장 79~
   - `read-only`와 `workspace-write` 샌드박스 모두 플러그인 캐시 폴더를 읽을 수 있다.
 - Codex에서 스킬이 다른 스킬을 부르는 시험(1회, `codex exec --sandbox read-only`): 프로젝트 스킬의 본문에 "plate의 setup 스킬(`plate:setup`)을 불러 1번 절차를 수행한다"고만 적었는데, 모델이 setup의 `SKILL.md`를 열어 1번 절차를 수행했다. 시험 흔적은 `/tmp/plate-rail-test/chain-probe`와 `chain-probe-out`에 있다.
 - `read-only` 샌드박스에서는 `git rev-parse`가 실패한다(xcrun이 캐시 파일을 쓰지 못한다). 판정은 `workspace-write`로 돌린다.
+- 같은 플러그인 안의 두 스킬이 서로를 이름으로 부르는 것(2026-10-06, 판정 8과 9의 로그로 확인. 두 도구 모두 된다):
+  - Claude Code는 헤드리스에서도 스킬 호출로 `plate:setup`과 `plate:context`를 부른다. 미리 준 답은 호출의 인자로 넘긴다.
+  - Codex는 다른 스킬의 `SKILL.md`를 열어 그 절차를 따른다.
+- 판정 실행에 걸리는 시간(2026-10-06): Codex는 한 번에 1~2분이다. Claude Code는 2~9분이고, 스킬이 시키지 않은 자체 검증 명령이 권한에 막혀 되풀이될 때 길어진다(C3의 빈 폴더 셋업은 12분). 폴더가 다르면 여러 실행을 한꺼번에 돌려도 된다.
+- Codex는 2026-10-06 22:55쯤 사용 한도에 걸렸다(오류 글: 10월 7일 00:57에 다시 쓸 수 있다). 판정 5, 6, 7의 Codex 실행은 도중에 끊겼고 판정 10의 Codex 실행은 시작하지 못했다. 끊긴 폴더의 상태는 "D. 완성 판정"의 메모에 있다.
+- 셋업 스킬에서 본 것(C3과 D0, 판정 기준에는 걸리지 않는다): `CLAUDE.md`의 내용을 옮기는데 `AGENTS.md`가 없던 프로젝트(badak-next-app, finsight)에서, Codex는 새 `AGENTS.md`의 첫 줄을 빈 줄로 두고 Claude Code는 두지 않는다. 한 바이트가 다르다. 본문의 "앞에 빈 줄 하나를 둔다"가 파일이 없을 때 어떻게 하는지 말하지 않기 때문이다.
 - 헤드리스에서 세션을 이어 여러 턴을 주고받는 것(2026-10-06, 빈 폴더 `turn-probe-claude`, `turn-probe-codex`에서 확인. 첫 턴에 파일을 쓰고 낱말을 기억하게 한 뒤, 둘째 턴에 그 낱말을 다른 파일에 쓰게 했다. 두 도구 모두 됐다):
   - Claude Code: `claude -p "<첫 턴>" --plugin-dir <플러그인 폴더> --permission-mode acceptEdits --output-format json`의 출력에서 `session_id`를 읽고, `claude -p --resume <session_id> "<다음 턴>"`에 같은 옵션을 붙여 잇는다. 세션 id는 턴이 바뀌어도 같다.
   - Codex: `codex exec --sandbox workspace-write --json "<첫 턴>"`의 첫 줄(`thread.started`)에서 `thread_id`를 읽고, `codex exec resume <thread_id> --json "<다음 턴>"`으로 잇는다. `resume`에는 `--sandbox` 옵션이 없고, 첫 턴의 `workspace-write`가 이어져 둘째 턴도 파일을 썼다(`~/.codex/config.toml`에 샌드박스 설정이 없는 상태였다).
@@ -213,7 +218,7 @@ DESIGN의 토큰에 대한 물음 일곱은 B6에서 물어 정했다(원장 79~
   - badak-next-app `src/app/global.css`: `@theme inline`에 40개, `:root`에 32개, `.dark`에 31개. `@theme inline`의 값은 모두 `var(…)`이거나 `calc(var(--radius) * …)`다. 글자 그대로 적힌 값은 `:root`와 `.dark`에 있고, 이름에 범주 접두어가 없다(`--primary`, `--radius`). `--font-sans`와 `--font-heading`의 값은 `var(--font-sans)`이고 글꼴 이름(Geist)은 `src/app/layout.tsx`의 `next/font` 호출에 있다. 글자 크기, 굵기, 줄 높이 변수는 두 프로젝트 모두 없다.
 - 시험할 프로젝트:
   - `~/Desktop/vibe2/excel-viewer`: 셋업이 UI 프로젝트로 판정하지 않아 `docs/DESIGN.md`가 생기지 않는다.
-  - `~/Desktop/badak-next-app`: Next와 React, 추적 파일 80개, `CLAUDE.md` 5.2KB, `docs/` 없음, `src/app/global.css`에 CSS 변수 103개와 `@theme`.
+  - `~/Desktop/badak-next-app`: Next와 React, 추적 파일 80개, `CLAUDE.md` 5.2KB, `docs/` 없음, `src/app/global.css`에 CSS 변수 103개와 `@theme`. 루트에 `DESIGN.md`(94줄, 실제 디자인 문서)가 있어서 그대로 셋업하면 같은 역할 문서로 판정되고 `docs/DESIGN.md` 양식이 생기지 않는다(D0에서 확인).
   - `~/Desktop/finsight`: Next와 React, 추적 파일 84개, `CLAUDE.md` 2KB. `docs/PRD.md`·`ARCHITECTURE.md`·`ADR.md`가 이미 있고 남은 칸이 0개이며 절 구성이 양식과 다르다. `src/app/globals.css`에 CSS 변수 10개와 `@theme`.
 - 2026-10-06에 `main`, `rail`, `origin/main`은 모두 f841716이었다. 브랜치 `context`는 여기서 갈라졌다.
 
@@ -277,6 +282,7 @@ DESIGN의 토큰에 대한 물음 일곱은 B6에서 물어 정했다(원장 79~
 | 83 | `--text-X--line-height` 꼴은 같은 토큰의 속성으로 옮긴다. 추천안이었다 | 구현 중 (B6) |
 | 84 | 토큰을 코드에서 옮긴 프로젝트의 본문 Colors·Typography 절은 절마다 질문 하나로 묻고, 답에 나온 토큰만 토큰 이름을 항목 이름으로 써서 적는다. 추천안이었다 | 구현 중 (B6) |
 | 85 | 토큰 파일은 있는데 변수가 없는 범주는 범주마다 한 번 묻는다. 값을 답하면 답대로 적고, 없다고 하면 앞머리에서 빼고 `omitted`에 적고, 미루면 양식의 칸을 `{확인 필요}`로 둔다. 추천안이었다 | 구현 중 (B6) |
+| 86 | 판정 6의 `ctx-badak`은 복제본 안에서 루트 `DESIGN.md`를 지워 커밋한 변형으로 한다. 원본은 건드리지 않는다. 추천안이었다. 다른 안은 "그대로 두고 토큰 대조를 finsight로 옮긴다", "둘 다 한다"였다 | 구현 중 (D0) |
 
 합의 뒤에 설계하면서 더한 것(사용자에게 따로 확인받지 않았다): 토큰 참조(`{colors.primary}`)는 남은 칸으로 세지 않는다. 채운 `docs/DESIGN.md`에 토큰 참조가 남으면 원장 44와 45가 그 문서를 끝나지 않은 것으로 보기 때문이다.
 

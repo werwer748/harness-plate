@@ -34,20 +34,23 @@
 
 ## D. 완성 판정 (D1~D11은 plan.md "완성 판정 기준"의 표 번호와 같다. 12번은 E4에서 한다)
 
-- [ ] D0. 시험 폴더 8쌍과 답 파일 준비. Codex 설치본을 최신 스킬로 갱신
-- [ ] D1. `ctx-full`: 답을 모두 주면 세 문서가 채워지고 남은 칸이 0개
-- [ ] D2. `ctx-part`: 미룬 칸이 `{확인 필요}`가 되고 두 도구에서 같은 칸
-- [ ] D3. `ctx-part`: 다시 부르면 남은 칸만 바뀜
-- [ ] D4. `ctx-full`: 다시 불러도 변화 없음
-- [ ] D5. `ctx-ev`: 출처 경로, ADR 후보의 범주, `README.md`·`TODO.md` 미변경
-- [ ] D6. `ctx-badak`: `docs/DESIGN.md`의 토큰이 `src/app/global.css`의 이름과 값 그대로
-- [ ] D7. `ctx-fin`: 기존 세 문서는 그대로이고 `docs/DESIGN.md`만 채워짐
-- [ ] D8. `ctx-nosetup`: 셋업을 묻고 이어서 채움. 셋업 결과가 setup 단독 결과와 같음. 실패하면 원장 60을 사용자에게 다시 묻는다
-- [ ] D9. `ctx-chain`: setup의 끝 물음에서 context로 이어짐. 실패하면 원장 60을 사용자에게 다시 묻는다
-- [ ] D10. `ctx-turn`: 여러 턴에서 질문이 하나씩 나옴, 승인 전 쓰지 않음, 도중에 그만하면 답한 칸만 쓰임
-- [ ] D11. `ctx-full`: setup을 다시 돌려도 화면 여부를 묻지 않고 변화 없음
-- [ ] D13. D1, D2, D5, D6, D7의 두 도구 결과를 기계 판정과 뜻 대조 표로 정리해 사용자에게 보여 줌
+- [x] D0. 시험 폴더 8쌍과 답 파일 준비. Codex 설치본을 최신 스킬로 갱신 (빈 폴더의 셋업 결과는 두 도구가 바이트 단위로 같아서 `ctx-full`, `ctx-part`, `ctx-turn`은 C3의 `c3-empty-*`를 복사해 만들었고, `ctx-ev`는 `c3-ev-*`를 복사했다. `ctx-badak`과 `ctx-fin`은 복제본에 셋업을 실제로 돌렸다. `ctx-badak`은 루트 `DESIGN.md`를 지운 변형이다(원장 86). 셋업 직후를 폴더마다 커밋해 두었다. 답 파일은 `/tmp/plate-rail-test/answers/`, 판정 도구는 `/tmp/plate-rail-test/bin/`에 있다)
+- [x] D1. `ctx-full`: 답을 모두 주면 세 문서가 채워지고 남은 칸이 0개 (두 도구 통과. 기계 판정 모두 같음. 글자가 다른 곳은 다듬은 표현 넷이다)
+- [x] D2. `ctx-part`: 미룬 칸이 `{확인 필요}`가 되고 두 도구에서 같은 칸 (두 도구 통과. PRD의 사용자, ARCHITECTURE의 데이터 흐름, ADR-001의 트레이드오프)
+- [x] D3. `ctx-part`: 다시 부르면 남은 칸만 바뀜 (두 도구 통과. `git diff`가 세 파일에서 한 줄씩이다)
+- [x] D4. `ctx-full`: 다시 불러도 변화 없음 (두 도구 통과)
+- [ ] D5. `ctx-ev`: 출처 경로, ADR 후보의 범주, `README.md`·`TODO.md` 미변경 (Claude Code는 끝났다. Codex는 PRD와 ARCHITECTURE를 쓴 뒤 사용 한도 오류로 끊겼다. 끊긴 결과는 `partial-ctx-ev-codex`에 두고 폴더는 셋업 직후로 되돌렸다. Codex를 다시 돌려야 한다)
+- [ ] D6. `ctx-badak`: `docs/DESIGN.md`의 토큰이 `src/app/global.css`의 이름과 값 그대로 (Claude Code는 끝났고 토큰 대조를 통과했다: 색 31개, 모서리 8개, 글꼴 2개의 이름·값·순서가 같다. Codex는 PRD와 ARCHITECTURE를 쓴 뒤 한도 오류로 끊겼다. `partial-ctx-badak-codex`에 두고 되돌렸다. Codex를 다시 돌려야 한다)
+- [ ] D7. `ctx-fin`: 기존 세 문서는 그대로이고 `docs/DESIGN.md`만 채워짐 (Claude Code는 통과했다. Codex는 `docs/DESIGN.md`를 다 쓴 뒤 한도 오류로 끝났다. 그 파일은 토큰 대조를 통과했고 Claude Code의 결과와 세 줄만 다르다(`name` 위의 출처 주석, `omitted`의 주석 글, Typography 항목의 표현). `partial-ctx-fin-codex`에 두고 되돌렸다. 실행이 오류로 끝났으니 Codex를 다시 돌린다)
+- [x] D8. `ctx-nosetup`: 셋업을 묻고 이어서 채움. 셋업 결과가 setup 단독 결과와 같음. 실패하면 원장 60을 사용자에게 다시 묻는다 (두 도구 통과. `AGENTS.md`, `CLAUDE.md`, `.gitkeep`이 setup 단독 결과와 같다)
+- [x] D9. `ctx-chain`: setup의 끝 물음에서 context로 이어짐. 실패하면 원장 60을 사용자에게 다시 묻는다 (두 도구 통과)
+- [ ] D10. `ctx-turn`: 여러 턴에서 질문이 하나씩 나옴, 승인 전 쓰지 않음, 도중에 그만하면 답한 칸만 쓰임 (Claude Code는 통과했다: 다섯 턴. 질문이 턴마다 하나, 넷째 턴까지 `git status`가 비어 있고, 승인 뒤 `docs/PRD.md`의 두 줄만 바뀌었다. Codex는 한도 오류로 시작하지 못했다. `/tmp/plate-rail-test/bin/codex_rest.sh`가 판정 5, 6, 7, 10의 Codex 실행을 한 번에 돌린다)
+- [x] D11. `ctx-full`: setup을 다시 돌려도 화면 여부를 묻지 않고 변화 없음 (두 도구 통과)
+- [ ] D13. D1, D2, D5, D6, D7의 두 도구 결과를 기계 판정과 뜻 대조 표로 정리해 사용자에게 보여 줌 (기계 판정은 `python3 /tmp/plate-rail-test/bin/judge.py <폴더A> <폴더B>`, 토큰 대조는 `tokencheck.py <폴더> <토큰 파일> [--ask radius=rounded]`로 한다)
 - [ ] D14. 실패한 항목이 있었으면 스킬을 고치고 그 항목을 다시 통과시킴. 커밋
+  - 여기서 사용자에게 물을 것 1: 기존 프로젝트의 해석 칸(기술 스택, 패턴과 규칙)은 도구마다 항목 수와 출처 경로가 다르게 나온다(excel-viewer의 패턴과 규칙이 Claude Code 9개, 끊기기 전의 Codex 2개). 원장 66의 기계 기준을 해석 칸에도 적용할지, 스킬을 더 좁힐지
+  - 고칠 후보 2: Claude Code만 DESIGN 앞머리의 `name` 위에 `# 출처: docs/PRD.md`를 붙였다. 출처 주석은 토큰 파일에서 옮긴 범주에만 붙인다고 본문에 적으면 된다
+  - 물을 것 3: setup 스킬에서 `AGENTS.md`가 없을 때 Codex만 새 파일의 첫 줄을 빈 줄로 둔다(plan.md "확인해 둔 사실"). 2단계에서 고칠지
 
 ## E. 자기 적용과 마무리
 
