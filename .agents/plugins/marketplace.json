@@ -1,0 +1,20 @@
+{
+  "name": "harness-plate",
+  "interface": {
+    "displayName": "harness-plate"
+  },
+  "plugins": [
+    {
+      "name": "plate",
+      "source": {
+        "source": "local",
+        "path": "./plugins/plate"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
