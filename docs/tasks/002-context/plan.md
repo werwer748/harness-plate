@@ -86,13 +86,38 @@ docs/PRD.md, docs/ARCHITECTURE.md, docs/ADR.md   # E 묶음에서 2단계 상태
 | ADR | 철학 | 질문 |
 | ADR | 항목 | 다섯 범주의 후보를 보여 주고 남길 것을 고르게 한 뒤, 이 밖에 적어 둘 결정이 있는지 한 번 묻는다 |
 | ADR | 항목의 이유, 트레이드오프 | 질문. `README`, 커밋 제목, 주석에 적혀 있으면 추천안 |
-| DESIGN | 앞머리의 토큰 | 토큰 파일에 있으면 적힌 사실. 없으면 양식의 키대로 질문 |
 | DESIGN | 앞머리의 `name`, `description` | `name`은 PRD의 프로젝트명, `description`은 질문 |
-| DESIGN | 본문의 절 | 질문 |
+| DESIGN | 앞머리의 `colors`, `typography`, `rounded`, `spacing` | 토큰 파일에 있으면 적힌 사실. 없으면 양식의 키대로 질문 |
+| DESIGN | 앞머리의 `components` | 양식의 키대로 질문 |
+| DESIGN | 본문의 Colors, Typography | 질문. 토큰을 코드에서 옮겼으면 절마다 하나(원장 84) |
+| DESIGN | 본문의 나머지 절 | 질문 |
 
 **ADR 후보의 범주**: 언어와 런타임, 프레임워크, 저장소(DB), 외부 서비스, 빌드·배포 방식. 이 다섯 범주 밖에서는 후보를 내지 않는다.
 
 **DESIGN의 토큰**: 토큰 파일에 적힌 이름과 값을 규격의 범주(`colors`, `typography`, `rounded`, `spacing`)에 그대로 옮긴다. 양식의 예시 키(`primary`, `secondary` 등)는 쓰지 않는다. 빈 프로젝트처럼 토큰이 코드에 없으면 양식의 키대로 하나씩 묻는다.
+
+세부 규칙은 구현 중에 물어 정했다(원장 77~85). 규칙의 전문은 스킬 본문의 "DESIGN의 토큰" 절에 있고, 아래는 그 요약이다.
+
+- 토큰 이름은 변수 이름에서 앞의 `--`와 범주 접두어를 뗀 것이다(원장 77). 접두어는 아래 표의 것이고 긴 것부터 맞춰 본다.
+- `typography`는 변수 하나를 속성 하나로 옮기고, 뗀 이름이 같은 변수는 한 토큰에 모은다. 양식의 레벨(`headline-lg` 등)은 만들지 않는다(원장 78, 83).
+- 값은 적힌 그대로 옮긴다. `var(--이름)` 하나뿐인 값은 따라가서 끝에 적힌 값을 옮기고, `calc(…)` 같은 식은 계산하지 않는다. 따라간 끝에 값이 없으면 질문한다(원장 79).
+- 접두어가 없는 변수는 값이 색이면 `colors`에 넣고, 아니면 범주를 묻는다(원장 80).
+- `:root`와 `@theme`의 기본 값만 옮긴다. 다른 선택자 안의 값과 네 범주 밖의 변수는 옮기지 않고 보고에 적는다(원장 81, 82).
+- 토큰 파일은 있는데 변수가 없는 범주는 범주마다 한 번 묻고, 없다고 하면 앞머리에서 빼고 `omitted`에 적는다(원장 85).
+
+| 변수 이름 | 옮기는 곳 |
+|---|---|
+| `--color-X` | `colors.X` |
+| `--radius-X` | `rounded.X` |
+| `--spacing-X` | `spacing.X` |
+| `--font-X` | `typography.X.fontFamily` |
+| `--font-weight-X` | `typography.X.fontWeight` |
+| `--text-X` | `typography.X.fontSize` |
+| `--text-X--line-height` | `typography.X.lineHeight` |
+| `--text-X--letter-spacing` | `typography.X.letterSpacing` |
+| `--text-X--font-weight` | `typography.X.fontWeight` |
+| `--leading-X` | `typography.X.lineHeight` |
+| `--tracking-X` | `typography.X.letterSpacing` |
 
 ### 절대 규칙
 
@@ -152,15 +177,13 @@ docs/PRD.md, docs/ARCHITECTURE.md, docs/ADR.md   # E 묶음에서 2단계 상태
 ## 아직 확인하지 못한 것 (구현 중 확인)
 
 - 같은 플러그인 안의 두 스킬이 서로를 이름으로 부르는 것. Codex에서는 프로젝트 스킬이 `plate:setup`을 부르는 것을 한 번 봤을 뿐이다(아래 "확인해 둔 사실"). Claude Code의 헤드리스 실행에서는 보지 않았다. 판정 8, 9에서 확인한다.
-- 헤드리스에서 세션을 이어 여러 턴을 주고받는 것. 옵션이 있는 것만 봤다(`claude -p --resume`, `codex exec resume`).
-- DESIGN.md 규격의 `typography` 토큰은 여러 속성을 묶은 값이다(양식의 `headline-lg`). CSS 변수는 낱개 값이다. "이름 그대로 옮긴다"를 `typography`에서 어떻게 지킬지는 규격을 다시 읽고 정한다.
 - DESIGN.md 규격은 alpha라 절 구성이 바뀔 수 있다.
 
 ## 구현 중 사용자에게 물을 것
 
-- 네 범주(`colors`, `typography`, `rounded`, `spacing`)에 들지 않는 토큰(그림자, z-index 등)을 어떻게 하나
-- 토큰이 많은 프로젝트(badak-next-app은 CSS 변수 103개)에서 DESIGN 본문의 Colors·Typography 절을 어떻게 묻나
 - 판정 8이나 9가 Codex에서 실패하면 원장 60의 다른 안(셋업 절차를 context 본문에 복사)으로 바꿀지
+
+DESIGN의 토큰에 대한 물음 일곱은 B6에서 물어 정했다(원장 79~85). 처음 적어 둔 둘(네 범주 밖 토큰, 본문 Colors·Typography 절)에, A2에서 두 시험 프로젝트의 토큰 파일을 읽다가 나온 넷(`var()`·`calc()` 값, 접두어 없는 변수, 다크 모드 값, `--text-X--line-height` 꼴)과 규칙을 적다가 나온 하나(변수가 없는 범주)를 더해 물었다.
 
 ## 확인해 둔 사실
 
@@ -172,6 +195,22 @@ docs/PRD.md, docs/ARCHITECTURE.md, docs/ADR.md   # E 묶음에서 2단계 상태
   - `read-only`와 `workspace-write` 샌드박스 모두 플러그인 캐시 폴더를 읽을 수 있다.
 - Codex에서 스킬이 다른 스킬을 부르는 시험(1회, `codex exec --sandbox read-only`): 프로젝트 스킬의 본문에 "plate의 setup 스킬(`plate:setup`)을 불러 1번 절차를 수행한다"고만 적었는데, 모델이 setup의 `SKILL.md`를 열어 1번 절차를 수행했다. 시험 흔적은 `/tmp/plate-rail-test/chain-probe`와 `chain-probe-out`에 있다.
 - `read-only` 샌드박스에서는 `git rev-parse`가 실패한다(xcrun이 캐시 파일을 쓰지 못한다). 판정은 `workspace-write`로 돌린다.
+- 헤드리스에서 세션을 이어 여러 턴을 주고받는 것(2026-10-06, 빈 폴더 `turn-probe-claude`, `turn-probe-codex`에서 확인. 첫 턴에 파일을 쓰고 낱말을 기억하게 한 뒤, 둘째 턴에 그 낱말을 다른 파일에 쓰게 했다. 두 도구 모두 됐다):
+  - Claude Code: `claude -p "<첫 턴>" --plugin-dir <플러그인 폴더> --permission-mode acceptEdits --output-format json`의 출력에서 `session_id`를 읽고, `claude -p --resume <session_id> "<다음 턴>"`에 같은 옵션을 붙여 잇는다. 세션 id는 턴이 바뀌어도 같다.
+  - Codex: `codex exec --sandbox workspace-write --json "<첫 턴>"`의 첫 줄(`thread.started`)에서 `thread_id`를 읽고, `codex exec resume <thread_id> --json "<다음 턴>"`으로 잇는다. `resume`에는 `--sandbox` 옵션이 없고, 첫 턴의 `workspace-write`가 이어져 둘째 턴도 파일을 썼다(`~/.codex/config.toml`에 샌드박스 설정이 없는 상태였다).
+  - 세션은 폴더에 묶인다. 두 턴 모두 시험 폴더 안에서 실행한다. 로그는 `/tmp/plate-rail-test/logs/turn-probe-*`에 있다.
+- DESIGN.md 규격(alpha)의 토큰(2026-10-06, google-labs-code/design.md의 `docs/spec.md`와 린터 소스 `packages/cli/src/linter/`로 확인. 커밋 9bf8eae, CLI 0.4.0):
+  - `typography`는 토큰 이름마다 속성 묶음을 둔다. 속성은 `fontFamily`(문자열), `fontSize`(치수), `fontWeight`(숫자), `lineHeight`(치수 또는 단위 없는 숫자), `letterSpacing`(치수), `fontFeature`, `fontVariation` 일곱 가지다. 린터는 적힌 속성만 검사하므로 속성이 하나뿐인 토큰도 통과한다. 이 밖의 속성은 경고다.
+  - 치수는 단위가 `px`, `em`, `rem`인 문자열이다. `rounded`와 `typography`의 치수 속성에 `calc(…)`나 `var(…)`를 적으면 린터 오류다. `spacing`은 치수가 아닌 값도 문자열로 받는다.
+  - 색은 CSS 색 문자열이다(`#hex`, `rgb()`, `hsl()`, `oklch()` 등). `var(…)`는 색이 아니라서 린터 오류다.
+  - 토큰 참조는 `{범주.이름}`이다(린터의 판정식은 `^\{[a-zA-Z0-9._-]+\}$`). 낱개 값만 가리키고, `components` 안에서만 묶음(`{typography.label-md}`)을 가리킬 수 있다. `colors`, `rounded`, `spacing`의 값 자리에도 쓸 수 있다.
+  - 규격의 내보내기 도구는 토큰을 Tailwind v4 `@theme` 변수로 이렇게 내보낸다: `colors.X` → `--color-X`, `rounded.X` → `--radius-X`, `spacing.X` → `--spacing-X`, `typography.X`의 `fontFamily` → `--font-X`, `fontSize` → `--text-X`, `lineHeight` → `--leading-X`, `letterSpacing` → `--tracking-X`, `fontWeight` → `--font-weight-X`. 내보낼 토큰 이름은 `^[a-zA-Z0-9][a-zA-Z0-9-]*$`여야 한다. CSS에서 DESIGN.md로 들여오는 도구는 없다.
+  - 앞머리에 규격 밖의 최상위 키를 둘 수 있다. 값이 토큰 묶음처럼 보이면 "내보내기에서 빠진다"는 경고가 난다.
+  - `omitted` 키(선택)에 일부러 뺀 범주를 적으면 그 범주가 없다는 경고가 나지 않는다. 양식에는 이 키가 없다.
+  - `colors`에 `primary`가 없으면 경고다. `colors`가 있는데 `typography`가 없어도 경고다. 둘 다 오류는 아니다.
+- 시험할 두 UI 프로젝트의 토큰 파일(2026-10-06):
+  - finsight `src/app/globals.css`: `@theme` 안에 `--color-*` 8개, `--font-sans` 1개, `--radius-base` 1개. 값은 모두 글자 그대로 적힌 값이다.
+  - badak-next-app `src/app/global.css`: `@theme inline`에 40개, `:root`에 32개, `.dark`에 31개. `@theme inline`의 값은 모두 `var(…)`이거나 `calc(var(--radius) * …)`다. 글자 그대로 적힌 값은 `:root`와 `.dark`에 있고, 이름에 범주 접두어가 없다(`--primary`, `--radius`). `--font-sans`와 `--font-heading`의 값은 `var(--font-sans)`이고 글꼴 이름(Geist)은 `src/app/layout.tsx`의 `next/font` 호출에 있다. 글자 크기, 굵기, 줄 높이 변수는 두 프로젝트 모두 없다.
 - 시험할 프로젝트:
   - `~/Desktop/vibe2/excel-viewer`: 셋업이 UI 프로젝트로 판정하지 않아 `docs/DESIGN.md`가 생기지 않는다.
   - `~/Desktop/badak-next-app`: Next와 React, 추적 파일 80개, `CLAUDE.md` 5.2KB, `docs/` 없음, `src/app/global.css`에 CSS 변수 103개와 `@theme`.
@@ -188,7 +227,7 @@ docs/PRD.md, docs/ARCHITECTURE.md, docs/ADR.md   # E 묶음에서 2단계 상태
 
 ## 결정 원장 (E 묶음에서 ADR의 원본으로 쓴다)
 
-번호는 1단계 원장(1~39)에 잇는다. 40~68은 2단계 질문 라운드의 Q1~Q29다. 69~76은 답에서 이끌어 낸 것으로, 합의를 확인할 때 함께 승인받았다.
+번호는 1단계 원장(1~39)에 잇는다. 40~68은 2단계 질문 라운드의 Q1~Q29다. 69~76은 답에서 이끌어 낸 것으로, 합의를 확인할 때 함께 승인받았다. 77부터는 구현 중에 물어 정한 것이다.
 
 | # | 결정 | 질문 |
 |---|---|---|
@@ -229,5 +268,21 @@ docs/PRD.md, docs/ARCHITECTURE.md, docs/ADR.md   # E 묶음에서 2단계 상태
 | 74 | 새 ADR 항목을 더하는 일은 context 스킬의 일이 아니다. 2단계의 결정은 이 레포의 `docs/ADR.md`에 손으로 더한다 | 합의 확인 |
 | 75 | 셋업 스킬을 고친 뒤 1단계 판정 D1, D2, D4, D5, D6을 다시 돌린다 | 합의 확인 |
 | 76 | `README.md`, 두 매니페스트의 설명, 이 레포의 PRD와 ARCHITECTURE를 2단계 상태로 고친다 | 합의 확인 |
+| 77 | DESIGN의 토큰 이름은 변수 이름에서 `--`와 범주 접두어를 뗀 것이다(`--color-primary` → `colors.primary`). 추천안이었다. 다른 안은 "`--`만 뗀다", "`--`까지 그대로 둔다"였다 | 구현 중 (A2) |
+| 78 | `typography`는 변수 하나를 속성 하나짜리 토큰으로 옮긴다. 접두어가 속성을 정하고, 뗀 이름이 같으면 한 토큰에 모은다. 레벨은 질문으로 만들지 않는다. 추천안이었다 | 구현 중 (A2) |
+| 79 | 값이 `var(--이름)` 하나이면 따라가서 끝에 적힌 값을 옮긴다. `calc(…)` 같은 식은 계산하지 않고 그대로 옮긴다(규격 린터가 오류로 보는 것을 받아들인다). 따라간 끝에 값이 없으면 질문한다. 추천안이었다 | 구현 중 (B6) |
+| 80 | 범주 접두어가 없는 변수는 값이 색이면 `colors`에 넣고, 아니면 범주를 묻는다. 추천안이었다 | 구현 중 (B6) |
+| 81 | `:root`와 `@theme`의 기본 값만 옮긴다. 다른 선택자(`.dark` 등) 안의 값은 옮기지 않고 보고에 적는다. 추천안이었다 | 구현 중 (B6) |
+| 82 | 네 범주 밖의 토큰(그림자, 중단점 등)은 옮기지 않고 보고에 적는다. 본문 절을 물을 때 추천안의 근거로는 쓸 수 있다. 추천안이었다 | 구현 중 (B6) |
+| 83 | `--text-X--line-height` 꼴은 같은 토큰의 속성으로 옮긴다. 추천안이었다 | 구현 중 (B6) |
+| 84 | 토큰을 코드에서 옮긴 프로젝트의 본문 Colors·Typography 절은 절마다 질문 하나로 묻고, 답에 나온 토큰만 토큰 이름을 항목 이름으로 써서 적는다. 추천안이었다 | 구현 중 (B6) |
+| 85 | 토큰 파일은 있는데 변수가 없는 범주는 범주마다 한 번 묻는다. 값을 답하면 답대로 적고, 없다고 하면 앞머리에서 빼고 `omitted`에 적고, 미루면 양식의 칸을 `{확인 필요}`로 둔다. 추천안이었다 | 구현 중 (B6) |
 
 합의 뒤에 설계하면서 더한 것(사용자에게 따로 확인받지 않았다): 토큰 참조(`{colors.primary}`)는 남은 칸으로 세지 않는다. 채운 `docs/DESIGN.md`에 토큰 참조가 남으면 원장 44와 45가 그 문서를 끝나지 않은 것으로 보기 때문이다.
+
+스킬 본문을 쓰면서 더한 것(B 묶음. 사용자에게 따로 확인받지 않았고 B 묶음의 보고에서 알렸다):
+- 적힌 사실이나 해석으로 얻는 칸인데 저장소에 읽을 것이 없으면 질문으로 얻는다. 판정 1이 빈 폴더에서 세 문서를 모두 채우려면 필요하다.
+- ADR 후보가 없으면 후보를 고르는 물음을 건너뛴다.
+- `components`는 양식의 키대로 묻고, 답이 옮긴 토큰을 가리키면 토큰 참조로 적는다.
+- 토큰 규칙의 세부: 네 범주 밖 접두어의 목록(Tailwind v4의 네임스페이스), 같은 토큰이 되는 두 변수는 하나만 적는다, 범주 안의 순서는 토큰 파일에 처음 나온 순서, 여러 줄 값은 한 줄로, 값은 큰따옴표로, 출처 주석은 범주 키의 윗줄, `omitted`는 `description` 다음 줄, 끝에 닿은 변수가 같으면 한 번만 묻는다.
+- tailwind 설정 파일의 `theme` 값을 같은 자리로 옮기는 대응(규격의 `json-tailwind` 내보내기와 같은 대응이다). 두 시험 프로젝트에는 이 파일이 없어 판정으로 확인되지 않는다.

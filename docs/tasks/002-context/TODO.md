@@ -9,21 +9,21 @@
 
 ## A. 준비
 
-- [ ] A1. 현재 브랜치가 `context`인지 확인
-- [ ] A2. DESIGN.md 규격(google-labs-code/design.md)을 다시 읽어 `typography` 토큰의 형태와 토큰 참조 문법을 확인하고 plan.md "아직 확인하지 못한 것"에 반영. `typography`를 어떻게 옮길지 정해지지 않으면 묻는다
-- [ ] A3. 헤드리스 여러 턴이 두 도구에서 되는지 빈 폴더에서 확인(`claude -p --resume`, `codex exec resume`)하고 명령 형태를 plan.md "확인해 둔 사실"에 기록
-- [ ] A4. 두 매니페스트의 version을 0.5.0으로 올림
+- [x] A1. 현재 브랜치가 `context`인지 확인
+- [x] A2. DESIGN.md 규격(google-labs-code/design.md)을 다시 읽어 `typography` 토큰의 형태와 토큰 참조 문법을 확인하고 plan.md "아직 확인하지 못한 것"에 반영. `typography`를 어떻게 옮길지 정해지지 않으면 묻는다 (확인이 끝나 "확인해 둔 사실"로 옮겼다. 옮기는 방식은 물어 정했다: 원장 77, 78. 토큰 파일을 읽다가 나온 물음 넷은 B6에서 묻도록 plan.md "구현 중 사용자에게 물을 것"에 적었다)
+- [x] A3. 헤드리스 여러 턴이 두 도구에서 되는지 빈 폴더에서 확인(`claude -p --resume`, `codex exec resume`)하고 명령 형태를 plan.md "확인해 둔 사실"에 기록
+- [x] A4. 두 매니페스트의 version을 0.5.0으로 올림
 
 ## B. 맥락 스킬 본문
 
-- [ ] B1. 이름과 설명만 있는 껍데기 `plugins/plate/skills/context/SKILL.md` 작성
-- [ ] B2. 확인: Claude Code에서 `/plate:context`, Codex에서 설치본을 갱신한 뒤 `$plate:context`가 보임
-- [ ] B3. 낱말(남은 칸, 대상 문서, 적힌 사실·해석·의도)과 절대 규칙 작성 (plan.md "맥락 스킬 규격")
-- [ ] B4. 절차 0~4 작성
-- [ ] B5. 답을 적는 규칙, 칸의 분류 표, ADR 후보의 범주 작성
-- [ ] B6. DESIGN의 토큰 규칙 작성. 네 범주 밖 토큰과 본문 Colors·Typography 절의 묻는 방식은 사용자에게 물어 정한다
-- [ ] B7. 확인: 본문에 도구 이름이 없고 동작으로만 쓰여 있음
-- [ ] B8. 커밋
+- [x] B1. 이름과 설명만 있는 껍데기 `plugins/plate/skills/context/SKILL.md` 작성
+- [x] B2. 확인: Claude Code에서 `/plate:context`, Codex에서 설치본을 갱신한 뒤 `$plate:context`가 보임
+- [x] B3. 낱말(남은 칸, 대상 문서, 적힌 사실·해석·의도)과 절대 규칙 작성 (plan.md "맥락 스킬 규격")
+- [x] B4. 절차 0~4 작성
+- [x] B5. 답을 적는 규칙, 칸의 분류 표, ADR 후보의 범주 작성
+- [x] B6. DESIGN의 토큰 규칙 작성. 네 범주 밖 토큰과 본문 Colors·Typography 절의 묻는 방식은 사용자에게 물어 정한다 (일곱 가지를 물어 정했다: 원장 79~85)
+- [x] B7. 확인: 본문에 도구 이름이 없고 동작으로만 쓰여 있음
+- [x] B8. 커밋
 
 ## C. 셋업 스킬 수정
 
@@ -53,7 +53,7 @@
 
 - [ ] E1. `README.md`와 두 매니페스트의 설명에 context 스킬을 더함
 - [ ] E2. `docs/PRD.md`와 `docs/ARCHITECTURE.md`를 2단계 상태로 고침
-- [ ] E3. `docs/ADR.md`에 2단계의 결정을 plan.md의 결정 원장(40~76)을 근거로 더함. 이유와 트레이드오프 중 기록이 없는 칸은 `{확인 필요}`로 둔다
+- [ ] E3. `docs/ADR.md`에 2단계의 결정을 plan.md의 결정 원장(40번부터)을 근거로 더함. 이유와 트레이드오프 중 기록이 없는 칸은 `{확인 필요}`로 둔다
 - [ ] E4. 판정 12: 이 레포에서 `plate:context`를 사용자와 대화형으로 돌려 `docs/ADR.md`의 `{확인 필요}` 칸을 채움. 적힌 내용이 바뀌지 않았는지 `git diff`로 확인
 - [ ] E5. 확인: ADR의 각 항목이 결정 원장 번호에 대응 / 지도 표의 위치와 실제 파일이 일치. 커밋
 - [ ] E6. 체크리스트 결과를 보고하고 두 가지를 따로 확인받음: `context`를 `main`에 병합하고 푸시할지 / 3단계(계획) 질문 라운드를 열지
