@@ -47,16 +47,16 @@
 - [x] D4-2. context 스킬: "기술 스택" 절을 더하고(원장 91), 출처 주석은 토큰 파일에서 옮긴 범주에만 붙인다고 적음(원장 93)
 - [x] D4-3. setup 스킬: `AGENTS.md`를 새로 만들 때는 앞의 빈 줄을 두지 않는다고 적음(원장 92)
 - [x] D4-4. 확인: 두 본문에 도구 이름이 없고 동작으로만 쓰여 있음. 커밋
-- [ ] D4-5. `~/plate-rail-test`를 만듦(원장 94): 판정 도구와 답 파일을 세션 기록에서 되살리고, 폴더 넷(`setup-empty`, `ctx-ev`, `ctx-badak`, `ctx-fin`)에 셋업을 돌려 plan.md "2026-10-08에 다시 돌리는 것"의 셋업 기대값을 확인. 셋업 직후를 폴더마다 커밋
-- [ ] D5. `ctx-ev`: 출처 경로, ADR 후보의 범주, `README.md`·`TODO.md` 미변경, 기술 스택이 원장 91대로 (2026-10-06에 Claude Code는 끝났고 Codex는 한도 오류로 끊겼다. 그 결과는 사라졌다. Claude Code로 다시 돌린다. 기대값은 plan.md의 표)
-- [ ] D6. `ctx-badak`: `docs/DESIGN.md`의 토큰이 `src/app/global.css`의 이름과 값 그대로, 기술 스택이 원장 91대로 (2026-10-06에 Claude Code는 토큰 대조를 통과했고 Codex는 한도 오류로 끊겼다. 그 결과는 사라졌다. Claude Code로 다시 돌린다)
-- [ ] D7. `ctx-fin`: 기존 세 문서는 그대로이고 `docs/DESIGN.md`만 채워짐, `name` 위에 출처 주석이 없음 (2026-10-06에 Claude Code는 통과했고 Codex는 파일을 다 쓴 뒤 한도 오류로 끝났다. 그 결과는 사라졌다. Claude Code로 다시 돌린다)
+- [x] D4-5. `~/plate-rail-test`를 만듦(원장 94): 판정 도구와 답 파일을 세션 기록에서 되살리고, 폴더 넷(`setup-empty`, `ctx-ev`, `ctx-badak`, `ctx-fin`)에 셋업을 돌려 plan.md "2026-10-08에 다시 돌리는 것"의 셋업 기대값을 확인. 셋업 직후를 폴더마다 커밋 (네 폴더 모두 통과. 대조는 새로 만든 `bin/setupcheck.py`로 했다: 양식과 지도 구간이 본문과 한 글자도 다르지 않고, badak과 finsight의 새 `AGENTS.md`는 옮긴 원문이 첫 줄부터 그대로다. excel-viewer는 기존 `AGENTS.md` 뒤에 빈 줄 하나와 옮긴 내용이 붙었고 `README.md`·`TODO.md`가 그대로다. `ctx-fin`은 커밋 `bdff8d9`로 맞춘 복제본이다)
+- [x] D5. `ctx-ev`: 출처 경로, ADR 후보의 범주, `README.md`·`TODO.md` 미변경, 기술 스택이 원장 91대로 (2026-10-08 Claude Code 통과. 바뀐 파일은 PRD·ARCHITECTURE·ADR뿐이다. 기술 스택은 넉 줄이고 첫 줄이 Kotlin 2.4.20과 JVM 25, 출처는 `build.gradle.kts` 하나다. 테스트용 선언과 빌드 플러그인이 없다. ADR 항목은 셋이고 미룬 칸은 `{확인 필요}`다. Codex는 도구 확장 때로 미뤘다)
+- [x] D6. `ctx-badak`: `docs/DESIGN.md`의 토큰이 `src/app/global.css`의 이름과 값 그대로, 기술 스택이 원장 91대로 (2026-10-08 Claude Code 통과. 토큰 대조: 색 31, 모서리 8, 글꼴 2의 이름·값·순서가 같다. 기술 스택은 14줄이고 `package.json`의 `dependencies` 순서와 같으며 출처가 `package.json` 하나다(`bin/stackcheck.py`). `name` 위에 출처 주석이 없다. Codex는 도구 확장 때로 미뤘다)
+- [x] D7. `ctx-fin`: 기존 세 문서는 그대로이고 `docs/DESIGN.md`만 채워짐, `name` 위에 출처 주석이 없음 (2026-10-08 Claude Code 통과. `git status`가 `docs/DESIGN.md` 하나다. 토큰 대조: 색 8, 글꼴 1, 모서리 1이 같다. Codex는 도구 확장 때로 미뤘다)
 - [x] D8. `ctx-nosetup`: 셋업을 묻고 이어서 채움. 셋업 결과가 setup 단독 결과와 같음. 실패하면 원장 60을 사용자에게 다시 묻는다 (두 도구 통과. `AGENTS.md`, `CLAUDE.md`, `.gitkeep`이 setup 단독 결과와 같다)
 - [x] D9. `ctx-chain`: setup의 끝 물음에서 context로 이어짐. 실패하면 원장 60을 사용자에게 다시 묻는다 (두 도구 통과)
 - [x] D10. `ctx-turn`: 여러 턴에서 질문이 하나씩 나옴, 승인 전 쓰지 않음, 도중에 그만하면 답한 칸만 쓰임 (Claude Code 통과: 다섯 턴. 질문이 턴마다 하나, 넷째 턴까지 `git status`가 비어 있고, 승인 뒤 `docs/PRD.md`의 두 줄만 바뀌었다. Codex는 한도 오류로 시작하지 못했고 도구 확장 때로 미뤘다: 원장 87)
 - [x] D11. `ctx-full`: setup을 다시 돌려도 화면 여부를 묻지 않고 변화 없음 (두 도구 통과)
-- [ ] D13. 판정 5, 6, 7의 결과를 답 파일과 나란히 놓은 뜻 대조 표와 토큰 대조 결과로 정리해 사용자에게 보여 줌(원장 95). 해석 칸은 적힌 내용을 그대로 보여 준다 (기계 판정은 `python3 ~/plate-rail-test/bin/judge.py <폴더>`, 토큰 대조는 `tokencheck.py <폴더> <토큰 파일> [--ask radius=rounded]`로 한다)
-- [ ] D14. 기대값과 다른 항목이 있었으면 스킬을 고치고 그 항목을 다시 통과시킴. 본문의 규칙을 바꿔야 하면 고치기 전에 묻는다. 커밋하고 `origin/context`로 푸시
+- [x] D13. 판정 5, 6, 7의 결과를 답 파일과 나란히 놓은 뜻 대조 표와 토큰 대조 결과로 정리해 사용자에게 보여 줌(원장 95). 해석 칸은 적힌 내용을 그대로 보여 준다 (기계 판정은 `python3 ~/plate-rail-test/bin/judge.py <폴더>`, 토큰 대조는 `tokencheck.py <폴더> <토큰 파일> [--ask radius=rounded]`로 한다. 2026-10-08에 표로 보여 줬다. 답에 없는 내용이 더해진 곳도 빠진 답도 없었다)
+- [x] D14. 기대값과 다른 항목이 있었으면 스킬을 고치고 그 항목을 다시 통과시킴. 본문의 규칙을 바꿔야 하면 고치기 전에 묻는다. 커밋하고 `origin/context`로 푸시 (기대값과 다른 항목이 없어 본문을 더 고치지 않았다)
   - 2026-10-06에 여기서 묻기로 한 셋은 재개 라운드에서 정했다: 해석 칸의 기계 기준 → 원장 90, 91 / `name` 위의 출처 주석 → 원장 93 / 새 `AGENTS.md`의 첫 줄 → 원장 92
 
 ## E. 자기 적용과 마무리 (`claude --plugin-dir plugins/plate`로 연 새 세션에서 한다: 원장 99)

@@ -154,7 +154,7 @@ docs/TOOLS.md, AGENTS.md                         # E 묶음에서 도구 사실 
 | `ctx-part` | 빈 폴더에 셋업(화면 없음) |
 | `ctx-ev` | `~/Desktop/vibe2/excel-viewer` 복제본에 셋업 |
 | `ctx-badak` | `~/Desktop/badak-next-app` 복제본에서 루트 `DESIGN.md`를 지워 커밋한 뒤 셋업 (원장 86) |
-| `ctx-fin` | `~/Desktop/finsight` 복제본에 셋업 |
+| `ctx-fin` | `~/Desktop/finsight` 복제본에 셋업. 2026-10-08부터는 복제본을 커밋 `bdff8d9`로 맞춘 뒤 셋업한다("확인해 둔 사실") |
 | `ctx-nosetup` | 빈 폴더, 셋업하지 않음 |
 | `ctx-chain` | 빈 폴더, 셋업하지 않음 |
 | `ctx-turn` | 빈 폴더에 셋업(화면 없음) |
@@ -251,6 +251,11 @@ DESIGN의 토큰에 대한 물음 일곱은 B6에서 물어 정했다(원장 79~
   - Codex 설치본(`~/.codex/plugins/cache/harness-plate/plate/0.5.0`)의 스킬은 a131ed4의 스킬과 같다. 이날 고친 본문은 Codex 설치본에 반영하지 않았다(원장 87).
   - Claude Code에 설치된 `plate@harness-plate`는 옛 0.3.0이고 꺼져 있다. 시험은 `--plugin-dir`로 레포의 본문을 읽는다.
   - 지난 실행(2026-10-06)에서 badak의 기술 스택은 Claude Code가 8줄이고 매니페스트 밖에서 읽은 것(DB 없음, 배포처, 패키지 매니저)이 섞여 있었다. Codex는 7줄이고 모두 `package.json`에서 적었으나 묶는 방식이 달랐다. 원장 91은 여기서 나왔다.
+  - finsight 원본은 2026-10-06 뒤로 계속 바뀌었다(추적 파일 84개 → 130개, `CLAUDE.md` 2KB → 4KB, `docs/UI_GUIDE.md`가 생겼다). `docs/UI_GUIDE.md`는 셋업의 같은 역할 문서 후보라서 지금의 원본으로는 판정 7의 전제(`docs/DESIGN.md` 양식이 생긴다)가 서지 않는다. 그래서 `ctx-fin`은 복제본 안에서 2026-10-06의 판정이 쓴 커밋 `bdff8d9`로 맞췄다(이 문서의 "시험할 프로젝트"에 적힌 상태다). 원본은 건드리지 않았다.
+  - 이날의 실행 시간(Claude Code, 폴더 넷과 셋을 한꺼번에): 셋업은 257~459초, context는 312~410초였다.
+  - 판정 도구에 둘을 더했다: `bin/setupcheck.py`(셋업 결과를 setup 본문의 양식·지도 구간과 대조), `bin/stackcheck.py`(기술 스택 절을 `package.json`과 대조).
+  - 판정 5에서 본 것(기대값에는 걸리지 않는다): excel-viewer의 `intellijPlatform { … }` 블록은 원장 91이 기계적으로 정해 주지 않는다. 조건문으로 된 선언(`localIdePath`가 있으면 로컬 IDE, 없으면 `webstorm(2026.2.3)`)은 풀어서 한 줄로 적혔고 `pluginVerifier()`는 적히지 않았다. `package.json`처럼 의존성이 목록으로 적힌 매니페스트에서는 줄 수와 순서가 그대로 정해졌다(판정 6).
+  - `judge.py`의 출처 추출은 디렉터리 구조의 주석 끝에 있는 `(scripts/)`를 출처로 잘못 센다. 기술 스택의 출처는 절을 직접 읽어 확인했다.
   - 시험 프로젝트의 빌드 매니페스트: badak `package.json`은 `dependencies` 13개와 `devDependencies` 14개, finsight는 5개와 14개다. 둘 다 `engines`가 없다. excel-viewer `build.gradle.kts`는 Kotlin JVM 플러그인 2.4.20, IntelliJ Platform Gradle 플러그인 2.19.0, `jvmToolchain(25)`이고 `implementation` 선언이 없다(`intellijPlatform { … }` 블록, `compileOnly` 하나, 나머지는 테스트용).
 
 ## 다음 단계에서 물을 것 (지금 확정하지 않음)
