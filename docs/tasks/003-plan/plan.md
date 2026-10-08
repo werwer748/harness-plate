@@ -278,6 +278,14 @@ booklog는 2단계의 답 파일에 있는 가상의 프로젝트다. Python 3.1
   - `--allowedTools "Bash(git add:*)" "Bash(git commit:*)"`를 더하면 커밋까지 된다. 명령 형태는 `claude -p "<요청>" --plugin-dir … --permission-mode acceptEdits --allowedTools "Bash(git add:*)" "Bash(git commit:*)" --output-format stream-json --verbose`다. `--allowedTools`는 뒤의 인자를 여럿 받으므로 요청 글을 옵션들 앞에 둔다.
   - `git -C <경로> status`처럼 `-C`를 붙인 꼴은 읽기만 하는 명령이어도 승인을 요구했다. 폴더 안에서 `git status`로 돌린 것은 막히지 않았다.
   - Claude Code는 커밋 메시지의 본문에 `Co-Authored-By:` 줄을 붙였다. 제목 줄은 요청한 글 그대로였다. 그래서 `plancheck.py`는 메시지의 제목 줄을 `plan: NNN-slug`와 견준다.
+- 판정 준비(2026-10-08, C 묶음):
+  - `bin/plancheck.py <폴더> [--task NNN] [--base <sha>|none] [--nogit] [--untracked-ok]`를 만들었다. 손으로 쓴 통과 표본 하나와 실패 표본 넷(절 순서, 빠진 확인 줄, 남은 안내 글, phase 번호, 폴더 이름, TODO 없음, 코드 블록, 항목 순서, 커밋 메시지, 다른 파일이 든 커밋, 남은 변경, 커밋 없음)으로 확인했다.
+  - "`{…}` 안내 글이 남아 있지 않다"는 스킬 본문의 `plan.md` 양식에 든 안내 글이 그대로 남았는지로 본다. 계획의 글에 중괄호가 들 수 있어서다(11번의 계획은 `{확인 필요}`를 다룬다). 그 밖의 중괄호 글은 참고로만 보여 준다.
+  - 폴더 이름의 낱말에는 숫자도 받는다(`[a-z0-9]+`).
+  - 셋업을 함께 돌리는 8번은 셋업이 만든 파일이 커밋되지 않은 채 남는다(setup은 커밋하지 않는다). 그래서 8번은 `--untracked-ok`로 보고, 남은 파일이 셋업의 것뿐인지는 목록으로 본다.
+  - `bin/run.sh`: 스킬이 `plan`일 때만 `--allowedTools "Bash(git add:*)" "Bash(git commit:*)"`를 준다. 여섯째 인자로 세션 id를 주면 답 파일의 글을 그 세션의 다음 턴으로 보낸다. git 레포면 돌리기 전의 HEAD를 `logs/<로그 이름>.base`에 적는다. `bin/calls.py <jsonl>`은 도구 호출과 결과를 순서대로 보여 준다.
+  - `plan-base`는 `setup-empty`를 복사해 context 스킬에 `answers/ctx-full.md`를 준 것이다. 남은 칸은 0개이고 커밋은 "맥락을 채운 직후"(da01bf3)다.
+  - 요청과 답 파일은 요청 글, 빈 줄, `[여기부터는 요청 글이 아니다. 물음의 답을 미리 준다]`, 답의 순서다. 3, 5, 6번의 파일에는 "답이 없는 물음이 나오면 다시 묻지 말고 추천안으로 정한다"를 넣었다. 헤드리스는 묻고 멈추면 아무것도 쓰지 못하기 때문이다. 1, 4, 7, 8, 10번에는 넣지 않았다. 질문이 나오면 그대로 실패로 드러난다.
 
 ## 다음 단계에서 물을 것 (지금 확정하지 않음)
 

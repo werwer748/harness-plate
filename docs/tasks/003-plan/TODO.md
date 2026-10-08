@@ -28,11 +28,11 @@
 
 ## C. 판정 준비
 
-- [ ] C1. `~/plate-rail-test/bin/plancheck.py` 작성 (plan.md "기계로 보는 것"). 손으로 쓴 통과 표본 하나와 실패 표본 몇 개로 도구부터 확인
-- [ ] C2. `run.sh`가 계획 스킬을 요청과 답이 함께 든 파일로 돌릴 수 있게 고침. A2에서 확인한 옵션을 넣음
-- [ ] C3. `plan-base` 준비: `setup-empty`의 "셋업 직후"를 복사하고 context 스킬에 `answers/ctx-full.md`를 주어 채움. `judge.py`로 남은 칸이 0개인지 확인하고 커밋
-- [ ] C4. 시험 폴더 준비: `plan-small`, `plan-big`, `plan-conflict`, `plan-adr`, `plan-turn`(`plan-base` 복사), `plan-unfilled`(`setup-empty` 복사), `plan-nosetup`(`git init`만), `plan-nogit`(빈 폴더)
-- [ ] C5. 요청과 답 파일을 `answers/plan-*.md`로 작성 (plan.md "완성 판정 기준"의 표)
+- [x] C1. `~/plate-rail-test/bin/plancheck.py` 작성 (plan.md "기계로 보는 것"). 손으로 쓴 통과 표본 하나와 실패 표본 몇 개로 도구부터 확인
+- [x] C2. `run.sh`가 계획 스킬을 요청과 답이 함께 든 파일로 돌릴 수 있게 고침. A2에서 확인한 옵션을 넣음
+- [x] C3. `plan-base` 준비: `setup-empty`의 "셋업 직후"를 복사하고 context 스킬에 `answers/ctx-full.md`를 주어 채움. `judge.py`로 남은 칸이 0개인지 확인하고 커밋
+- [x] C4. 시험 폴더 준비: `plan-small`, `plan-big`, `plan-conflict`, `plan-adr`, `plan-turn`(`plan-base` 복사), `plan-unfilled`(`setup-empty` 복사), `plan-nosetup`(`git init`만), `plan-nogit`(빈 폴더)
+- [x] C5. 요청과 답 파일을 `answers/plan-*.md`로 작성 (plan.md "완성 판정 기준"의 표)
 
 ## D. 완성 판정 (D1~D10은 plan.md "완성 판정 기준"의 표 번호와 같다. 11번은 E5에서 한다)
 
