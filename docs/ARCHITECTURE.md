@@ -2,7 +2,7 @@
 
 ## 기술 스택
 - 코드가 없다. 마크다운 스킬(`SKILL.md`)과 JSON 매니페스트로 이루어진 플러그인이다.
-- 대상 도구: Claude Code(1단계는 2.1.291, 2026-10-08의 판정은 2.1.293에서 확인). Codex(0.160.0)는 2026-10-08에 확인을 멈췄고, Codex와 Grok Build로 넓히는 일은 v1.0 뒤에 한다(ADR-018). 도구별로 확인해 둔 사실은 `docs/TOOLS.md`에 있다.
+- 대상 도구: Claude Code(1단계는 2.1.291, 2단계의 2026-10-08 판정은 2.1.293, 3단계는 2.1.294에서 확인). Codex(0.160.0)는 2026-10-08에 확인을 멈췄고, Codex와 Grok Build로 넓히는 일은 v1.0 뒤에 한다(ADR-018). 도구별로 확인해 둔 사실은 `docs/TOOLS.md`에 있다.
 - 배포: 플러그인과 마켓플레이스 목록. 레포는 GitHub의 `werwer748/harness-plate`(비공개)다.
 
 ## 디렉터리 구조
@@ -14,7 +14,8 @@ plugins/plate/
 ├── .codex-plugin/plugin.json      # Codex용 매니페스트
 └── skills/
     ├── setup/SKILL.md             # 셋업 스킬. 본문 하나를 두 도구가 함께 쓴다
-    └── context/SKILL.md           # 맥락 채우기 스킬. 본문 하나를 두 도구가 함께 쓴다
+    ├── context/SKILL.md           # 맥락 채우기 스킬. 본문 하나를 두 도구가 함께 쓴다
+    └── plan/SKILL.md              # 계획 스킬. 본문 하나를 두 도구가 함께 쓴다
 docs/                              # 이 레포의 하네스 기록. 위치는 AGENTS.md의 문서 지도를 따른다
 ```
 
@@ -31,8 +32,11 @@ docs/                              # 이 레포의 하네스 기록. 위치는 A
 ```
 셋업(AGENTS.md의 문서 지도, docs/의 양식)
 → 맥락(docs/PRD.md, docs/ARCHITECTURE.md, docs/ADR.md, UI 프로젝트면 docs/DESIGN.md)
-→ 계획(docs/tasks/NNN-slug/plan.md)
-→ 실행(docs/tasks/NNN-slug/phase-N.md, phase마다 새 컨텍스트의 에이전트)
-→ 검증(docs/tasks/NNN-slug/verify.md)
+→ 계획(docs/tasks/NNN-slug/plan.md를 쓰고 그 파일만 커밋한다)
+→ 실행(phase마다 새 컨텍스트의 에이전트가 수행하고 docs/tasks/NNN-slug/phase-N.md를 남긴다
+       → 회고 → 통과하면 plan.md의 그 phase 절과 phase-N.md를 지운다)
+→ 검증(작업 전체를 plan.md의 완료 조건에 대어 보고 docs/tasks/NNN-slug/verify.md를 남긴다)
 ```
-셋업과 맥락을 만들었다. 계획부터 검증까지는 만들기 전이다.
+셋업, 맥락, 계획을 만들었다. 실행과 검증은 만들기 전이다.
+
+통과한 phase의 근거는 git 이력에만 남는다. 검증까지 통과한 작업의 폴더에는 머리만 남은 `plan.md`와 `verify.md`가 남는다(ADR-022).
