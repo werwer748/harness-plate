@@ -255,7 +255,6 @@ booklog는 2단계의 답 파일에 있는 가상의 프로젝트다. Python 3.1
 
 ## 아직 확인하지 못한 것 (구현 중 확인)
 
-- 헤드리스(`claude -p`)에서 스킬이 `git commit`을 할 때 권한에 막히지 않게 하는 옵션. 2단계의 `run.sh`는 `--permission-mode acceptEdits`만 주었고 그때는 커밋하는 스킬이 없었다. A 묶음에서 빈 폴더로 확인하고 명령 형태를 "확인해 둔 사실"에 적는다.
 - 스킬이 다른 스킬을 불렀다가 돌아와 자기 절차를 잇는 것이 세 스킬에 걸쳐서도 되는지(plan → setup → 돌아와 계획). 2단계에서는 두 스킬 사이만 확인했다. 판정 8이 확인한다.
 - 이 레포의 `docs/ADR.md`에는 칸이 아닌 중괄호 글이 둘 있다(머리말의 `{확인 필요}`, ADR-006의 `{plan,phase-N,verify}`). 절차 1번의 안내 글 판정이 이것을 안내 글로 잘못 볼 수 있다. 판정 11에서 본다.
 
@@ -274,6 +273,11 @@ booklog는 2단계의 답 파일에 있는 가상의 프로젝트다. Python 3.1
   - `answers/`: `ctx-badak.md`, `ctx-ev.md`, `ctx-fin.md`, `ctx-full.md`, `ctx-part-2.md`, `setup-empty.md`, `setup-move.md`
   - `run.sh`는 `run.sh <도구> <폴더> <스킬> <로그 이름> [답 파일]`이고, 답 파일의 내용을 스킬 이름 뒤에 붙여 `claude -p "/plate:<스킬> <답>" --plugin-dir … --permission-mode acceptEdits --output-format stream-json --verbose`로 돌린다. 계획 스킬은 요청 글도 함께 넘겨야 하므로 요청과 답을 한 파일에 적는다.
 - 2단계의 `ctx-full` 폴더(채운 빈 폴더)는 2026-10-08의 재부팅으로 사라졌고 다시 만들지 않았다. `plan-base`는 새로 만든다.
+- 헤드리스의 커밋 권한(2026-10-08, A2. `git init`만 한 빈 폴더 둘에서 "파일을 만들고 그 파일만 커밋해라"를 돌렸다):
+  - `--permission-mode acceptEdits`만 주면 파일 쓰기는 되고 `git add`와 `git commit`은 승인을 요구하며 막힌다.
+  - `--allowedTools "Bash(git add:*)" "Bash(git commit:*)"`를 더하면 커밋까지 된다. 명령 형태는 `claude -p "<요청>" --plugin-dir … --permission-mode acceptEdits --allowedTools "Bash(git add:*)" "Bash(git commit:*)" --output-format stream-json --verbose`다. `--allowedTools`는 뒤의 인자를 여럿 받으므로 요청 글을 옵션들 앞에 둔다.
+  - `git -C <경로> status`처럼 `-C`를 붙인 꼴은 읽기만 하는 명령이어도 승인을 요구했다. 폴더 안에서 `git status`로 돌린 것은 막히지 않았다.
+  - Claude Code는 커밋 메시지의 본문에 `Co-Authored-By:` 줄을 붙였다. 제목 줄은 요청한 글 그대로였다. 그래서 `plancheck.py`는 메시지의 제목 줄을 `plan: NNN-slug`와 견준다.
 
 ## 다음 단계에서 물을 것 (지금 확정하지 않음)
 
