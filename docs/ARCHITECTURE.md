@@ -2,7 +2,7 @@
 
 ## 기술 스택
 - 코드가 없다. 마크다운 스킬(`SKILL.md`)과 JSON 매니페스트로 이루어진 플러그인이다.
-- 대상 도구: Claude Code(2.1.291에서 확인), Codex(0.160.0에서 확인). Grok Build는 설치한 시점부터 확인한다.
+- 대상 도구: Claude Code(1단계는 2.1.291, 2026-10-08의 판정은 2.1.293에서 확인). Codex(0.160.0)는 2026-10-08에 확인을 멈췄고, Codex와 Grok Build로 넓히는 일은 v1.0 뒤에 한다(ADR-018). 도구별로 확인해 둔 사실은 `docs/TOOLS.md`에 있다.
 - 배포: 플러그인과 마켓플레이스 목록. 레포는 GitHub의 `werwer748/harness-plate`(비공개)다.
 
 ## 디렉터리 구조
@@ -12,7 +12,9 @@
 plugins/plate/
 ├── .claude-plugin/plugin.json     # Claude Code용 매니페스트
 ├── .codex-plugin/plugin.json      # Codex용 매니페스트
-└── skills/setup/SKILL.md          # 셋업 스킬. 본문 하나를 두 도구가 함께 쓴다
+└── skills/
+    ├── setup/SKILL.md             # 셋업 스킬. 본문 하나를 두 도구가 함께 쓴다
+    └── context/SKILL.md           # 맥락 채우기 스킬. 본문 하나를 두 도구가 함께 쓴다
 docs/                              # 이 레포의 하네스 기록. 위치는 AGENTS.md의 문서 지도를 따른다
 ```
 
@@ -21,8 +23,9 @@ docs/                              # 이 레포의 하네스 기록. 위치는 A
 - 스킬 본문은 하나만 두고 도구별 매니페스트가 같은 폴더를 가리킨다. 본문은 도구 이름 대신 동작으로 쓴다("사용자에게 묻는다", "파일을 옮긴다")(ADR-004).
 - 양식은 스킬 본문 안에 넣는다. 이유: 별도 파일로 두면 대상 프로젝트의 작업 디렉터리 밖이라 읽기가 거부된 전례가 있다.
 - 위치 규칙은 대상 프로젝트의 `AGENTS.md`에 두고 `CLAUDE.md`에는 `@AGENTS.md` 임포트만 둔다. 이유: Claude Code는 `CLAUDE.md`가 없을 때만 `AGENTS.md`를 읽고, Codex와 Grok Build는 `AGENTS.md`를 자동으로 읽는다(ADR-007).
-- 각 단계는 Claude Code에서 만들고 Codex에서 같은 결과를 확인해야 완성이다. 빈 폴더는 결과가 완전히 같아야 하고, 기존 프로젝트는 파일 목록·위치·지도 구간이 같아야 한다(ADR-004, ADR-010).
-- Codex는 설치할 때 플러그인을 `~/.codex/plugins/cache/` 아래로 복사해 그 사본을 읽는다. 스킬을 고친 뒤에는 `codex plugin add plate@harness-plate`를 다시 실행해 설치본을 갱신한다.
+- 스킬이 다른 스킬의 절차를 써야 하면 그 스킬을 이름으로 부른다(`plate:setup`, `plate:context`). 절차를 복사하지 않는다(ADR-017).
+- 각 단계의 완성은 Claude Code에서 실제로 실행한 결과를 기대값(답 파일, 빌드 매니페스트, 토큰 파일)과 견줘 판정한다(ADR-010, ADR-019). 1단계 전부와 2단계 판정의 일부는 Codex에서도 같은 결과를 확인했고, 2026-10-08부터는 Codex에서 확인하지 않는다(ADR-018).
+- 도구마다 다른 동작과 확인을 멈춘 지점은 `docs/TOOLS.md`에 적는다(ADR-018).
 
 ## 데이터 흐름
 ```
@@ -32,4 +35,4 @@ docs/                              # 이 레포의 하네스 기록. 위치는 A
 → 실행(docs/tasks/NNN-slug/phase-N.md, phase마다 새 컨텍스트의 에이전트)
 → 검증(docs/tasks/NNN-slug/verify.md)
 ```
-셋업만 만들었다. 맥락부터 검증까지는 만들기 전이다.
+셋업과 맥락을 만들었다. 계획부터 검증까지는 만들기 전이다.

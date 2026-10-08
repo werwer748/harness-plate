@@ -1,7 +1,7 @@
 {
   "name": "plate",
   "version": "0.5.0",
-  "description": "레일 하네스. 도구가 바뀌어도 같은 규격으로 작업을 진행하게 한다. 지금은 프로젝트에 하네스 문서의 위치 기준을 세우는 setup 스킬이 있다.",
+  "description": "레일 하네스. 도구가 바뀌어도 같은 규격으로 작업을 진행하게 한다. 지금은 프로젝트에 하네스 문서의 위치 기준을 세우는 setup 스킬과 그 문서의 남은 칸을 채우는 context 스킬이 있다.",
   "author": { "name": "hugo" },
   "repository": "https://github.com/werwer748/harness-plate"
 }
