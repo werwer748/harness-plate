@@ -18,13 +18,13 @@
 
 ## B. 계획 스킬 본문
 
-- [ ] B1. 이름과 설명만 있는 껍데기 `plugins/plate/skills/plan/SKILL.md` 작성 (plan.md "계획 스킬 규격"의 설명 초안)
-- [ ] B2. 확인: `claude --plugin-dir plugins/plate`에서 `/plate:plan`이 보임
-- [ ] B3. 막는 실패, 절대 규칙, 낱말 작성
-- [ ] B4. 절차 0~8 작성
-- [ ] B5. `plan.md`의 양식과 적는 규칙(머리, 조건, phase를 나누는 기준, phase의 절, TODO) 작성
-- [ ] B6. 확인: 본문에 도구 이름이 없고 동작으로만 쓰여 있음. 출처 절에 가져온 기법을 적음
-- [ ] B7. 커밋하고 `origin/plan`으로 푸시
+- [x] B1. 이름과 설명만 있는 껍데기 `plugins/plate/skills/plan/SKILL.md` 작성 (plan.md "계획 스킬 규격"의 설명 초안)
+- [x] B2. 확인: `claude --plugin-dir plugins/plate`에서 `/plate:plan`이 보임
+- [x] B3. 막는 실패, 절대 규칙, 낱말 작성
+- [x] B4. 절차 0~8 작성
+- [x] B5. `plan.md`의 양식과 적는 규칙(머리, 조건, phase를 나누는 기준, phase의 절, TODO) 작성
+- [x] B6. 확인: 본문에 도구 이름이 없고 동작으로만 쓰여 있음. 출처 절에 가져온 기법을 적음
+- [x] B7. 커밋하고 `origin/plan`으로 푸시
 
 ## C. 판정 준비
 
