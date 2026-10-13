@@ -29,6 +29,19 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
 - 커밋 메시지의 본문에 `Co-Authored-By:` 줄을 붙였다. 제목 줄은 요청한 글 그대로였다(2026-10-08).
 - 실행 시간. 2026-10-06에는 한 번에 2~9분이었고, 스킬이 시키지 않은 자체 검증 명령이 권한에 막혀 되풀이될 때 길어졌다(빈 폴더의 셋업 한 번이 12분). 2026-10-08에는 셋업이 257~459초, 맥락 채우기가 312~410초였다. 폴더가 다르면 여러 실행을 한꺼번에 돌려도 된다.
 
+**서브에이전트, 권한, worktree** (2.1.296, 2026-10-13. 헤드리스에서 직접 돌려 확인했다. 시험용 플러그인은 `~/plate-rail-test/probe-plugin`, 실행 스크립트는 `bin/a2.sh`, 기록은 `logs/a2-*.jsonl`이다)
+
+- 명령의 꼴은 `claude -p "<요청>" --allowedTools "<항목>" "<항목>" --plugin-dir <플러그인 폴더> --permission-mode acceptEdits --forward-subagent-text --output-format stream-json --verbose`다. 이 꼴로 돌린 기록에는 서브에이전트가 받은 글, 쓴 글, 도구 호출이 `parent_tool_use_id`와 함께 남는다.
+- 서브에이전트가 플러그인 스킬을 이름으로 부른다. 메인이 "probe의 work 스킬(`probe:work`)을 불러 그 절차를 따른다"와 번호만 넘겨도 서브에이전트가 스킬 본문을 받아 따랐다.
+- 서브에이전트에게 `CLAUDE.md`와 그 `@` 임포트가 실린다(문서로 확인했다. 1단계의 판정에서도 서브에이전트에게 문서 지도가 실리는 것을 봤다).
+- `--allowedTools`가 서브에이전트에게 이어진다. `"Bash(git add:*)" "Bash(git commit:*)"`만 주고 서브에이전트 셋이 모두 커밋했다.
+- 한 번의 실행에서 메인이 에이전트 셋을 차례로 띄우고 돌아온 줄을 모아 보고했다. 80초가 걸렸다(에이전트 하나에 약 25초).
+- 허용 목록 없이는 `test -f`, `grep -q`, `ls`와 그것들을 `&&`로 이은 명령만 되고, `python3 -m unittest`, `python3 -m venv`, `.venv/bin/pip install`, `.venv/bin/python -m pytest`, `python3 -c`는 승인을 요구하며 막힌다. `"Bash(python3:*)" "Bash(.venv/bin/pip:*)" "Bash(.venv/bin/python:*)"`를 더하면 서브에이전트가 모두 돌린다.
+- 막힌 명령 하나마다 약 65초를 기다린다. 다섯이 막힌 실행이 363초였고 `--permission-prompts none`을 붙여도 367초였다. 허용 목록에서 빠진 명령은 실행 시간을 크게 늘린다.
+- `"Bash(git rm:*)" "Bash(git worktree:*)" "Bash(git merge:*)" "Bash(git branch:*)"`를 더하면 `git worktree add <경로> -b <브랜치>`, `git rm`, `git merge <브랜치>`, `git worktree remove`, `git branch -d`가 된다. `git merge`는 편집기를 띄우지 않고 병합 커밋을 만든다.
+- `.git/info/exclude`는 쓰지 못한다. 파일을 고치는 도구도 `echo … >> .git/info/exclude`도 민감한 파일이라며 막히고, `--allowedTools "Edit(.git/info/exclude)"`로도 풀리지 않는다. `.worktrees/.gitignore`에 `*` 한 줄을 쓰는 것은 막히지 않고, 그 뒤에 worktree를 만들고 지워도 `git status --short`가 비어 있다.
+- worktree 폴더에서 연 헤드리스 세션도 플러그인 스킬을 부르고 그 브랜치에 커밋한다. 서브에이전트가 `git -C <절대 경로> add`를 먼저 써서 한 번 막힌 뒤 `git add`로 했다.
+
 ## Codex
 
 0.160.0에서 확인했다(2026-10-06).
@@ -112,5 +125,6 @@ v1.0 뒤에 한다(ADR-018). 시험 폴더, 판정 도구, 답 파일의 위치�
 - Codex에서 끊긴 판정 넷을 돌린다.
 - 2026-10-08에 고친 본문 셋을 Codex에서 확인한다. 새 `AGENTS.md`의 첫 줄은 Codex에서만 빈 줄이 나오던 곳이다.
 - Codex에서 계획 스킬의 판정 열 경우를 돌린다(ADR-031). 계획 스킬은 Codex에서 돌린 적이 없다. 계획 스킬은 커밋을 하는데 `workspace-write`는 `.git` 쓰기를 막으므로 돌릴 샌드박스부터 확인한다.
+- Codex에서 실행 스킬 셋(run, phase, retro)의 판정을 돌린다. 서브에이전트를 띄우는 방법, 서브에이전트가 스킬을 부르는 방법, worktree와 `.git` 쓰기를 막는 샌드박스부터 확인한다.
 - 두 도구의 결과를 서로 견주는 기계 기준을 다시 쓴다. 지금의 기준은 바뀐 파일 목록, 절 제목과 순서, 남은 `{…}` 안내 글이 없음, `{확인 필요}`가 있는 칸, 목록 칸의 항목 수, 출처 경로의 집합이고, 해석 칸(패턴과 규칙, 데이터 흐름, 폴더의 역할)은 빠져 있다(ADR-019).
 - Codex 다음에 Grok Build를 확인한다.
