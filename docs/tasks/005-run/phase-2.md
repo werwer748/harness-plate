@@ -21,6 +21,6 @@
 - 세 본문에 도구 이름이 없다.
   - 확인: `cat plugins/plate/skills/{run,phase,retro}/SKILL.md | grep -oiE 'claude(\.md)?|codex|grok' | grep -vcx 'CLAUDE.md'` → 0
 - 스킬 여섯이 불린다.
-  - 확인: `claude -p --plugin-dir plugins/plate`의 실행 기록 첫 줄(세션의 스킬 목록)에 `plate:setup`, `plate:context`, `plate:plan`, `plate:run`, `plate:phase`, `plate:retro`가 있다
+  - 확인: `claude -p --plugin-dir plugins/plate --output-format stream-json --verbose`의 실행 기록의 init 줄(세션의 스킬 목록)에 `plate:setup`, `plate:context`, `plate:plan`, `plate:run`, `plate:phase`, `plate:retro`가 있다
 - 사용자가 고친 본문을 확인했다.
   - 확인: 바뀐 절을 적은 답글에 받은 답

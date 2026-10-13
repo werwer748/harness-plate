@@ -75,7 +75,7 @@
 17. 네 스킬(plan, run, phase, retro)의 본문에 한 파일 시절의 기준이 없고 스킬 여섯이 불린다.
     - 확인: `grep -cE '코드 블록 밖|\(통과\) Phase|phase 절' plugins/plate/skills/*/SKILL.md` → 모두 0
     - 확인: `grep -n 'ADR' plugins/plate/skills/plan/SKILL.md`의 줄이 1번(표준 네 문서), 4번(어긋나는지 본다), ADR 후보의 규칙뿐이다
-    - 확인: `claude -p --plugin-dir plugins/plate`의 실행 기록 첫 줄(세션의 스킬 목록)에 `plate:setup`, `plate:context`, `plate:plan`, `plate:run`, `plate:phase`, `plate:retro`가 있다
+    - 확인: `claude -p --plugin-dir plugins/plate --output-format stream-json --verbose`의 실행 기록의 init 줄(세션의 스킬 목록)에 `plate:setup`, `plate:context`, `plate:plan`, `plate:run`, `plate:phase`, `plate:retro`가 있다
 18. 004의 계획과 `docs/ADR.md`에 ADR-034가 없다.
     - 확인: `grep -rc 'ADR-034' docs/tasks/004-context-rules/ docs/ADR.md` → 모두 0
 19. 이 레포의 문서(README, 두 매니페스트, PRD, ARCHITECTURE, TOOLS)가 스킬 여섯과 `phase-N.md`로 나뉜 계획을 말한다.
