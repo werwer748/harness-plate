@@ -15,7 +15,10 @@ plugins/plate/
 └── skills/
     ├── setup/SKILL.md             # 셋업 스킬. 본문 하나를 두 도구가 함께 쓴다
     ├── context/SKILL.md           # 맥락 채우기 스킬. 본문 하나를 두 도구가 함께 쓴다
-    └── plan/SKILL.md              # 계획 스킬. 본문 하나를 두 도구가 함께 쓴다
+    ├── plan/SKILL.md              # 계획 스킬. 본문 하나를 두 도구가 함께 쓴다
+    ├── run/SKILL.md               # 실행 스킬. 조율만 하고 수행과 회고는 아래 두 스킬에 맡긴다
+    ├── phase/SKILL.md             # 수행 스킬. run이 띄운 에이전트가 부른다
+    └── retro/SKILL.md             # 회고 스킬. run이 띄운 에이전트가 부른다
 docs/                              # 이 레포의 하네스 기록. 위치는 AGENTS.md의 문서 지도를 따른다
 ```
 
@@ -27,17 +30,17 @@ docs/                              # 이 레포의 하네스 기록. 위치는 A
 - 스킬이 다른 스킬의 절차를 써야 하면 그 스킬을 이름으로 부른다(`plate:setup`, `plate:context`). 절차를 복사하지 않는다(ADR-017).
 - 각 단계의 완성은 Claude Code에서 실제로 실행한 결과를 기대값(답 파일, 빌드 매니페스트, 토큰 파일)과 견줘 판정한다(ADR-010, ADR-019). 1단계 전부와 2단계 판정의 일부는 Codex에서도 같은 결과를 확인했고, 2026-10-08부터는 Codex에서 확인하지 않는다(ADR-018).
 - 도구마다 다른 동작과 확인을 멈춘 지점은 `docs/TOOLS.md`에 적는다(ADR-018).
-- 대상 프로젝트의 규칙이 스킬의 규칙과 부딪히면 프로젝트의 규칙이 우선한다. 스킬의 절대 규칙도 든다. 스킬 본문에는 아직 넣지 않았고 4단계 라운드에서 정한다(ADR-033).
+- 대상 프로젝트의 규칙이 스킬의 규칙과 부딪히면 프로젝트의 규칙이 우선한다. 스킬의 절대 규칙도 든다. 네 스킬(plan, run, phase, retro)의 본문에 넣었고, 따른 곳은 보고나 기록에 적는다(ADR-033).
 
 ## 데이터 흐름
 ```
 셋업(AGENTS.md의 문서 지도, docs/의 양식)
 → 맥락(docs/PRD.md, docs/ARCHITECTURE.md, docs/ADR.md, UI 프로젝트면 docs/DESIGN.md)
-→ 계획(docs/tasks/NNN-slug/plan.md를 쓰고 그 파일만 커밋한다)
-→ 실행(phase마다 새 컨텍스트의 에이전트가 수행하고 docs/tasks/NNN-slug/phase-N.md를 남긴다
-       → 회고 → 통과하면 plan.md의 그 phase 절과 phase-N.md를 지운다)
+→ 계획(docs/tasks/NNN-slug/에 plan.md와 phase마다의 phase-N.md를 쓰고 그 파일들만 커밋한다)
+→ 실행(phase마다 새 컨텍스트의 에이전트가 수행하고 그 phase의 phase-N.md에 기록을 덧붙인다
+       → 회고 → 통과하면 배운 것과 하네스의 문제점을 docs/LESSONS.md로 옮기고 phase-N.md를 지운다)
 → 검증(작업 전체를 plan.md의 완료 조건에 대어 보고 docs/tasks/NNN-slug/verify.md를 남긴다)
 ```
-셋업, 맥락, 계획을 만들었다. 실행과 검증은 만들기 전이다.
+셋업, 맥락, 계획, 실행을 만들었다. 검증은 만들기 전이다.
 
-통과한 phase의 근거는 git 이력에만 남는다. 검증까지 통과한 작업의 폴더에는 머리만 남은 `plan.md`와 `verify.md`가 남는다(ADR-022).
+통과한 phase의 근거는 git 이력에만 남는다. 검증까지 통과한 작업의 폴더에는 `plan.md`와 `verify.md`가 남는다(ADR-022).
