@@ -42,6 +42,18 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
 - `.git/info/exclude`는 쓰지 못한다. 파일을 고치는 도구도 `echo … >> .git/info/exclude`도 민감한 파일이라며 막히고, `--allowedTools "Edit(.git/info/exclude)"`로도 풀리지 않는다. `.worktrees/.gitignore`에 `*` 한 줄을 쓰는 것은 막히지 않고, 그 뒤에 worktree를 만들고 지워도 `git status --short`가 비어 있다.
 - worktree 폴더에서 연 헤드리스 세션도 플러그인 스킬을 부르고 그 브랜치에 커밋한다. 서브에이전트가 `git -C <절대 경로> add`를 먼저 써서 한 번 막힌 뒤 `git add`로 했다.
 
+**실행 스킬의 판정에서 본 것** (2.1.296, 2026-10-13. 실행 스크립트는 `~/plate-rail-test/bin/run.sh`와 `bin/rerun.sh`, 기록은 `logs/run-*.jsonl`이다)
+
+- 물음의 답을 미리 주면 그 물음에서 멈추지 않고 묻는 글도 쓰지 않는다. 묻는 글을 읽어야 하는 판정은 그 답을 빼고 부르고, 멈춘 뒤에 `--resume`으로 답을 보낸다. 커밋하지 않은 변경의 파일 목록과 합칠지 묻는 글은 이렇게 해서 봤다.
+- 허용 목록에 든 명령도 꼴에 따라 막힌다. `"Bash(git log:*)"`가 있어도 `git log --stat --format='--- %H %s' -5`는 승인을 요구했고 `git log --oneline`과 `git show --stat`은 돌았다. `cd <폴더> && git …`은 폴더를 바꾼 뒤 버전 관리 명령을 돌린다며 막힌다. `sed -n`, `awk`, `unzip -l`, 명령 치환(`$(mktemp)`)도 승인을 요구한다.
+- 명령을 `&&`나 `;`로 이으면 그 가운데 하나만 승인이 필요해도 전체가 막힌다. 한 명령씩 부르면 돈다.
+- 원래 자리의 세션은 worktree 안의 `git status`를 돌리지 못한다. `git -C <worktree> status`도 `cd <worktree> && git status`도 막힌다.
+- 에이전트는 프로젝트 폴더 밖의 파일을 읽지 못한다. 플러그인의 `SKILL.md`를 경로로 여는 것, `~/.gradle/gradle.properties`의 `grep`, 상위 폴더의 `ls`가 막혔다. 다른 스킬의 본문은 그 스킬을 이름으로 불러야 받는다. 그래서 점검 에이전트는 하네스의 문제점을 다른 스킬의 글에 대어 보지 못한다.
+- WebFetch는 헤드리스에서 권한이 없어 막힌다. 계획 스킬이 외부 API의 문서를 확인하지 못하고 계획에 "실제 응답으로 먼저 확인한다"를 넣었다.
+- 실행 환경의 기본 안내에 "기본 브랜치에 있으면 브랜치를 먼저 만든다"가 있다. 수행 에이전트와 점검 에이전트는 phase 스킬의 규칙을 따라 `main`에 커밋했고 그 충돌을 "하네스에서 걸린 것"에 적었다(세 실행).
+- 브랜치를 가른 뒤 원래 브랜치에 새 커밋이 없으면 `git merge`가 fast-forward로 끝나 병합 커밋이 생기지 않는다.
+- 실행 시간. phase 하나를 확인만으로 끝내면 80~460초, 회고하면 390~500초였다. phase 셋을 전체 지시로 돌린 실행은 1307초, Gradle의 `verifyPlugin`이 든 excel-viewer의 phase 하나는 1368초였다. 폴더가 다른 실행 여섯을 한꺼번에 돌렸다.
+
 ## Codex
 
 0.160.0에서 확인했다(2026-10-06).
