@@ -24,15 +24,15 @@
 
 ## B. 스킬 본문
 
-- [ ] B1. 이름과 설명만 있는 껍데기 셋 작성: `plugins/plate/skills/run/SKILL.md`, `phase/SKILL.md`, `retro/SKILL.md` (plan.md의 설명 초안)
-- [ ] B2. 확인: `claude --plugin-dir plugins/plate`에서 `/plate:run`, `/plate:phase`, `/plate:retro`가 보임
-- [ ] B3. phase 본문 작성: 막는 실패, 절대 규칙, 절차 1~6, `phase-N.md`의 양식, 돌려주는 다섯 줄 (plan.md "수행 스킬 `plate:phase`의 규격")
-- [ ] B4. retro 본문 작성: 막는 실패, 절대 규칙, 절차 0~7, 판정, 회고 절의 양식, 돌려주는 세 줄 (plan.md "점검 스킬 `plate:retro`의 규격")
-- [ ] B5. run 본문 작성: 막는 실패, 절대 규칙, 낱말, 절차 0~8, "계획을 고친다", "합친다", `docs/LESSONS.md`의 양식과 옮기는 규칙 (plan.md "조율 스킬 `plate:run`의 규격", "`docs/LESSONS.md`")
-- [ ] B6. plan 스킬의 네 곳을 고침 (plan.md "plan 스킬에서 고치는 곳"). 확인: `git diff`가 그 넷에만 걸림
-- [ ] B7. 확인: 세 본문에 도구 이름이 없고 동작으로만 쓰여 있음(`grep -ciE 'claude|codex|grok'` → 0). 네 본문(run, phase, retro, plan)의 절대 규칙 절 첫머리에 프로젝트의 규칙 문장이 있고 셋째 문장만 스킬마다 다름. 출처 절에 가져온 기법을 적음
-- [ ] B8. "설계하면서 더한 것"과 본문을 쓰면서 더한 것을 사용자에게 보여 주고 확인받음. 본문을 쓰면서 더한 것은 plan.md 끝에 적음
-- [ ] B9. 커밋하고 `origin/run`으로 푸시
+- [x] B1. 이름과 설명만 있는 껍데기 셋 작성: `plugins/plate/skills/run/SKILL.md`, `phase/SKILL.md`, `retro/SKILL.md` (plan.md의 설명 초안)
+- [x] B2. 확인: `claude --plugin-dir plugins/plate`에서 `/plate:run`, `/plate:phase`, `/plate:retro`가 보임
+- [x] B3. phase 본문 작성: 막는 실패, 절대 규칙, 절차 1~6, `phase-N.md`의 양식, 돌려주는 다섯 줄 (plan.md "수행 스킬 `plate:phase`의 규격")
+- [x] B4. retro 본문 작성: 막는 실패, 절대 규칙, 절차 0~7, 판정, 회고 절의 양식, 돌려주는 세 줄 (plan.md "점검 스킬 `plate:retro`의 규격")
+- [x] B5. run 본문 작성: 막는 실패, 절대 규칙, 낱말, 절차 0~8, "계획을 고친다", "합친다", `docs/LESSONS.md`의 양식과 옮기는 규칙 (plan.md "조율 스킬 `plate:run`의 규격", "`docs/LESSONS.md`")
+- [x] B6. plan 스킬의 네 곳을 고침 (plan.md "plan 스킬에서 고치는 곳"). 확인: `git diff`가 그 넷에만 걸림
+- [x] B7. 확인: 세 본문에 도구 이름이 없고 동작으로만 쓰여 있음(`grep -ciE 'claude|codex|grok'` → 0). 네 본문(run, phase, retro, plan)의 절대 규칙 절 첫머리에 프로젝트의 규칙 문장이 있고 셋째 문장만 스킬마다 다름. 출처 절에 가져온 기법을 적음
+- [x] B8. "설계하면서 더한 것"과 본문을 쓰면서 더한 것을 사용자에게 보여 주고 확인받음. 본문을 쓰면서 더한 것은 plan.md 끝에 적음 → 2026-10-13에 확인받음. 더한 것의 목록은 plan.md에 적지 않았다(같은 날 계획에 그런 절을 쌓지 않기로 했고, 내용은 본문에 있다). 함께 물어 정한 것 둘: B7은 파일 이름 `CLAUDE.md`를 빼고 센다 / 확인만 방식에서도 프로젝트의 규칙을 따른 곳이 있을 때만 "하네스의 문제점"을 적고 run이 옮긴다
+- [x] B9. 커밋하고 `origin/run`으로 푸시
 
 ## C. 판정 준비
 
