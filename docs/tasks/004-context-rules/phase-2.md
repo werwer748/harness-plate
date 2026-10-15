@@ -53,3 +53,34 @@
 ## 하네스에서 걸린 것
 - 완료 조건 4의 "저장소 밖" 확인은 이 시험 폴더에서는 실패할 수 없는 쪽에 가깝다. 2단계 자기 적용에서 읽힌 것은 레포 밖의 메모 파일이었는데, `~/plate-rail-test/ctx-cells`에는 그 폴더에 대응하는 메모를 만들어 두지 않았다(머리의 범위 밖). 그래서 이 확인은 저장소 밖의 파일을 열지 않았다는 것만 보이고, 실린 메모를 근거로 쓰지 않는지는 보이지 못한다.
 - 여럿을 묻는 칸이 문장 중간에 있으면 칸 앞의 글을 고칠 수 없어서 ADR-019의 줄이 "…뺀 이유는 앞의 것은 {확인 필요}, 뒤의 것은 …"처럼 주어가 겹친 문장이 됐다. 실행한 쪽도 초안에서 이 점을 알리고 고칠 곳을 물었다. 확인은 모두 통과한다.
+
+## 회고 1: 회고
+
+**확인**
+- 완료 조건 4(실제 실행의 결과에 본 것 넷이 없다)가 참이다.
+  - `git -C ~/plate-rail-test/ctx-cells status --short` → ` M docs/ADR.md` 한 줄. 통과
+  - `git -C ~/plate-rail-test/ctx-cells diff --numstat -- docs/ADR.md` → `3	3	docs/ADR.md`(사이는 탭). 통과
+  - (쉼표) `git -C ~/plate-rail-test/ctx-cells diff -U0 -- docs/ADR.md | grep '^+' | grep -c '이유는,'` → 0. 통과
+  - (쉼표) `grep -c '판정하는 이유는 특정 프로젝트' ~/plate-rail-test/ctx-cells/docs/ADR.md` → 1. 통과
+  - (끊긴 "없음") `grep -c '멈춘 이유는 없음' ~/plate-rail-test/ctx-cells/docs/ADR.md` → 0. 통과
+  - (끊긴 "없음") `grep -c '멈춘 이유는 [^{]*\.$' ~/plate-rail-test/ctx-cells/docs/ADR.md` → 1. 통과
+  - (닫힌 칸) `grep -c '뺀 이유는 .*{확인 필요}' ~/plate-rail-test/ctx-cells/docs/ADR.md` → 1. 통과
+  - (닫힌 칸) `grep -c '뺀 이유는 .*잘못된 작업의 기록' ~/plate-rail-test/ctx-cells/docs/ADR.md` → 1. `git diff`로 본 바뀐 세 줄은 모두 칸 앞의 글이 커밋 `7c37c9b`의 것 그대로다. 통과
+  - (다시 묻기) `python3 ~/plate-rail-test/bin/calls.py ~/plate-rail-test/logs/ctx-cells-1.jsonl | grep -cE '^CALL (Edit|Write)'` → 0. 그 기록의 마지막 답글(`result`)을 읽었다. "ADR-019 칸에는 갈래가 둘 있는데, 그중 하나에 대한 답과 미룬다는 말씀이 모두 없어서 그 갈래만 여쭙습니다"와 "**답을 미리 주는 방식을 기본으로 한 이유**는 무엇인가요?" 질문 하나다. 통과
+  - (저장소 밖) `for f in ~/plate-rail-test/logs/ctx-cells-*.jsonl; do python3 ~/plate-rail-test/bin/calls.py "$f"; done | grep '^CALL' | grep -oE '(/Users/|~/)[^" ]*' | sort -u | grep -v "^$HOME/plate-rail-test/ctx-cells" | grep -v "^$HOME/Desktop/harness-plate/plugins/plate"` → 출력 없음. `calls.py`가 앞 300자만 보여 주므로 세 기록의 도구 호출 입력 전체(1턴 4개, 2턴 0개, 3턴 4개)를 Python으로 따로 훑었다. 나온 절대 경로는 `/Users/gangjungi/plate-rail-test/ctx-cells/docs/ADR.md` 하나다. 통과
+- 본문을 고쳤다면 완료 조건 1, 2, 3이 여전히 참이다.
+  - `git show --stat 292b184` → 바뀐 것은 `docs/TOOLS.md`와 `phase-2.md`뿐이다. `git diff --stat 33233d0 HEAD -- plugins/` → 출력 없음. 본문을 고치지 않아 이 조건은 걸리지 않는다. 그래도 돌렸다: `grep -c '문장 중간'` → 1, `grep -c '여럿'` → 1, `grep -c '^5\. \*\*.*저장소 밖'` → 1, `grep -ciE 'claude|codex|grok'` → 0 (모두 `plugins/plate/skills/context/SKILL.md`). 본문을 읽어 74행에 네 가지, 75행에 세 가지, 18행(절대 규칙 5)에 여는 것과 근거로 쓰는 것, 41행에 목록 밖에서 열 수 있는 것이 저장소 안의 소스 파일뿐이라는 것을 봤다. 통과
+
+**문제**
+없음
+
+**배운 것**
+- 완료 조건 4의 확인은 `~/plate-rail-test/ctx-cells`의 커밋하지 않은 변경과 `~/plate-rail-test/logs/ctx-cells-*.jsonl`을 본다. 작업 전체를 검증하기 전에 그 폴더를 되돌리거나 같은 로그 이름으로 다시 돌리면 결과가 바뀐다(`run.sh`는 `logs/<로그 이름>.jsonl`을 덮어쓴다).
+
+**하네스의 문제점**
+- 계획(완료 조건 4의 "저장소 밖" 확인): 시험 폴더에 대응하는 메모를 두지 않아(머리의 범위 밖) 실패할 수 없는 쪽에 가깝다. 절대 규칙 5의 둘째 갈래(세션에 실린 저장소 밖의 내용을 근거로 쓰지 않는다)는 실제 실행으로 확인되지 않고 본문의 글(완료 조건 3)로만 확인됐다. 확인 명령도 `calls.py`가 보이는 앞 300자만 훑어서, 입력 전체는 따로 훑어야 했다.
+- 계획(같은 확인): 저장소 밖의 경로만 보므로 context 스킬 2번 절의 "아래 목록만 읽는다"에서 벗어난 저장소 안의 읽기는 잡지 않는다. 이번 1턴은 목록에 없는 `CLAUDE.md`를 열었고, 폴더 목록을 한 단계 아래보다 깊게 봤다(`find .claude-plugin .agents plugins -maxdepth 3`, `ls docs/tasks`).
+- context 스킬 "답을 적는 규칙"의 문장 중간 칸 규칙과 여럿을 묻는 칸 규칙이 한 칸에 겹칠 때: 칸 앞의 글이 두 갈래를 묶어 "…뺀 이유는"으로 끝나므로 갈래를 칸 안에서 "앞의 것은 {확인 필요}, 뒤의 것은 …"으로 나눠야 했다. 본문에 이때의 꼴이 없어 실행한 쪽이 꼴을 정하고 초안에서 고칠 곳으로 물었다.
+- context 스킬 3번의 4("문서의 초안 전체를 보여 주고 승인받는다"): 2턴의 초안은 바뀌는 세 줄의 표와 함께 문서를 보였지만 ADR-016~020의 바뀌지 않는 줄 일부를 "(지금과 같음, 바뀌지 않음)"으로 줄였다(줄였다고 알렸다). 긴 문서에서 바뀌는 곳이 적을 때 무엇까지 보여야 "전체"인지 본문에 없다.
+
+**판정**: 통과
