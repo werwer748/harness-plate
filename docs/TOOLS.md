@@ -55,6 +55,14 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
 - 브랜치를 가른 뒤 원래 브랜치에 새 커밋이 없으면 `git merge`가 fast-forward로 끝나 병합 커밋이 생기지 않는다.
 - 실행 시간. phase 하나를 확인만으로 끝내면 80~460초, 회고하면 390~500초였다. phase 셋을 전체 지시로 돌린 실행은 1307초, Gradle의 `verifyPlugin`이 든 excel-viewer의 phase 하나는 1368초였다. 폴더가 다른 실행 여섯을 한꺼번에 돌렸다.
 
+**플러그인 폴더의 편집과 권한 모드** (2026-10-13. 이 레포에서 `/plate:run 004`를 돌린 자기 적용에서 봤다)
+
+- `--plugin-dir`로 실은 폴더는 보호 경로다. 그 안의 쓰기는 설정의 `permissions.allow`로 미리 허락할 수 없고, 묻지 않고 지나가는 모드는 bypassPermissions뿐이다. 수동 모드와 acceptEdits에서는 묻고, 띄운 에이전트의 물음도 주 세션에 뜬다(문서 code.claude.com/docs/en/permission-modes의 "Protected paths"로 확인했다).
+- 자동 모드에서는 그 안의 편집이 분류기로 넘어간다. 수행 에이전트 넷의 `plugins/plate/skills/context/SKILL.md` 편집이 "The server-side auto mode classifier gave no verdict (it skipped this action)"로 거부됐고, 같은 세션의 `docs/` 편집은 지나갔다. 띄운 에이전트는 자기 권한 모드를 바꾸지 못해 다시 띄워도 같았다.
+- 사용자가 같은 세션의 모드를 자동이 아닌 것으로 바꾼 뒤 띄운 다섯째 수행 에이전트는 그 편집을 지나갔다(커밋 `d169a15`). 어느 모드였는지는 기록이 없다. 세션을 새로 열 필요는 없었다.
+- 세션을 연 명령의 `--permission-mode`는 지금 모드를 말해 주지 않는다. `--permission-mode acceptEdits`로 연 세션이 도중에 자동 모드로 바뀌었다가 돌아왔다(세션 기록의 `permissionMode` 필드로 2026-10-14에 확인했다).
+- 확인하지 않은 것: `CLAUDE_CODE_AUTO_MODE_SERVER=0`일 때 자동 모드에서 지나가는지, 플러그인을 저장소 밖의 복사본에서 실으면 그 폴더의 편집이 지나가는지.
+
 ## Codex
 
 0.160.0에서 확인했다(2026-10-06).
