@@ -77,3 +77,40 @@
 - 계획의 완료 조건 4와 6: 옛 셋업에서 위치를 묻고 멈추는 것까지만 적어, 받은 답(특히 추천안이 아닌 위치)으로 run이 무엇을 하는지는 어느 완료 조건에도 없다. 완료 조건 6의 시험도 물음에서 멈춘 상태만 읽어서, phase 2가 더한 273행이 같은 본문의 절대 규칙 5와 나머지 경로에 맞는지는 어느 확인도 보지 않았다.
 
 **판정**: 문제 있음
+
+## 검증 3
+
+**확인**
+- verify와 retro의 4번에, 하네스의 문제점은 그 스킬을 따르며 직접 읽거나 돌려서 본 것만 적는다는 규칙이 있다. 다른 스킬의 본문은 열지 않고 이름으로만 가리키며, 읽지 않은 파일이나 그 스킬 밖의 하네스 동작(예: 실행 스킬이 검증 뒤에 하는 일)은 짐작해 적지 않는다.
+  - `plugins/plate/skills/verify/SKILL.md` 63행과 `plugins/plate/skills/retro/SKILL.md` 62행(둘 다 4번)을 읽음 → 두 곳 모두 "이번 검증(회고)에서 직접 읽거나 돌려서 본 것만 적는다", "다른 스킬의 본문은 열지 않고 이름으로만 가리킨다", "읽지 않은 파일과 이 스킬 밖의 하네스 동작(예: 실행 스킬이 검증(회고) 뒤에 하는 일)은 짐작해 적지 않는다"가 있다. 통과
+- verify의 "작업의 커밋"이 작업 폴더의 파일을 바꾼 커밋과 메시지가 작업 폴더의 이름으로 시작하는 커밋이다. 메시지가 다른 작업 폴더의 이름으로 시작하는 커밋은 빼지 않고, 그 커밋에서는 이 작업 폴더의 변경만 본다. 수행·회고·통과·검증의 커밋은 작업 폴더의 파일을 함께 바꾸므로 메시지가 프로젝트의 꼴이어도 든다는 것이 정의에 적혀 있다.
+  - `grep -n '다른 작업 폴더의 이름으로 시작하는 커밋은 뺀다' plugins/plate/skills/verify/SKILL.md` → 출력 없음(종료 코드 1). 통과
+  - `plugins/plate/skills/verify/SKILL.md`의 낱말 "작업의 커밋"(28행), 1번(41행), 3번(52행)을 읽음 → 28행에 수행·회고·통과·검증의 커밋은 메시지가 프로젝트의 꼴(예: `[001] …`)이어도 든다는 것과 다른 작업 폴더의 이름으로 시작하는 커밋은 빼지 않고 이 작업 폴더의 변경만 본다는 것이 있고, 41행은 그런 커밋에서 이 작업 폴더의 변경만 읽고 52행은 그것만 모은다. 통과
+- plan의 "적는 규칙"에 두 규칙이 있다. 남은 결과(시험 폴더의 상태, 실행 기록처럼 앞서 만든 결과)를 읽는 확인에는, 그 결과를 만든 뒤에 그 결과에 걸리는 파일이 바뀌지 않았는지 보는 명령을 함께 적는다. 앞 phase가 이룬 완료 조건에 걸리는 파일을 뒤 phase가 고치면, 뒤 phase의 통과 조건이 그 완료 조건도 번호로 가리킨다.
+  - `plugins/plate/skills/plan/SKILL.md`의 "적는 규칙"(158~208행)을 읽음 → "조건"에 남은 결과를 읽는 확인에는 그 결과를 만든 뒤 걸리는 파일이 바뀌지 않았는지 보는 명령을 함께 적는다는 항목(174행)과, 앞 phase가 이룬 완료 조건에 걸리는 파일을 뒤 phase가 고치면 뒤 phase의 통과 조건이 그 완료 조건도 번호로 가리킨다는 항목(179행)이 있다. 통과
+- run의 "`docs/LESSONS.md`" 절에 두 규칙이 있다. 옮길 줄과 같은 뜻의 줄이 LESSONS의 같은 절에 이미 있으면 더하지 않는다(회고 절과 검증 절에서 옮길 때 모두, 다른 작업에서 옮긴 줄과 겹칠 때도). 문서 지도 위의 글에 "하네스의 스킬이 위치를 정해 둔 기록은 묻지 않고"가 없는 프로젝트에서 LESSONS를 처음 만들 때는 위치를 묻고, `docs/LESSONS.md`를 추천안으로 내며, setup을 다시 돌리면 다음부터 묻지 않는다고 함께 알린다.
+  - `plugins/plate/skills/run/SKILL.md`의 "`docs/LESSONS.md`" 절(236~279행)을 읽음 → 247행에 같은 뜻의 줄이 같은 절에 이미 있으면 더하지 않고 회고 절·검증 절에서 옮길 때와 다른 작업에서 옮긴 줄도 같다는 규칙이 있고, 273행에 그 글이 없는 프로젝트(옛 setup)에서는 처음 만들기 전에 위치를 묻고 멈추며 `docs/LESSONS.md`를 추천안으로 내고 `plate:setup`을 다시 돌리면 다음부터 묻지 않는다고 알린다는 규칙이 있다. 그 구절은 `plugins/plate/skills/setup/SKILL.md` 120행의 지도 위의 글과 같다. 통과
+- run "검증을 맡긴다"의 첫 갈래가, 닫힌 검증이면 맡기지 않고 "통과하면"의 1번부터 한다. 1~3을 다시 해도 이미 옮긴 줄은 완료 조건 4의 규칙으로 겹치지 않고, 지울 파일이나 고친 파일이 없으면 그냥 지나간다.
+  - `grep -n '"통과하면"의 4번으로 간다' plugins/plate/skills/run/SKILL.md` → 출력 없음(종료 코드 1). 통과
+  - `plugins/plate/skills/run/SKILL.md`의 "검증을 맡긴다"를 읽음 → 162행 "닫힌 검증이면 맡기지 않고 아래 "통과하면"의 1번부터 한다. 앞 세션이 1~3을 이미 했어도 같다."와, 이미 옮긴 줄은 다시 더하지 않고 지울 파일이나 고친 파일이 없으면 그 번호는 그냥 지나간다는 글이 있다. 통과
+- 옛 셋업이고 `docs/LESSONS.md`가 없는 프로젝트에서 run이 LESSONS로 옮길 줄을 처음 얻으면, 검증이 `verify.md`를 커밋한 뒤 LESSONS를 만들기 전에 위치를 묻고, `docs/LESSONS.md`를 추천안으로 내며, setup을 다시 돌리면 다음부터 묻지 않는다고 알리고 멈춘다. 그때 `docs/LESSONS.md`도 문서 지도의 LESSONS 행도 없다. 시험 폴더는 `~/plate-rail-test/run-oldsetup`(`vrule-base`에 `docs/LESSONS.md`와 문서 지도의 LESSONS 행을 지운 커밋을 얹은 것)이다. `AGENTS.md`에 커밋 메시지 꼴 규칙이 있어 검증이 "프로젝트의 규칙을 따름" 줄을 적으므로, 옮길 줄이 반드시 생긴다. 거기서 `/plate:run 001`을 헤드리스로 한 턴 돌린다.
+  - `~/plate-rail-test/logs/run-oldsetup.jsonl`의 마지막 답글(메인의 마지막 assistant 글과 result 줄, success 278964ms)을 읽음 → 검증 통과와 옮길 줄 다섯을 보인 뒤 "**회고 문서를 어디에 만들까요?**"로 위치를 묻고, "추천: `docs/LESSONS.md`"를 내고, "plate의 setup 스킬(`plate:setup`)을 다시 돌리면 다음부터는 묻지 않습니다."라고 알리고 멈췄다. init 줄의 plate는 `/Users/gangjungi/Desktop/harness-plate/plugins/plate`(0.8.1)에서 실렸다(2.1.301). 통과
+  - `ls ~/plate-rail-test/run-oldsetup/docs/` → `ADR.md ARCHITECTURE.md PRD.md tasks`. `LESSONS.md`가 없다. 통과
+  - `grep -c 'LESSONS' ~/plate-rail-test/run-oldsetup/AGENTS.md` → `0`. 통과
+  - `run-oldsetup`에서 `git show --stat --format=%s HEAD` → `[001] 검증`, `docs/tasks/001-gitignore/verify.md`만 든다(24줄 더함). 통과
+  - `test ~/plate-rail-test/logs/run-oldsetup.jsonl -nt plugins/plate/skills/run/SKILL.md -a ~/plate-rail-test/logs/run-oldsetup.jsonl -nt plugins/plate/skills/verify/SKILL.md && echo 새것` → `새것`(기록 16:45:43, run 본문 16:40:53, verify 본문 15:17:23. 작업 트리는 깨끗하다). 통과
+- `docs/LESSONS.md`에서 하네스의 문제점 절에 있던 17줄과, 미룬 문제 절의 run "검증을 맡긴다" 첫 갈래 줄이 지워졌다. 다른 줄은 그대로다.
+  - `git diff 1f8e2ab -- docs/LESSONS.md | grep '^-- '` → 18줄. `1f8e2ab`의 하네스의 문제점 절의 항목 17줄과 미룬 문제 절의 `(006-verify, 검증 1) run 본문 "검증을 맡긴다"의 첫 갈래는 …` 줄을 모아 정렬한 것과 `diff`로 견주어 같다. 같은 diff에서 `^-`로 시작하는 줄(`---` 빼고)도 18줄이라 그 밖의 줄은 지워지지 않았다. 더한 줄은 `(007-harness-issues, phase 2)` 세 줄, `(007-harness-issues, phase 4)` 일곱 줄, phase 5의 통과(`70a5b8b`)가 옮긴 `(007-harness-issues, phase 5)` 두 줄뿐이다. 통과
+- 두 매니페스트의 버전이 0.8.1이다.
+  - `grep -h '"version"' plugins/plate/.claude-plugin/plugin.json plugins/plate/.codex-plugin/plugin.json` → 두 줄 모두 `"version": "0.8.1",`. 통과
+
+**문제**
+- 없음
+
+**배운 것**
+- 없음
+
+**하네스의 문제점**
+- 없음
+
+**판정**: 통과
