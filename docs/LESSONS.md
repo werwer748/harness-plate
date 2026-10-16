@@ -10,6 +10,8 @@
 - (007-harness-issues, phase 4) 다시 돌린 `run-oldsetup`의 메인 세션은 run 본문 248행의 새 기준대로 `git log --oneline -S'(001-gitignore, 검증 ' -- docs/LESSONS.md`를 돌렸고, 그 폴더의 LESSONS 이력은 `(001-gitignore, phase 1)` 줄 넷을 더한 `4aa1686`과 LESSONS를 지운 `bddcdfe`뿐이라 출력이 없어 옮길 줄 넷을 보이며 위치를 물었다(`~/plate-rail-test/logs/run-oldsetup.jsonl`). 기록에 run 본문은 남지 않지만 이 명령으로 고친 본문을 따랐음을 알 수 있다. 완료 조건 6의 시험은 248행에서 옮기는 쪽만 지나고, 이미 옮겨 건너뛰는 쪽과 0번의 worktree 갈래는 어느 확인도 돌리지 않는다.
 - (007-harness-issues, 검증 1) 검증 1의 검증 에이전트가 `plate:verify`를 불러 받은 본문은 이 작업의 phase 1(`214466b`) 전의 글이었다. 낱말 "작업의 커밋"에 "메시지가 다른 작업 폴더의 이름으로 시작하는 커밋은 뺀다"가 있었고 4번에 phase 1이 더한 세 문장이 없었다. 디스크의 `plugins/plate/skills/verify/SKILL.md`는 고친 글이다. 이 작업의 커밋은 두 정의에서 같았다(메시지가 다른 작업 폴더의 이름으로 시작하는 커밋이 없다).
 - (007-harness-issues, 검증 1) 완료 조건 6의 마지막 확인은 `~/plate-rail-test/logs/run-oldsetup.jsonl`이 run과 verify 본문보다 새것이어야 통과한다. 고칠 phase가 둘 가운데 하나를 고치면 `bin/vfmake.sh run-oldsetup`으로 폴더를 다시 만들고 다시 돌려야 한다(돌린 꼴은 `c6ff0e6`의 `phase-2.md` "한 일"). `run-oldsetup`은 위치 물음에서 멈춘 상태라 그 물음에 답하면 완료 조건 6의 다른 확인도 바뀐다.
+- (008-tdd, phase 1) 이 레포에는 `.gitignore`가 없어서 테스트를 돌리면 `tests/__pycache__/`가 추적되지 않는 파일로 남는다. 커밋에 들지 않게 지워야 한다.
+- (008-tdd, phase 1) 훅이 테스트 먼저로 막은 횟수는 git 폴더(`git rev-parse --absolute-git-dir`)의 `plate-test-first.json`에 남고 작업 트리에는 보이지 않는다. 같은 git 폴더에서 계획을 바꾸지 않고 다시 돌리면 앞의 횟수가 이어진다.
 
 ## 하네스의 문제점
 - (007-harness-issues, phase 2) `~/plate-rail-test`는 git 레포가 아니라서 이 phase에서 고친 `bin/vfmake.sh`와 새로 생긴 `run-oldsetup`, `logs/run-oldsetup.*`는 커밋에 넣지 못했다. 커밋에는 `plugins/plate/skills/run/SKILL.md`와 `phase-2.md`만 든다.
@@ -25,6 +27,10 @@
 - (007-harness-issues, 검증 1) 계획의 완료 조건 5는 다시 옮겨도 겹치지 않는 근거를 완료 조건 4의 겹침 규칙에 두었는데, 같은 계획의 완료 조건 7은 옮긴 줄을 LESSONS에서 지운다. 두 조건은 phase 2와 phase 3에 나뉘었고 세 phase가 모두 "확인만"으로 지나, 둘이 만나는 곳은 검증에서 처음 점검됐다. phase 3이 고친 것은 run 본문이 아니라 run이 기대는 LESSONS의 내용이라, plan "적는 규칙"의 새 규칙(앞 phase가 이룬 완료 조건에 걸리는 파일을 뒤 phase가 고치면 그 완료 조건도 가리킨다)에도 걸리지 않는다.
 - (007-harness-issues, 검증 1) verify 4번의 "다른 스킬의 본문은 열지 않고 이름으로만 가리킨다"는 하네스 저장소 자신의 작업처럼 다른 스킬의 본문이 작업의 커밋이 바꾼 파일일 때를 말하지 않는다. 검증 1은 1번("작업의 커밋이 바꾼 것 전부")을 따라 run, plan, retro의 본문을 읽었고, 검증 1의 두 문제는 그렇게 읽은 run 본문에서 나왔다.
 - (007-harness-issues, 검증 2) 계획의 완료 조건 4와 6: 옛 셋업에서 위치를 묻고 멈추는 것까지만 적어, 받은 답(특히 추천안이 아닌 위치)으로 run이 무엇을 하는지는 어느 완료 조건에도 없다. 완료 조건 6의 시험도 물음에서 멈춘 상태만 읽어서, phase 2가 더한 273행이 같은 본문의 절대 규칙 5와 나머지 경로에 맞는지는 어느 확인도 보지 않았다.
+- (008-tdd, phase 1) 머리의 결정 "테스트 파일은 `tests/`, `test/`, `__tests__/` 아래이거나 …"가 테스트를 돌려 생기는 파일을 거르지 않는다. 시험 프로젝트(테스트 먼저 "예", `.gitignore` 없음)에서 `src/app.py` 편집은 종료 코드 2로 막혔고, `tests/__pycache__/test_app.cpython-313.pyc`만 만든 뒤에는 종료 코드 0으로 통과했다. `.gitignore`가 없는 Python 프로젝트에서는 테스트를 한 번 돌리기만 해도 테스트 먼저 검사가 풀린다. 이 작업은 테스트 먼저 표시를 쓰지 않아 걸리지 않는다.
+- (008-tdd, phase 1) 계획이 훅 스크립트를 열지 못할 때를 정하지 않았다. `python3 /nonexistent/edit_guard.py`는 `can't open file`을 내고 종료 코드 2로 끝나는데, 2는 훅이 막을 때 쓰는 코드다(`plugins/plate/hooks/edit_guard.py`의 머리글). `hooks.json`의 경로가 틀리면 `.md`를 포함한 모든 파일 편집이 그 글로 막힌다.
+- (008-tdd, phase 1) plan 스킬의 낱말 "테스트가 있는 프로젝트"의 "빌드 매니페스트에 테스트 명령"이 예를 들지 않아, 수행이 `package.json`의 `scripts.test`와 `Makefile`의 `test:`만 보기로 정했다("계획과 달라진 점"). 테스트 파일 없이 다른 매니페스트에만 테스트 명령이 있는 프로젝트는 plan이 테스트 먼저 "예"를 적어도 훅이 검사하지 않는다.
+- (008-tdd, phase 1) retro 스킬 3번의 "맥락 문서와 어긋나지 않는가"가 머리의 결정이 바꾸기로 한 맥락 문서를 가리지 않는다. 이 phase의 훅은 지금의 `docs/ARCHITECTURE.md`("훅은 두지 않는다")와 `docs/PRD.md`(범위 밖의 훅 줄)와 어긋나지만, 결정이 그 줄을 바꾸기로 했고 phase 4가 바꾼다. 이번에는 결정을 따라 문제로 적지 않았다.
 
 ## 미룬 문제
 - (004-context-rules, 검증 1) 절대 규칙 5의 "저장소 밖의 파일을 열지 않는다"에는 다른 스킬을 이름으로 부를 때 도구가 여는 스킬 파일의 예외가 없다. `docs/TOOLS.md`의 Codex 절에는 Codex가 플러그인을 `~/.codex/plugins/cache/…`에 복사해 읽고, 본문에 "plate의 setup 스킬(`plate:setup`)을 불러"라고만 있으면 그 `SKILL.md`를 열어 따른다고 적혀 있다. 그래서 같은 본문의 0번(셋업이 안 됐으면 `plate:setup`을 부른다)을 Codex에서 따르면 절대 규칙 5를 어긴다. 본문 하나가 도구가 바뀌어도 같게 작동한다는 ADR-004, 본문을 계속 도구에 기대지 않게 쓴다는 ADR-018과 어긋난다 (`plugins/plate/skills/context/SKILL.md` 18행). 기준: 맥락 문서
