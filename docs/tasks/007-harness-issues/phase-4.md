@@ -79,3 +79,34 @@
 - 같은 양식의 통과 조건(208~210행)은 "머리의 완료 조건이 모두 참이다" 하나라, 검증의 문제가 완료 조건 밖에서 나오면 고친 것을 보는 확인이 없다. 이번 두 TODO(0번의 worktree 갈래, 248행의 기준)가 그랬고, 완료 조건 5의 확인은 162행의 글만 본다.
 
 **판정**: 문제 있음
+
+## 회고 2: 회고
+
+**확인**
+- 머리의 완료 조건이 모두 참이다.
+  - 완료 조건 1: `plugins/plate/skills/verify/SKILL.md` 63행과 `plugins/plate/skills/retro/SKILL.md` 62행(둘 다 4번)을 읽음 → 두 곳 모두 "이번 검증(회고)에서 직접 읽거나 돌려서 본 것만 적는다", "다른 스킬의 본문은 열지 않고 이름으로만 가리킨다", "읽지 않은 파일과 이 스킬 밖의 하네스 동작(예: 실행 스킬이 검증(회고) 뒤에 하는 일)은 짐작해 적지 않는다"가 있다. 통과
+  - 완료 조건 2: `grep -n '다른 작업 폴더의 이름으로 시작하는 커밋은 뺀다' plugins/plate/skills/verify/SKILL.md` → 출력 없음(종료 코드 1). 통과
+  - 완료 조건 2: verify 본문의 낱말 "작업의 커밋"(28행), 1번(41행), 3번(52행)을 읽음 → 수행·회고·통과·검증의 커밋은 메시지가 프로젝트의 꼴(예: `[001] …`)이어도 들고, 다른 작업 폴더의 이름으로 시작하는 커밋은 빼지 않고 이 작업 폴더의 변경만 본다/읽는다/모은다. 통과
+  - 완료 조건 3: `plugins/plate/skills/plan/SKILL.md`의 "적는 규칙"(158행~)을 읽음 → 174행(남은 결과를 읽는 확인에 결과를 만든 뒤 걸리는 파일이 바뀌지 않았는지 보는 명령을 함께 적는다)과 179행(앞 phase가 이룬 완료 조건에 걸리는 파일을 뒤 phase가 고치면 뒤 phase의 통과 조건이 그 완료 조건도 번호로 가리킨다)이 있다. 통과
+  - 완료 조건 4: run 본문 "`docs/LESSONS.md`" 절을 읽음 → 247행(같은 뜻의 줄이 같은 절에 있으면 더하지 않는다. 회고 절·검증 절에서 옮길 때와 다른 작업에서 옮긴 줄도 같다)과 273행(표 위의 글에 "하네스의 스킬이 위치를 정해 둔 기록은 묻지 않고"가 없으면 처음 만들기 전에 위치를 묻고 멈추며, `docs/LESSONS.md`를 추천안으로 내고, `plate:setup`을 다시 돌리면 다음부터 묻지 않는다고 알린다)이 있다. 통과
+  - 완료 조건 5: `grep -n '"통과하면"의 4번으로 간다' plugins/plate/skills/run/SKILL.md` → 출력 없음(종료 코드 1). 통과
+  - 완료 조건 5: run 본문 "검증을 맡긴다"를 읽음 → 162행 "닫힌 검증이면 맡기지 않고 아래 "통과하면"의 1번부터 한다. 앞 세션이 1~3을 이미 했어도 같다."가 있고, 이미 옮긴 줄은 다시 더하지 않고 지울 파일이나 고친 파일이 없으면 그 번호는 지나간다고 적혀 있다. 통과
+  - 완료 조건 6: `~/plate-rail-test/logs/run-oldsetup.jsonl`의 메인 마지막 assistant 글과 result 줄(success, 189687ms)을 읽음 → 검증 판정 통과와 옮길 줄 넷을 보인 뒤 "**물음: 이 기록을 어디에 만들까요?**"로 위치를 묻고, "**추천은 `docs/LESSONS.md`입니다.**"를 내고, "`plate:setup`을 다시 돌리면 다음부터는 이 위치를 묻지 않습니다."라고 알리고, 위치를 정해 주면 잇겠다며 멈췄다. init 줄의 plate는 `/Users/gangjungi/Desktop/harness-plate/plugins/plate`(0.8.1)에서 실렸다(2.1.301). 통과
+  - 완료 조건 6: `ls ~/plate-rail-test/run-oldsetup/docs/` → `ADR.md ARCHITECTURE.md PRD.md tasks`. `LESSONS.md`가 없다. 통과
+  - 완료 조건 6: `grep -c 'LESSONS' ~/plate-rail-test/run-oldsetup/AGENTS.md` → `0`. 통과
+  - 완료 조건 6: `git -C ~/plate-rail-test/run-oldsetup show --stat --format=%s HEAD` → `[001] 검증`, `docs/tasks/001-gitignore/verify.md`만 든다(23줄 더함). 통과
+  - 완료 조건 6: `test ~/plate-rail-test/logs/run-oldsetup.jsonl -nt plugins/plate/skills/run/SKILL.md -a ~/plate-rail-test/logs/run-oldsetup.jsonl -nt plugins/plate/skills/verify/SKILL.md && echo 새것` → `새것`(기록 16:18:10, run 본문 16:14:53, verify 본문 15:17:23. 작업 트리는 깨끗하다). 통과
+  - 완료 조건 7: `git diff 1f8e2ab -- docs/LESSONS.md | grep '^-- '` → 18줄. 하네스의 문제점 절에 있던 `(006-verify, phase 1)`~`(006-verify, phase 6)` 열하나, `(004-context-rules, 검증 1)` 셋, `(006-verify, 검증 1)` 셋과 미룬 문제 절의 `(006-verify, 검증 1) run 본문 "검증을 맡긴다"의 첫 갈래는 …` 줄이다. 더한 줄은 `(007-harness-issues, phase 2)` 세 줄뿐이다. 통과
+  - 완료 조건 8: `grep -h '"version"' plugins/plate/.claude-plugin/plugin.json plugins/plate/.codex-plugin/plugin.json` → 두 줄 모두 `"version": "0.8.1",`. 통과
+
+**문제**
+- 없음
+
+**배운 것**
+- 다시 돌린 `run-oldsetup`의 메인 세션은 248행의 새 기준대로 `git log --oneline -S'(001-gitignore, 검증 ' -- docs/LESSONS.md`를 돌렸다(`~/plate-rail-test/logs/run-oldsetup.jsonl`). 그 폴더의 LESSONS 이력은 `(001-gitignore, phase 1)` 줄 넷을 더한 `4aa1686`과 LESSONS를 지운 `bddcdfe`뿐이라 출력이 없었고, 옮길 줄 넷을 보이며 위치를 물었다. 기록에 run 본문은 남지 않지만 이 명령으로 고친 본문을 따랐음을 알 수 있다. 완료 조건 6의 시험은 248행에서 옮기는 쪽만 지나고, 이미 옮겨 건너뛰는 쪽과 0번의 worktree 갈래는 어느 확인도 돌리지 않는다.
+
+**하네스의 문제점**
+- run 본문 "`docs/LESSONS.md`" 절 248행의 git 기준은 "그 꼴의 줄은 이 작업의 검증이 닫힐 때만 더해진다"에 기대지만, `git log -S`는 줄의 머리만이 아니라 LESSONS의 글 어디에서든 그 글자를 찾는다. 닫히기 전에 LESSONS에 들어간 줄(이 작업의 phase가 통과할 때 옮긴 회고 절의 줄, 다른 작업의 줄)이 이 작업의 폴더 이름과 "검증"을 그 괄호 꼴로 적으면, 처음 닫힐 때도 검증 절의 줄을 이미 옮긴 것으로 보고 옮기지 않는다. 지금 이 레포에서 이 작업의 폴더 이름으로 돌리면 출력이 없어 걸리지 않는다. 이 회고 절의 줄도 그 꼴을 피해 적었다.
+- 같은 248행의 git 기준은 옮길 줄이 모두 247행 규칙(같은 뜻의 줄이 이미 있다)으로 걸러져 하나도 더해지지 않은 채 닫힌 검증을 옮긴 것으로 보지 못한다. 그 뒤 다른 작업이 옮긴 같은 뜻의 줄을 LESSONS에서 지우고 run을 다시 부르면 이 작업의 줄로 다시 더해진다. 이 phase의 "하네스에서 걸린 것"이 적은 것이다.
+
+**판정**: 통과
