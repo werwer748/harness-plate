@@ -12,3 +12,4 @@
 - (006-verify, phase 2) run 본문 LESSONS 절이 검증 절마다 배운 것을 옮기게 해서, 검증 1과 검증 2가 같은 사실(`booklog/`와 `tests/`가 아직 없다)을 적은 run-vfix의 LESSONS에 같은 사실이 두 줄 들어갔다.
 - (006-verify, phase 3) 005 phase 7 전에 셋업된 프로젝트(문서 지도에 "하네스의 스킬이 위치를 정해 둔 기록은 묻지 않고 …"가 없다)에서 run이 `docs/LESSONS.md`를 처음 만들 때 갈린다. 처음 돌린 run-small은 프로젝트의 규칙을 따른다며 위치를 묻고 멈췄고, run-vfix는 묻지 않고 만든 뒤 "프로젝트 규칙을 어겼다"고 보고했다. setup을 다시 돌리면 없어지지만 run은 그것을 안내하지 않는다.
 - (006-verify, phase 3) 검증의 문제 글에 고치는 방법이 둘(테스트를 고친다 / ARCHITECTURE에 적는다) 들어 있으면, run이 TODO에 그 글을 그대로 옮긴 뒤 양식에 없는 선택지와 추천안을 더해 물었다(run-all 첫 턴).
+- (006-verify, phase 4) setup을 다시 돌릴 때 있는 구간을 표준 글과 견주려고 프로젝트 밖(`/tmp/plate-setup-check/`)에 파일을 쓰려 했다(setup-remap의 처음 실행, setup-fresh를 다시 돌린 것). 권한에 막혀 만들어지지 않았지만 3번의 "다른 파일은 만들지도 고치지도 않는다"에서 벗어난다.
