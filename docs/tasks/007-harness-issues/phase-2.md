@@ -52,3 +52,21 @@
 - `~/plate-rail-test`는 git 레포가 아니라서 이 phase에서 고친 `bin/vfmake.sh`와 새로 생긴 `run-oldsetup`, `logs/run-oldsetup.*`는 커밋에 넣지 못했다. 커밋에는 `plugins/plate/skills/run/SKILL.md`와 이 파일만 든다.
 - `run-oldsetup`의 바탕인 `vrule-base`는 LESSONS를 이 작업(001)의 `[001] phase 1 통과`(`4aa1686`)에서 만든 상태라, 그것을 지운 `a4d2a8d`를 검증이 "작업 밖의 커밋이 작업의 변경을 되돌렸다"는 하네스의 문제점으로 적었다(`run-oldsetup/docs/tasks/001-gitignore/verify.md`). 시험 폴더를 만든 방식에서 나온 줄이고, 사용자가 위치에 답하면 run이 이 줄도 LESSONS로 옮긴다.
 - 같은 검증이 "작업의 커밋"의 메시지 기준이 `[001] …` 아래에서 하나도 맞지 않는다는 줄을 다시 적었다. phase 1이 고친 정의(작업 폴더의 파일을 바꾼 커밋도 든다)로 빠진 커밋은 없었다고 함께 적었다.
+
+## 회고 1: 확인만
+
+**확인**
+- 완료 조건 4, 5, 6이 참이다.
+  - 완료 조건 4: `plugins/plate/skills/run/SKILL.md`의 "`docs/LESSONS.md`" 절을 읽었다 → "옮기는 것"의 끝에 "옮길 줄과 같은 뜻의 줄이 `docs/LESSONS.md`의 같은 절에 이미 있으면 더하지 않는다. 회고 절에서 옮길 때도 검증 절에서 옮길 때도, 이미 있는 줄을 다른 작업에서 옮겼어도 같다."가 있고, "문서 지도"에 표 위의 글에 "하네스의 스킬이 위치를 정해 둔 기록은 묻지 않고"가 없는 프로젝트에서는 처음 만들기 전에 위치를 묻고 멈추며, `docs/LESSONS.md`를 추천안으로 내고, `plate:setup`을 다시 돌리면 다음부터 묻지 않는다고 알린다는 글이 있다. 통과
+  - 완료 조건 5: `grep -n '"통과하면"의 4번으로 간다' plugins/plate/skills/run/SKILL.md` → 출력 없음(종료 코드 1). 통과
+  - 완료 조건 5: `plugins/plate/skills/run/SKILL.md`의 "검증을 맡긴다"를 읽었다 → 첫 갈래가 "닫힌 검증이면 맡기지 않고 아래 "통과하면"의 1번부터 한다."이고, 이미 옮긴 줄은 다시 더하지 않고 지울 파일이나 고친 파일이 없으면 그 번호는 지나간다고 적혀 있다. 통과
+  - 완료 조건 6: `~/plate-rail-test/logs/run-oldsetup.jsonl`의 마지막 답글을 `bin/summ.py`로 읽었다 → "회고 기록 문서를 어디에 만들까요?"로 위치를 묻고, "추천: `docs/LESSONS.md`"를 내고, "`plate:setup`을 다시 돌리면 다음부터는 이 위치를 묻지 않아요"라고 알리고 멈췄다. 통과
+  - 완료 조건 6: `ls ~/plate-rail-test/run-oldsetup/docs/` → `ADR.md ARCHITECTURE.md PRD.md tasks`. `LESSONS.md`가 없다. 통과
+  - 완료 조건 6: `grep -c 'LESSONS' ~/plate-rail-test/run-oldsetup/AGENTS.md` → `0`. 통과
+  - 완료 조건 6: `run-oldsetup`에서 `git show --stat --format=%s HEAD` → `[001] 검증`, `docs/tasks/001-gitignore/verify.md`만 든다(24줄 더함). 통과
+  - 완료 조건 6: `test ~/plate-rail-test/logs/run-oldsetup.jsonl -nt plugins/plate/skills/run/SKILL.md -a ~/plate-rail-test/logs/run-oldsetup.jsonl -nt plugins/plate/skills/verify/SKILL.md && echo 새것` → `새것`. 통과
+
+**문제**
+- 없음
+
+**판정**: 통과
