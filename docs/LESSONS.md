@@ -24,6 +24,9 @@
 - (006-verify, 검증 1) 계획의 phase 5: 같은 phase에서 run 본문(LESSONS 양식, 미루는 길)을 고쳤는데 통과 조건이 완료 조건 14만 가리켰고, TODO의 "걸리는 판정이 다시 통과한다"는 run-vfix와 setup 둘만 다시 돌렸다. phase 5의 기록이 "LESSONS를 만드는 다른 경우(run-small 등)의 옛 결과를 다시 대조하면 그 두 줄이 실패한다"고 적고도 통과로 지워져, 완료 조건 7~10의 실패가 검증에서야 드러났다. 이 작업의 phase는 세션이 직접 수행해 따로 점검하는 에이전트가 없었다(머리의 결정).
 - (006-verify, 검증 1) 계획의 완료 조건 12: 확인 `plancheck.py plan-test`를 적힌 대로 돌리면 전체 테스트 조건을 보는 항목이 없어, 그 조건이 없어도 통과한다. plan 스킬 "적는 규칙"의 "조건의 일부만 보는 확인은 그 조건을 확인하지 못한다"에 걸린다. phase 4는 `--base`, `--fulltest` 인자를 더해 돌렸다.
 - (006-verify, 검증 1) 계획의 완료 조건 4: 확인 명령에 프롬프트가 없어 적힌 대로는 init 줄이 나오지 않고 오류로 끝난다. phase 1과 6은 `ok`를 더해 돌렸다.
+- (007-harness-issues, phase 2) `~/plate-rail-test`는 git 레포가 아니라서 이 phase에서 고친 `bin/vfmake.sh`와 새로 생긴 `run-oldsetup`, `logs/run-oldsetup.*`는 커밋에 넣지 못했다. 커밋에는 `plugins/plate/skills/run/SKILL.md`와 `phase-2.md`만 든다.
+- (007-harness-issues, phase 2) `run-oldsetup`의 바탕인 `vrule-base`는 LESSONS를 이 작업(001)의 `[001] phase 1 통과`(`4aa1686`)에서 만든 상태라, 그것을 지운 `a4d2a8d`를 검증이 "작업 밖의 커밋이 작업의 변경을 되돌렸다"는 하네스의 문제점으로 적었다(`run-oldsetup/docs/tasks/001-gitignore/verify.md`). 시험 폴더를 만든 방식에서 나온 줄이고, 사용자가 위치에 답하면 run이 이 줄도 LESSONS로 옮긴다.
+- (007-harness-issues, phase 2) 같은 검증이 "작업의 커밋"의 메시지 기준이 `[001] …` 아래에서 하나도 맞지 않는다는 줄을 다시 적었다. phase 1이 고친 정의(작업 폴더의 파일을 바꾼 커밋도 든다)로 빠진 커밋은 없었다고 함께 적었다.
 
 ## 미룬 문제
 - (004-context-rules, 검증 1) 절대 규칙 5의 "저장소 밖의 파일을 열지 않는다"에는 다른 스킬을 이름으로 부를 때 도구가 여는 스킬 파일의 예외가 없다. `docs/TOOLS.md`의 Codex 절에는 Codex가 플러그인을 `~/.codex/plugins/cache/…`에 복사해 읽고, 본문에 "plate의 setup 스킬(`plate:setup`)을 불러"라고만 있으면 그 `SKILL.md`를 열어 따른다고 적혀 있다. 그래서 같은 본문의 0번(셋업이 안 됐으면 `plate:setup`을 부른다)을 Codex에서 따르면 절대 규칙 5를 어긴다. 본문 하나가 도구가 바뀌어도 같게 작동한다는 ADR-004, 본문을 계속 도구에 기대지 않게 쓴다는 ADR-018과 어긋난다 (`plugins/plate/skills/context/SKILL.md` 18행). 기준: 맥락 문서
