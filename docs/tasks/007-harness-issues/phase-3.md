@@ -31,3 +31,15 @@
 
 ## 하네스에서 걸린 것
 없음
+
+## 회고 1: 확인만
+
+**확인**
+- 완료 조건 7, 8이 참이다.
+  - 완료 조건 7: `git diff 1f8e2ab -- docs/LESSONS.md | grep '^-- '` → 18줄. `1f8e2ab`의 LESSONS에서 하네스의 문제점 절 10~26행에 있던 17줄(`(006-verify, phase 1)`~`(006-verify, phase 6)` 열하나, `(004-context-rules, 검증 1)` 셋, `(006-verify, 검증 1)` 셋)과 미룬 문제 절의 `(006-verify, 검증 1) run 본문 "검증을 맡긴다"의 첫 갈래는 …` 줄이다. 같은 diff의 더한 줄은 `(007-harness-issues, phase 2)` 세 줄뿐이고, 프로젝트에서 배운 것 절 네 줄과 미룬 문제 절의 나머지 다섯 줄은 그대로다. 통과
+  - 완료 조건 8: `grep -h '"version"' plugins/plate/.claude-plugin/plugin.json plugins/plate/.codex-plugin/plugin.json` → 두 줄 모두 `"version": "0.8.1",`. 통과
+
+**문제**
+- 없음
+
+**판정**: 통과
