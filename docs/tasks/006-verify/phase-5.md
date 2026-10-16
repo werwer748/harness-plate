@@ -1,6 +1,6 @@
 # Phase 5: 이 레포에서 004를 검증한다 (자기 적용)
 
-**목표**: `004-context-rules`가 run으로 검증돼 `verify.md`의 판정이 "통과"다.
+**목표**: `004-context-rules`가 run으로 검증돼 `verify.md`의 검증이 닫힌다(판정이 "통과"이거나, 사용자가 남은 문제를 나중에 다루기로 했다).
 
 **읽을 것**
 - `docs/tasks/004-context-rules/plan.md` (004의 완료 조건)
