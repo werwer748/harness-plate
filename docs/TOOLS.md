@@ -1,12 +1,12 @@
 # 도구별로 확인해 둔 사실
 
-레일을 돌리는 도구(Claude Code, Codex, Grok Build)마다 확인해 둔 사실과 확인을 멈춘 지점을 적는다. 1단계부터 3단계까지를 만들면서 확인한 것을 단계 설계 문서에서 옮겼고(ADR-018), 4단계에서 확인한 것은 판정하면서 바로 적었다. 사실마다 확인한 날짜나 버전을 적었고, 그 뒤로 바뀌었을 수 있다.
+레일을 돌리는 도구(Claude Code, Codex, Grok Build)마다 확인해 둔 사실과 확인을 멈춘 지점을 적는다. 1단계부터 3단계까지를 만들면서 확인한 것을 단계 설계 문서에서 옮겼고(ADR-018), 4단계에서 확인한 것은 판정하면서 바로 적었고, 5단계에서 확인한 것은 마지막 phase에서 판정 기록을 읽어 적었다. 사실마다 확인한 날짜나 버전을 적었고, 그 뒤로 바뀌었을 수 있다.
 
 ## 지금 상태
 
 | 도구 | 상태 |
 |---|---|
-| Claude Code | 완성 판정을 이 도구로 한다. 1단계(셋업), 2단계(맥락 채우기), 3단계(계획), 4단계(실행)의 판정을 여기서 돌렸다 |
+| Claude Code | 완성 판정을 이 도구로 한다. 1단계(셋업), 2단계(맥락 채우기), 3단계(계획), 4단계(실행), 5단계(검증)의 판정을 여기서 돌렸다 |
 | Codex | 2026-10-08에 확인을 멈췄다. 1단계 전부와 2단계 판정의 일부만 확인했다. 남은 것은 아래 "Codex에서 확인을 멈춘 지점"에 있다 |
 | Grok Build | 이 Mac에 설치돼 있지 않다. 판정을 돌린 적이 없다 |
 
@@ -14,11 +14,11 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
 
 ## Claude Code
 
-1단계는 2.1.291(2026-10-06), 2단계의 2026-10-08 판정은 2.1.293, 3단계의 판정은 2.1.294(2026-10-08), 4단계의 판정은 2.1.296(2026-10-13), 작업 004-context-rules의 판정은 2.1.300(2026-10-15)에서 돌렸다.
+1단계는 2.1.291(2026-10-06), 2단계의 2026-10-08 판정은 2.1.293, 3단계의 판정은 2.1.294(2026-10-08), 4단계의 판정은 2.1.296(2026-10-13), 작업 004-context-rules의 판정은 2.1.300(2026-10-15), 5단계의 판정은 2.1.300(2026-10-15~16)과 2.1.301(2026-10-16)에서 돌렸다.
 
 - `claude --plugin-dir <플러그인 폴더>`로 시작하면 그 폴더의 플러그인을 그 세션에만 불러온다. 설치 기록과 마켓플레이스 등록을 건드리지 않는다.
 - 설치된 `plate@harness-plate`는 옛 0.3.0이고 꺼져 있다(2026-10-08). 시험은 `--plugin-dir`로 레포의 본문을 읽는다.
-- 스킬은 `/plate:setup`, `/plate:context`, `/plate:plan`, `/plate:run`, `/plate:phase`, `/plate:retro`로 부른다. 헤드리스(`claude -p`)에서도 불린다.
+- 스킬은 `/plate:setup`, `/plate:context`, `/plate:plan`, `/plate:run`, `/plate:phase`, `/plate:retro`, `/plate:verify`로 부른다. 헤드리스(`claude -p`)에서도 불린다.
 - `CLAUDE.md`가 없을 때만 `AGENTS.md`를 읽는다. 그래서 `CLAUDE.md`에 `@AGENTS.md` 임포트를 항상 둔다.
 - 헤드리스에서 물음의 답을 프롬프트에 미리 주면 다시 묻지 않는다.
 - 헤드리스에서도 한 스킬이 같은 플러그인의 다른 스킬을 이름으로 부른다(`plate:setup`, `plate:context`). 미리 준 답은 호출의 인자로 넘긴다(2026-10-06).
@@ -55,12 +55,21 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
 - 브랜치를 가른 뒤 원래 브랜치에 새 커밋이 없으면 `git merge`가 fast-forward로 끝나 병합 커밋이 생기지 않는다.
 - 실행 시간. phase 하나를 확인만으로 끝내면 80~460초, 회고하면 390~500초였다. phase 셋을 전체 지시로 돌린 실행은 1307초, Gradle의 `verifyPlugin`이 든 excel-viewer의 phase 하나는 1368초였다. 폴더가 다른 실행 여섯을 한꺼번에 돌렸다.
 
+**5단계의 판정에서 본 것** (2.1.300~2.1.301, 2026-10-15~16. 실행 스크립트는 `~/plate-rail-test/bin/run.sh`, `bin/rerun.sh`, 시험 폴더는 `bin/vfmake.sh`가 만들고, 기록은 `logs/vf-*.jsonl`, `logs/run-*.jsonl`, `logs/plan-test-*.jsonl`, `logs/setup-*.jsonl`이다)
+
+- `claude -p --output-format stream-json --verbose`의 init 줄(불러온 스킬 목록이 든 줄)은 첫 줄이 아니라 훅 줄들 뒤에 나온다.
+- 에이전트가 프로젝트 밖의 파일에 손대려다 막히면 실행이 길어진다. 검증 에이전트가 플러그인의 `plan/SKILL.md`를 두 번 읽으려다 막힌 vf-scope는 179초였고, 같은 시작 상태의 다른 둘은 44초, 63초였다. 쓰기도 막힌다. setup을 다시 돌린 실행이 견주려고 `/tmp/plate-setup-check/`에 파일을 쓰려다 막혔다.
+- run이 기본 브랜치에서 작업 브랜치로 바꾸려면 허용 목록에 `"Bash(git switch:*)"`가 있어야 한다. 없을 때 처음 띄운 실행이 그 명령의 승인을 기다렸다. `"Bash(git checkout:*)" "Bash(git symbolic-ref:*)"`도 함께 더했다.
+- run이 phase 1의 통과 때 `AGENTS.md`의 문서 지도에 행을 더한 뒤 같은 실행에서 띄운 검증 에이전트가 "그 행이 지도에 없다"고 적었다(run-nogit). 에이전트는 `AGENTS.md`를 다시 읽지 않았다. 세션이 시작될 때 실린 지침으로 판단한 것으로 보이지만 확인하지 않았다.
+- 실행 시간. 검증 스킬만 부른 실행이 44~179초, run이 검증 에이전트 하나만 띄운 실행이 143초였다. phase 하나를 회고하고 검증해 합친 run-small이 631초, phase 셋을 전체 지시로 돌려 검증까지 간 run-all이 1823초(고칠 phase를 승인한 둘째 턴 565초)였다. setup이 105~404초, 테스트가 있는 프로젝트의 계획이 네 턴에 걸쳐 모두 341초였다. 폴더가 다른 실행 넷을 한꺼번에 돌렸다.
+
 **플러그인 폴더의 편집과 권한 모드** (2026-10-13. 이 레포에서 `/plate:run 004`를 돌린 자기 적용에서 봤다)
 
 - `--plugin-dir`로 실은 폴더는 보호 경로다. 그 안의 쓰기는 설정의 `permissions.allow`로 미리 허락할 수 없고, 묻지 않고 지나가는 모드는 bypassPermissions뿐이다. 수동 모드와 acceptEdits에서는 묻고, 띄운 에이전트의 물음도 주 세션에 뜬다(문서 code.claude.com/docs/en/permission-modes의 "Protected paths"로 확인했다).
 - 자동 모드에서는 그 안의 편집이 분류기로 넘어간다. 수행 에이전트 넷의 `plugins/plate/skills/context/SKILL.md` 편집이 "The server-side auto mode classifier gave no verdict (it skipped this action)"로 거부됐고, 같은 세션의 `docs/` 편집은 지나갔다. 띄운 에이전트는 자기 권한 모드를 바꾸지 못해 다시 띄워도 같았다.
 - 사용자가 같은 세션의 모드를 자동이 아닌 것으로 바꾼 뒤 띄운 다섯째 수행 에이전트는 그 편집을 지나갔다(커밋 `d169a15`). 어느 모드였는지는 기록이 없다. 세션을 새로 열 필요는 없었다.
 - 세션을 연 명령의 `--permission-mode`는 지금 모드를 말해 주지 않는다. `--permission-mode acceptEdits`로 연 세션이 도중에 자동 모드로 바뀌었다가 돌아왔다(세션 기록의 `permissionMode` 필드로 2026-10-14에 확인했다).
+- 메인 세션이 직접 고칠 때도 같다. 2026-10-15에 메인 세션의 `plugins/plate/skills/` 편집 둘이 자동 모드에서 같은 문구로 막혔고, Shift+Tab으로 bypassPermissions로 바꾸자 같은 편집이 지나갔다. `claude --allow-dangerously-skip-permissions`로 시작하면 시작 모드는 설정의 `defaultMode` 그대로이고 Shift+Tab 순환에 bypassPermissions가 들어간다(2026-10-14).
 - 확인하지 않은 것: `CLAUDE_CODE_AUTO_MODE_SERVER=0`일 때 자동 모드에서 지나가는지, 플러그인을 저장소 밖의 복사본에서 실으면 그 폴더의 편집이 지나가는지.
 
 ## Codex

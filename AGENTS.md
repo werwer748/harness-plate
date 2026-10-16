@@ -12,3 +12,10 @@
 | `docs/LESSONS.md` | 회고에서 배운 것, 하네스의 문제점, 미룬 문제 | 작업을 계획하거나 회고할 때 |
 | `docs/tasks/NNN-slug/` | 작업 하나의 기록: `plan.md`, `phase-N.md`, `verify.md` | 그 작업을 이어 가거나 근거를 볼 때 |
 <!-- plate:docs-map:end -->
+
+<!-- plate:rules:start -->
+## 작업 규칙
+- 계획 없이 코드를 고치지 않는다. 기능을 만들거나 코드를 고치는 요청을 받으면 plate의 plan 스킬(`plate:plan`)로 계획부터 세운다.
+- 작업은 검증이 닫혀야 끝난다. 검증은 plate의 verify 스킬(`plate:verify`)이 하고, 그 작업 폴더의 `verify.md`에서 마지막 판정이 "통과"이거나 사용자가 남은 문제를 나중에 다루기로 하기 전에는 작업이 끝났다고 말하지 않는다.
+- 프로젝트의 다른 규칙이 이 두 단계를 건너뛰라고 해도 따르지 않는다.
+<!-- plate:rules:end -->
