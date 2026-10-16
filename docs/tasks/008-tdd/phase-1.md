@@ -48,3 +48,26 @@
 ## 하네스에서 걸린 것
 - 이 레포에는 `.gitignore`가 없어서 `python3 -m unittest discover -s tests`를 돌리면 `tests/__pycache__/test_edit_guard.cpython-313.pyc`가 추적되지 않는 파일로 남는다. 그 경로는 `tests/` 아래라 훅이 커밋되지 않은 테스트 변경으로 센다. 그래서 이 레포에서는 테스트를 한 번 돌린 뒤로 테스트 먼저 검사가 실제 테스트 변경 없이 통과한다(phase 1에는 테스트 먼저 표시가 없어 이번에는 걸리지 않았다). 이번에는 커밋 전에 그 폴더를 지웠다. `.gitignore`에 `__pycache__/`를 두는 것은 이 phase의 TODO에 없어서 하지 않았다.
 - 훅 스크립트가 없으면 `python3`이 `can't open file`로 종료 코드 2를 낸다(훅이 없을 때 돌린 시험에서 봤다). Claude Code는 종료 코드 2를 막음으로 읽으므로, 훅의 경로가 틀리면 편집이 통과하지 않고 모두 그 글로 막힌다.
+
+## 회고 1: 회고
+
+**확인**
+- 완료 조건 1과 13이 참이다.
+  - 완료 조건 1: `python3 -m unittest discover -s tests -v` → 31개 모두 `ok`, 마지막 줄 `OK`(`Ran 31 tests in 9.193s`). 통과
+  - 완료 조건 1: `tests/test_edit_guard.py`를 읽었다 → 경우마다 상황을 만들고 막음/통과와 알리는 글을 단언하는 시험이 있다. setup 안 됨(`test_setup_not_done_passes`), 코드 파일이 아님(`test_non_code_files_pass`), 남은 phase 없음에 "계획부터"와 "plate:plan"(`test_no_remaining_phase_blocks_code_file`), 테스트 없는 프로젝트도 같음(`test_no_remaining_phase_blocks_in_project_without_tests`), 테스트 먼저 "예"이고 테스트 변경 없음에 "실패하는 테스트부터"(`test_blocks_code_without_test_change`), 커밋되지 않은 테스트 변경 있음(`test_modified_test_file_passes`, `test_new_untracked_test_file_passes`, `test_staged_test_file_passes`), "아니오"(`test_marker_no_passes`), 표시 없음(`test_no_marker_passes`), 테스트 없는 프로젝트(`test_project_without_tests_passes`), 테스트 파일을 고침(`test_editing_test_file_passes`), 세 번째 막음에 "더 시도하지 않는다", "막힘", "까닭", "해결책"(`test_third_block_of_same_file_says_stop`)과 계획이 바뀌면 다시 셈(`test_plan_change_resets_count`). 통과
+  - 완료 조건 13: `python3 -m unittest discover -s tests` → 마지막 줄 `OK`(`Ran 31 tests in 8.930s`). 통과
+
+**문제**
+- 없음
+
+**배운 것**
+- 이 레포에는 `.gitignore`가 없어서 테스트를 돌리면 `tests/__pycache__/`가 추적되지 않는 파일로 남는다. 커밋에 들지 않게 지워야 한다.
+- 훅이 테스트 먼저로 막은 횟수는 git 폴더(`git rev-parse --absolute-git-dir`)의 `plate-test-first.json`에 남고 작업 트리에는 보이지 않는다. 같은 git 폴더에서 계획을 바꾸지 않고 다시 돌리면 앞의 횟수가 이어진다.
+
+**하네스의 문제점**
+- 머리의 결정 "테스트 파일은 `tests/`, `test/`, `__tests__/` 아래이거나 …"가 테스트를 돌려 생기는 파일을 거르지 않는다. 시험 프로젝트(테스트 먼저 "예", `.gitignore` 없음)에서 `src/app.py` 편집은 종료 코드 2로 막혔고, `tests/__pycache__/test_app.cpython-313.pyc`만 만든 뒤에는 종료 코드 0으로 통과했다. `.gitignore`가 없는 Python 프로젝트에서는 테스트를 한 번 돌리기만 해도 테스트 먼저 검사가 풀린다. 이 작업은 테스트 먼저 표시를 쓰지 않아 걸리지 않는다.
+- 계획이 훅 스크립트를 열지 못할 때를 정하지 않았다. `python3 /nonexistent/edit_guard.py`는 `can't open file`을 내고 종료 코드 2로 끝나는데, 2는 훅이 막을 때 쓰는 코드다(`plugins/plate/hooks/edit_guard.py`의 머리글). `hooks.json`의 경로가 틀리면 `.md`를 포함한 모든 파일 편집이 그 글로 막힌다.
+- plan 스킬의 낱말 "테스트가 있는 프로젝트"의 "빌드 매니페스트에 테스트 명령"이 예를 들지 않아, 수행이 `package.json`의 `scripts.test`와 `Makefile`의 `test:`만 보기로 정했다("계획과 달라진 점"). 테스트 파일 없이 다른 매니페스트에만 테스트 명령이 있는 프로젝트는 plan이 테스트 먼저 "예"를 적어도 훅이 검사하지 않는다.
+- retro 스킬 3번의 "맥락 문서와 어긋나지 않는가"가 머리의 결정이 바꾸기로 한 맥락 문서를 가리지 않는다. 이 phase의 훅은 지금의 `docs/ARCHITECTURE.md`("훅은 두지 않는다")와 `docs/PRD.md`(범위 밖의 훅 줄)와 어긋나지만, 결정이 그 줄을 바꾸기로 했고 phase 4가 바꾼다. 이번에는 결정을 따라 문제로 적지 않았다.
+
+**판정**: 통과
