@@ -60,3 +60,26 @@
 - 계획의 읽을 것이 가리킨 (006-verify, 검증 1)의 줄들은 run-vrule이 다시 돌리지 않아서 실패했다고 적었지만, 바탕 폴더 vrule-base의 LESSONS 자체가 옛 양식이라 다시 돌리는 것만으로는 풀리지 않았다. 이것은 하네스에도 걸린다. 옛 run으로 만든 LESSONS가 있는 프로젝트는 run이 그 절(`## 미룬 문제`)과 문서 지도의 행을 지금 양식으로 고치지 않아 옛 꼴로 남는다.
 - 완료 조건 9는 판정 도구의 기대를 이 작업의 결정이 바꾼 동작에 걸리는 것만 고치라고 하지만, run-all의 판정 도구 경우는 검증이 몇 번 도는지(검증 절의 수, 턴의 수)를 정해 두어서 그 실행의 검증이 무엇을 찾느냐에 따라 맞거나 틀린다. 이번에는 세 턴이 걸려 그 경우를 고쳐야 했다(계획과 달라진 점).
 - run-all의 검증 2와 3이 시험 폴더의 하네스의 문제점으로 적은 것이 있다. 고칠 phase 양식의 통과 조건("문제마다 적힌 곳을 다시 읽거나 돌린다")과 테스트 먼저 기록 점검(실패 출력 뒤 통과 출력)은 테스트를 고치는 phase가 테스트를 약하게 만든 것을 가려내지 못한다. phase 4는 테스트 파일만 고치는 고칠 phase였고, run이 테스트 먼저를 "아니오"로 적었다. 이 줄들은 `~/plate-rail-test/run-all/docs/LESSONS.md`에 있다.
+
+## 회고 1: 회고
+
+**확인**
+- 완료 조건 9가 참이다.
+  - `python3 ~/plate-rail-test/bin/runcheck.py <폴더>`를 run-vrule, run-nogit, run-small, run-all, run-wt, run-wt-gate마다 돌렸다 → 통과한 항목이 차례로 37, 20, 50, 127, 50, 7개이고 실패한 항목은 모두 0개다. 여섯 모두 마지막 줄이 `=> 실행 대조: 모두 통과`이고 종료 코드 0이다. run-wt-gate의 마지막 답글은 worktree 폴더에서 새 세션을 열어 `/plate:run 002`를 부르라고 안내한다. 통과
+  - `N=$(ls -t plugins/plate/skills/*/SKILL.md plugins/plate/hooks/* | head -1); find ~/plate-rail-test/logs -name '*.jsonl' -newer "$N"` → `N`은 `plugins/plate/skills/run/SKILL.md`(10-17 19:34)이고, `run-vrule`, `run-nogit`, `run-nogit-2`, `run-small`, `run-all`, `run-all-2`, `run-all-3`, `run-wt-a`, `run-wt-b`, `run-wt-c1`, `run-wt-c2`, `run-wt-gate`의 `.jsonl` 12개가 나왔다. 여섯 시험의 기록이 모두 든다. 통과
+
+**문제**
+- `runcheck.py`의 run-all 경우와 계획 고침 항목을 이 작업의 결정이 바꾸지 않은 까닭으로 고쳤다. 기록을 `run-all-3`까지 셋으로, 검증 절의 수를 2에서 3으로 바꿨고, "계획을 고친 커밋들이 새 phase 파일 하나만 더했다"를 "계획을 고친 커밋마다 새 phase 파일 하나만 더했다"로 바꿨다. 까닭은 시험 폴더의 phase 4가 고친 테스트를 검증 2가 문제로 찾아 셋째 턴이 걸린 것이고, 수행 기록도 이것이 이 작업의 결정이 바꾼 동작이 아니라고 적는다. 완료 조건 9와 TODO 3은 이 작업의 결정이 바꾼 동작에 걸리는 기대만 고치라고 한다. 고치기 전의 파일과 대어 읽으니 바뀐 항목은 계획 고침 커밋마다 보게 넓힌 것이고 덜 보게 된 항목은 없다 (`~/plate-rail-test/bin/runcheck.py`). 기준: 계획
+- LESSONS로 옮긴 줄의 수를 보는 항목을 검증 절의 줄 수와 "같다"에서 "많지 않다"로 바꿨다. 같은 뜻의 줄을 더하지 않는 run 본문의 규칙은 `4226c5c`(007-harness-issues phase 2)가 더한 것이고, 이 작업의 결정(완료 조건 7의 (가))은 그 경우에도 `LESSONS로 옮겼다`를 적게 했을 뿐 옮기는 줄을 바꾸지 않았다. 판정 도구가 읽을 것으로 낸 다섯 줄(검증 2에서 둘, 검증 3에서 셋)은 `~/plate-rail-test/run-all/docs/LESSONS.md`에 대어 읽었고, 모두 LESSONS에 이미 있는 줄을 다시 적거나 그 줄이 지금도 맞다고 적은 것이다 (`~/plate-rail-test/bin/runcheck.py`의 `check_lessons_text`). 기준: 계획
+
+**배운 것**
+- 고친 `~/plate-rail-test/bin/runcheck.py`는 0.9.1 본문의 동작(`verify.md`의 `LESSONS로 옮겼다` 줄, 검증 통과 커밋에 든 `verify.md`, 고칠 phase 양식)을 기대한다. 이 작업이 다시 돌리지 않은 옛 본문의 폴더는 그 항목에서 실패한다: `runcheck.py run-verify`는 2개, `runcheck.py run-vfix`는 5개 항목이 실패했다. 이 폴더들로 다시 판정하려면 `bin/vfmake.sh`로 다시 만들어 돌려야 한다.
+- `~/plate-rail-test/bin/rerun.sh`의 run-all 갈래는 검증이 "문제 있음"이면 둘째 턴까지만 잇는다. 둘째 턴 뒤의 검증도 "문제 있음"이면 셋째 턴은 `bin/run.sh`에 `answers/run-all-3.md`와 `logs/run-all.sid`의 세션을 주어 돌린다(이번 `logs/run-all-3.jsonl`의 세션이 `run-all.sid`와 같다).
+
+**하네스의 문제점**
+- 계획의 완료 조건 9와 phase 6의 TODO 3: 판정 도구의 기대를 이 작업의 결정이 바꾼 동작에 걸리는 것만 고치라는 제한은 시험 실행의 턴 수와 검증 절의 수가 늘 같다고 전제한다. 검증이 무엇을 찾느냐에 따라 run-all의 턴 수가 달라져, 이번에는 제한 밖의 기대를 고쳐야 했다(위의 첫째 문제).
+- 계획의 읽을 것이 가리킨 LESSONS의 (006-verify, 검증 1) 줄은 run-vrule의 실패를 바뀐 본문으로 다시 돌리지 않은 탓으로 적었지만, 바탕 폴더 `vrule-base`의 `docs/LESSONS.md`에 `## 미룬 문제` 절이 없고 문서 지도의 행이 옛 글("회고에서 배운 것과 하네스의 문제점")이라 다시 돌려도 풀리지 않는다. run 스킬의 "`docs/LESSONS.md`" 절은 처음 만들 때의 양식과 행만 정하고 이미 있는 문서에는 "이미 있는 항목은 고치지 않고 절의 끝에 더한다"만 적어, 옛 run으로 만든 LESSONS의 절과 행을 지금 양식으로 맞추는 곳이 없다. 이번에는 `bin/vfmake.sh`의 run-vrule 갈래가 시험 폴더를 지금 양식으로 맞췄다.
+- run 스킬의 고칠 phase 양식의 통과 조건("검증 K의 문제가 모두 고쳐졌다". 확인: 문제마다 적힌 곳을 다시 읽거나 돌린다)과 verify 스킬 3번의 테스트 먼저 기록 점검(실패 출력 뒤 통과 출력)은 테스트 코드를 고치는 고칠 phase가 테스트를 약하게 만든 것을 가려내지 못했다. run-all에서 run이 더한 phase 4(`13e7b9e`)는 테스트 파일만 고쳐 테스트 먼저가 "아니오"였고 회고를 통과했는데, 검증 2가 약해진 단언을 찾았다. phase 5는 "예"였지만 구현하기 전의 실패가 새 함수가 없다는 `AttributeError`뿐이었다(`~/plate-rail-test/run-all/docs/LESSONS.md`의 (001-core-commands, 검증 2)와 (001-core-commands, 검증 3) 줄).
+- 이 회고를 부를 때 Skill 도구가 넘긴 retro 본문은 디스크의 본문이 아니라 `9bd206e`(이 작업의 phase 3)가 고치기 전의 판이었다. 3번의 "머리의 결정이나 완료 조건이 바꾸기로 한 맥락 문서의 줄" 문장, 4번의 "그 본문이 그 phase의 커밋이 바꾼 파일이거나 계획의 읽을 것이면" 예외, 양식과 적는 규칙의 "테스트 먼저 기록" 항목이 없었고, 이 셋은 `9bd206e^`의 판에 없고 디스크의 판에 있다. 이 회고는 받은 본문대로 하되, run 본문의 "`docs/LESSONS.md`" 절은 이 phase의 읽을 것이라 디스크의 판 4번대로 읽었다. phase 6은 테스트 먼저가 "아니오"이고 맥락 문서를 바꾸지 않아 두 판의 차이가 판정을 바꾸지 않는다. 완료 조건 12가 확인하려는 동작(띄운 에이전트가 받는 본문)에 걸린다.
+
+**판정**: 문제 있음
