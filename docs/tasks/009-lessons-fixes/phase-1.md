@@ -52,3 +52,23 @@
 
 ## 하네스에서 걸린 것
 - 계획의 읽을 것(code.claude.com/docs/en/hooks)과 완료 조건 1의 (라)는 명령이 `sh -c`로 돈다고 보지만, 그 문서는 셸 꼴의 명령이 macOS와 Linux에서 `sh -c`, Windows에서는 Git Bash, Git Bash가 없으면 PowerShell로 돈다고 적는다(`shell` 필드로 고를 수 있다). 바꾼 명령(`f=…; [ -f "$f" ] || exit 0; exec python3 "$f"`)은 POSIX 셸 문법이라 PowerShell에서는 2가 아닌 코드로 끝나 막지 않고 훅이 돌지 않는다. 옛 명령(`python3 "…"`)은 PowerShell에서도 돌았다. 완료 조건대로 했고 시험은 이 Mac에서만 돌렸다.
+
+## 회고 1: 회고
+
+**확인**
+- 완료 조건 1이 참이다.
+  - `python3 -m unittest discover -s tests -v` → 36개 모두 `ok`, `Ran 36 tests in 9.370s`, 마지막 줄 `OK`. 통과
+  - `tests/test_edit_guard.py`를 읽었다 → (가) `TestFirstTest.test_python_bytecode_is_not_a_test_change`가 `.gitignore` 없이 `tests/__pycache__/…pyc`, `tests/test_app.pyc`, `src/__pycache__/…pyc`를 만들고 `src/app.py` 편집이 테스트 먼저로 막히는 것을, `tests/test_app.py`를 바꾼 뒤에는 통과하는 것을 단언한다. (나) `SetupAndCodeFileTest.test_docs_tasks_files_are_not_code`가 문서 지도가 있고 남은 phase가 없을 때 `src/app.py`는 막히고 `docs/tasks/.gitkeep`의 Write는 통과하는 것을, 테스트 먼저인 phase에서 `docs/tasks/001-a/notes.txt`가 통과하는 것을 단언한다. (다) `ThirdBlockTest.test_plan_md_change_resets_count`가 두 번 막은 뒤 `plan.md`에만 결정 한 줄을 더해 커밋하면 세 번째 편집이 멈춤 글 없이 테스트 먼저 글로 막히는 것을 단언한다. (라) `HooksJsonCommandTest`가 `hooks.json`에서 명령 글을 읽어 `sh -c`로 돌리고, 없는 플러그인 폴더면 막을 호출도 0, 있는 폴더면 스크립트의 2와 0이 그대로 나오는 것을 단언한다. 통과
+- 완료 조건 2가 참이다.
+  - `python3 -m unittest discover -s tests` 뒤 `git status --short --untracked-files=all | grep __pycache__` → 출력 없음(grep 종료 코드 1). `tests/__pycache__/test_edit_guard.cpython-313.pyc`는 디스크에 있다. 통과
+
+**문제**
+- 없음
+
+**배운 것**
+- Claude Code 훅에서 `args`가 없는 명령(셸 꼴)은 macOS와 Linux에서 `sh -c`, Windows에서 Git Bash, Git Bash가 없으면 PowerShell로 돈다. `shell` 필드(`"bash"` | `"powershell"`)로 고를 수 있다. `args`를 주면 셸 없이 `command`를 실행 파일로 바로 띄운다(exec 꼴). 문서는 경로 자리표시가 든 훅에 exec 꼴을 권하지만, `python3`는 없는 스크립트를 받으면 2로 끝나므로(이 Mac의 Python 3.13.2에서 돌려 봄) exec 꼴로 바꾸면 스크립트가 없을 때 막게 된다. 출처: code.claude.com/docs/en/hooks의 "Exec form and shell form"과 command 훅의 `shell` 필드(2026-10-17에 읽음)
+
+**하네스의 문제점**
+- 계획의 완료 조건 1의 (라)와 이 phase의 읽을 것(code.claude.com/docs/en/hooks)은 훅 명령이 `sh -c`로 돈다고만 본다. 그 문서는 셸 꼴 명령이 Windows에서 Git Bash, 없으면 PowerShell로 돈다고 적는다. 바뀐 명령(`f=…; [ -f "$f" ] || exit 0; exec python3 "$f"`)은 POSIX 셸 문법인데, PowerShell에서 어떻게 끝나는지는 완료 조건도 시험도 다루지 않는다(시험은 이 Mac의 `sh`로만 돈다). 같은 전제가 완료 조건 8에도 있어, phase 5가 `docs/TOOLS.md`에 "명령은 `sh -c`로 돈다"를 그대로 적으면 Windows의 경우가 빠진다.
+
+**판정**: 통과
