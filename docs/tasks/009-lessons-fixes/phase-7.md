@@ -73,3 +73,40 @@
 - `~/plate-rail-test`는 git 레포가 아니라서 이 phase가 만들거나 고친 `bin/reload.py`, `answers/run-oldsetup-2.md`, `answers/tdd-stop.md`, 시험 폴더 `run-oldsetup`, `tdd-stop`, `reload-probe`와 기록은 커밋에 들지 않는다. 커밋에는 `docs/LESSONS.md`, `docs/TOOLS.md`, `phase-7.md`만 든다.
 - 계획의 읽을 것이 시험의 꼴로 든 `bin/a2.sh`는 세션 도중에 본문을 고치는 시험에 맞지 않았다(위의 "계획과 달라진 점").
 - tdd-stop의 수행 에이전트와 run은 훅의 소스(`plugins/plate/hooks/edit_guard.py`)를 읽지 못해(프로젝트 밖의 파일) 첫 Edit가 세 번째 막음이 된 까닭을 짐작으로만 적었다. 이 시험은 횟수를 미리 2로 둔 것이라 실제 사용과 다르지만, 막은 글이 왜 막았는지(테스트 파일의 기준)를 담지 않으면 프로젝트 밖의 훅을 읽지 못하는 에이전트는 까닭을 확인할 수 없다. 이번 글에는 "테스트 파일은 … 꼴인 파일이다"가 TEST_FIRST에만 있고 세 번째 막음 글(STOP)에는 없다.
+
+## 회고 1: 회고
+
+**확인**
+- 완료 조건 10이 참이다.
+  - `ls ~/plate-rail-test/run-oldsetup/docs/notes/lessons.md ~/plate-rail-test/run-oldsetup/docs/LESSONS.md` → `docs/notes/lessons.md`만 있고 `docs/LESSONS.md`는 `No such file or directory`. 통과
+  - `grep -c 'docs/notes/lessons.md' ~/plate-rail-test/run-oldsetup/AGENTS.md` → `1`(문서 지도 11행, `docs/tasks/NNN-slug/` 행 앞). 통과
+  - `tail -3 ~/plate-rail-test/run-oldsetup/docs/tasks/001-gitignore/verify.md` → `**판정**: 통과`, 빈 줄, `LESSONS로 옮겼다`. 통과
+  - run-oldsetup에서 `git log -1 --stat` → `11d110c [001] 검증 통과`에 `AGENTS.md`, `docs/notes/lessons.md`, `docs/tasks/001-gitignore/verify.md`가 든다. `docs/notes/lessons.md`는 run 본문의 LESSONS 양식(제목, 세 절, `(001-gitignore, 검증 1)` 줄 넷)이다. 통과
+  - 완료 조건 9의 둘째 확인 → `N`은 `plugins/plate/skills/run/SKILL.md`이고 출력에 `run-oldsetup.jsonl`, `run-oldsetup-2.jsonl`이 든다. 첫 턴의 마지막 답글(`python3 bin/summ.py logs/run-oldsetup.jsonl 3000`)은 `docs/LESSONS.md`를 추천안으로 위치를 묻고 멈췄고, 둘째 턴의 답 파일은 "`docs/notes/lessons.md`에 만든다."다. 통과
+- 완료 조건 11이 참이다.
+  - `cat ~/plate-rail-test/tdd-stop/docs/tasks/*/phase-*.md | grep -c '훅이 테스트 먼저 때문에 세 번째 막음:'` → `2`. 통과
+  - `logs/tdd-stop.jsonl`의 마지막 답글(`python3 bin/summ.py logs/tdd-stop.jsonl 6000`) → "다시 맡긴다 / 멈춘다" 선택지를 내지 않는다고 적고, 수행 에이전트의 다섯 줄, 막힌 까닭, 수행 에이전트가 적은 해결책 둘을 보인 뒤 짐작과 세 길을 추천과 함께 내며 "어느 길로 갈까요?"로 논의를 묻는다. 같은 기록에서 수행 에이전트의 `calc.py` 첫 Edit(71행)가 세 번째 막음 글을 받았다. 통과
+  - 완료 조건 9의 둘째 확인 → 출력에 `tdd-stop.jsonl`이 든다. 통과
+- 완료 조건 12가 참이다.
+  - `logs/reload-probe.jsonl`에서 `parent_tool_use_id`가 에이전트인 `Base directory for this skill:` 줄 → 에이전트 1(17행)과 2(45행)는 `표식: 자두-7391`, 3(74행)은 `표식: 앵두-2604`이고, 2와 3 사이 64행이 `Reloaded: 6 plugins · 172 skills · 6 agents · 24 hooks · 0 plugin LSP servers`다. `reload-probe/out-1~3.txt`의 표식도 같고 work 본문은 `자두-7391`로 돌아와 있다. `docs/TOOLS.md`의 "세션 도중의 스킬 본문 고침" 묶음과 같다. 그 묶음이 인용한 code.claude.com/docs/en/plugins/create와 plugins/cli-reference에도 적힌 글이 있다. 통과
+- 완료 조건 13이 참이다.
+  - `git diff ec2f192 -- docs/LESSONS.md | grep -c '^-- '` → `41`. 통과
+  - 같은 차이의 `^-- ` 줄을 읽고 `git show ec2f192:docs/LESSONS.md`와 절마다 견줬다 → 하네스의 문제점 32줄과 미룬 문제 5줄이 모두 지워졌고, 프로젝트에서 배운 것에서 지운 넷이 완료 조건 13의 넷이며 남은 11줄은 순서도 그대로다. 더한 줄은 (009-lessons-fixes, …) 15줄뿐이다. 통과
+- 완료 조건 8이 참이다.
+  - `grep -n '멈춘 이유는 없음' docs/ADR.md` → 출력 없음(종료 코드 1). 통과
+  - `docs/TOOLS.md`의 머리글(3행), "지금 상태" 표(9행), 훅 묶음(72~74행)과 `docs/ADR.md`의 ADR-019 트레이드오프(26행), ADR-018 이유 끝(20행 "멈춘 이유는 없다.")을 읽었다 → 모두 있다. 이 phase의 TOOLS.md 차이는 77~84행의 묶음을 더한 것뿐이다. 통과
+- 완료 조건 15가 참이다.
+  - `python3 -m unittest discover -s tests` → `Ran 36 tests`, 마지막 줄 `OK`. 뒤의 `git status --short --untracked-files=all` → 출력 없음. 통과
+
+**문제**
+없음
+
+**배운 것**
+- `~/plate-rail-test/tdd-stop`은 수행이 막힌 채 멈춘 상태다. `task/001-sub`에 커밋이 없고 `docs/tasks/001-sub/phase-1.md`(기록)와 `checks/sub.md`가 커밋되지 않았으며 `.git/plate-test-first.json`의 `calc.py` 횟수는 3이다. 완료 조건 11의 첫 확인은 그 커밋되지 않은 `phase-1.md`를 읽으므로 검증 전에 그 폴더에서 run을 다시 부르면 결과가 바뀐다. `~/plate-rail-test/run-oldsetup`은 합칠지 묻고 멈춘 상태(`task/001-gitignore`의 `11d110c`)라 그 물음에 답하면 완료 조건 10의 `git log -1 --stat`이 바뀐다.
+
+**하네스의 문제점**
+- 훅(`plugins/plate/hooks/edit_guard.py`)의 세 번째 막음 글(`STOP`)은 막은 까닭인 테스트 파일의 기준을 담지 않고, 그 기준은 `TEST_FIRST` 글에만 있다. 막은 횟수는 git 폴더에 남아 수행이 바뀌어도 이어지므로 새 수행 에이전트가 첫 편집에서 바로 `STOP`을 받을 수 있고, 에이전트는 프로젝트 밖의 훅 소스를 읽지 못한다(`docs/TOOLS.md`). tdd-stop에서 수행 에이전트와 run은 훅 소스 읽기를 거부당해(`logs/tdd-stop.jsonl` 80행, 103행) 까닭(`checks/sub.md`가 `.md`라 커밋되지 않은 테스트 변경으로 세지 않는다)을 확인하지 못하고 짐작으로 논의했다.
+- 계획의 phase 7이 시험의 꼴로 든 둘이 그대로 쓰이지 않아 수행이 바꿨다("계획과 달라진 점"). 읽을 것의 `bin/a2.sh`는 프롬프트 하나로 프로세스 하나를 돌려(`claude -p "$prompt" … < /dev/null`) 세션 도중에 디스크를 고칠 틈이 없다. 완료 조건 11의 예("테스트가 `checks/`에 있고")는, 훅이 테스트 파일로 보지 않는 `.md`가 아닌 파일이면 코드 파일이라(`is_code_file`, `is_test_file`) 테스트를 쓰는 편집부터 막힌다.
+- 이 회고를 부를 때 받은 retro 본문은 디스크의 판이 아니라 `9bd206e`(이 작업의 phase 3) 전의 판이었다. 3번 58행의 둘째 문장, 60행의 "본 결과는 통과해도 …", 4번 64행의 예외, 양식 99~100행과 적는 규칙 119~120행이 없었다. 이 phase가 `docs/TOOLS.md`에 적은 사실(본문을 고친 뒤 `/reload-plugins` 없이 띄운 에이전트는 고치기 전의 본문을 받는다)과 맞는데, `plugins/plate/skills/`의 어느 본문에도 `/reload-plugins`나 세션을 새로 여는 것이 없어서, 이 작업이 그 사실을 적는 것으로 닫은 (008-tdd, phase 4)·(008-tdd, 검증 1) 줄과 같은 일이 이 작업 안에서 되풀이된다. 이 phase는 테스트 먼저가 "아니오"이고 맥락 문서와 어긋나는 것이 없어 두 판의 차이가 판정을 바꾸지 않는다.
+
+**판정**: 통과
