@@ -14,7 +14,7 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
 
 ## Claude Code
 
-1단계는 2.1.291(2026-10-06), 2단계의 2026-10-08 판정은 2.1.293, 3단계의 판정은 2.1.294(2026-10-08), 4단계의 판정은 2.1.296(2026-10-13), 작업 004-context-rules의 판정은 2.1.300(2026-10-15), 5단계의 판정은 2.1.300(2026-10-15~16)과 2.1.301(2026-10-16)에서 돌렸다.
+1단계는 2.1.291(2026-10-06), 2단계의 2026-10-08 판정은 2.1.293, 3단계의 판정은 2.1.294(2026-10-08), 4단계의 판정은 2.1.296(2026-10-13), 작업 004-context-rules의 판정은 2.1.300(2026-10-15), 5단계의 판정은 2.1.300(2026-10-15~16)과 2.1.301(2026-10-16), 6단계의 판정은 2.1.302(2026-10-17)에서 돌렸다.
 
 - `claude --plugin-dir <플러그인 폴더>`로 시작하면 그 폴더의 플러그인을 그 세션에만 불러온다. 설치 기록과 마켓플레이스 등록을 건드리지 않는다.
 - 설치된 `plate@harness-plate`는 옛 0.3.0이고 꺼져 있다(2026-10-08). 시험은 `--plugin-dir`로 레포의 본문을 읽는다.
@@ -62,6 +62,14 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
 - run이 기본 브랜치에서 작업 브랜치로 바꾸려면 허용 목록에 `"Bash(git switch:*)"`가 있어야 한다. 없을 때 처음 띄운 실행이 그 명령의 승인을 기다렸다. `"Bash(git checkout:*)" "Bash(git symbolic-ref:*)"`도 함께 더했다.
 - run이 phase 1의 통과 때 `AGENTS.md`의 문서 지도에 행을 더한 뒤 같은 실행에서 띄운 검증 에이전트가 "그 행이 지도에 없다"고 적었다(run-nogit). 에이전트는 `AGENTS.md`를 다시 읽지 않았다. 세션이 시작될 때 실린 지침으로 판단한 것으로 보이지만 확인하지 않았다.
 - 실행 시간. 검증 스킬만 부른 실행이 44~179초, run이 검증 에이전트 하나만 띄운 실행이 143초였다. phase 하나를 회고하고 검증해 합친 run-small이 631초, phase 셋을 전체 지시로 돌려 검증까지 간 run-all이 1823초(고칠 phase를 승인한 둘째 턴 565초)였다. setup이 105~404초, 테스트가 있는 프로젝트의 계획이 네 턴에 걸쳐 모두 341초였다. 폴더가 다른 실행 넷을 한꺼번에 돌렸다.
+
+**훅** (2.1.302, 2026-10-17. 시험 폴더는 `~/plate-rail-test/bin/vfmake.sh`의 tdd-plan, tdd-run, tdd-edit이고, 기록은 `logs/tdd-plan-*.jsonl`, `logs/tdd-run.jsonl`, `logs/tdd-edit.jsonl`이다)
+
+- `--plugin-dir`로 실은 플러그인의 훅이 돈다. 매니페스트에 적지 않아도 플러그인 폴더의 `hooks/hooks.json`을 읽고, 훅 명령의 `${CLAUDE_PLUGIN_ROOT}`는 `--plugin-dir`에 준 폴더가 된다. init 줄의 `plugins`에는 이 플러그인이 `plate@inline`으로 나온다.
+- 서브에이전트의 편집 호출에도 돈다. tdd-edit에서 메인이 띄운 서브에이전트의 Edit가 PreToolUse 훅에 막혔고 파일은 바뀌지 않았다. tdd-run에서는 수행 에이전트가 테스트 파일을 먼저 써서 한 번도 막히지 않았다.
+- 훅이 종료 코드 2로 막으면 에이전트는 그 호출의 결과로 훅의 stderr를 받는다. 기록에는 `"type": "user"` 줄의 `tool_result`로 남는다. `is_error`가 `true`이고, 내용은 `PreToolUse:Edit hook error: [<훅 명령>]: <stderr>` 뒤에 빈 줄과 `This hook comes from the plate@inline plugin.`이 붙은 글이다. 같은 줄의 `tool_use_result`는 그 글 앞에 `Error: `가 붙은 것이고, `tool_result_meta`의 `permission_decision`은 `{"decision": "reject", "source": "hook", "reason_type": "hook"}`다. 서브에이전트의 호출이면 그 줄에 `parent_tool_use_id`가 있다.
+- PreToolUse 훅은 stream-json 기록에 `hook_started`·`hook_response` 줄을 남기지 않는다. 그 줄은 SessionStart 훅에만 나왔다. 그래서 훅이 통과시킨 호출은 기록만으로는 훅이 돌았는지 알 수 없다.
+- 실행 시간. tdd-edit이 27초, tdd-plan이 네 턴에 86초, 28초, 212초, 111초, phase 하나를 회고하고 검증해 합친 tdd-run이 626초였다. 폴더가 다른 실행 셋을 한꺼번에 돌렸다.
 
 **플러그인 폴더의 편집과 권한 모드** (2026-10-13. 이 레포에서 `/plate:run 004`를 돌린 자기 적용에서 봤다)
 
