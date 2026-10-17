@@ -9,7 +9,6 @@
 | `docs/ARCHITECTURE.md` | 기술 스택, 구조, 데이터 흐름 | 파일 위치나 모듈 경계를 판단할 때 |
 | `docs/ADR.md` | 이미 내린 결정과 이유 | 기술 선택을 바꾸거나 새로 할 때 |
 | `docs/TOOLS.md` | 도구별로 확인해 둔 사실과 확인을 멈춘 지점 | 다른 도구로 넓히거나 도구마다 다른 동작을 판단할 때 |
-| `docs/LESSONS.md` | 회고에서 배운 것, 하네스의 문제점, 미룬 문제 | 작업을 계획하거나 회고할 때 |
 | `docs/tasks/NNN-slug/` | 작업 하나의 기록: `plan.md`, `phase-N.md`, `verify.md` | 그 작업을 이어 가거나 근거를 볼 때 |
 <!-- plate:docs-map:end -->
 
