@@ -12,6 +12,7 @@
 - (007-harness-issues, 검증 1) 완료 조건 6의 마지막 확인은 `~/plate-rail-test/logs/run-oldsetup.jsonl`이 run과 verify 본문보다 새것이어야 통과한다. 고칠 phase가 둘 가운데 하나를 고치면 `bin/vfmake.sh run-oldsetup`으로 폴더를 다시 만들고 다시 돌려야 한다(돌린 꼴은 `c6ff0e6`의 `phase-2.md` "한 일"). `run-oldsetup`은 위치 물음에서 멈춘 상태라 그 물음에 답하면 완료 조건 6의 다른 확인도 바뀐다.
 - (008-tdd, phase 1) 이 레포에는 `.gitignore`가 없어서 테스트를 돌리면 `tests/__pycache__/`가 추적되지 않는 파일로 남는다. 커밋에 들지 않게 지워야 한다.
 - (008-tdd, phase 1) 훅이 테스트 먼저로 막은 횟수는 git 폴더(`git rev-parse --absolute-git-dir`)의 `plate-test-first.json`에 남고 작업 트리에는 보이지 않는다. 같은 git 폴더에서 계획을 바꾸지 않고 다시 돌리면 앞의 횟수가 이어진다.
+- (008-tdd, phase 2) plan 본문 78행과 80행대로면 테스트 먼저 "예"인 phase가 있는 계획은 다른 물을 것이 없어도 5번을 건너뛰지 않고, 다른 물음을 마친 뒤 엣지케이스 물음에서 한 번 멈춘다. plan을 헤드리스로 돌리는 시험(완료 조건 9의 tdd-plan)은 앞의 물음들과 이 물음에 답하는 턴을 둬야 한다.
 
 ## 하네스의 문제점
 - (007-harness-issues, phase 2) `~/plate-rail-test`는 git 레포가 아니라서 이 phase에서 고친 `bin/vfmake.sh`와 새로 생긴 `run-oldsetup`, `logs/run-oldsetup.*`는 커밋에 넣지 못했다. 커밋에는 `plugins/plate/skills/run/SKILL.md`와 `phase-2.md`만 든다.
@@ -31,6 +32,8 @@
 - (008-tdd, phase 1) 계획이 훅 스크립트를 열지 못할 때를 정하지 않았다. `python3 /nonexistent/edit_guard.py`는 `can't open file`을 내고 종료 코드 2로 끝나는데, 2는 훅이 막을 때 쓰는 코드다(`plugins/plate/hooks/edit_guard.py`의 머리글). `hooks.json`의 경로가 틀리면 `.md`를 포함한 모든 파일 편집이 그 글로 막힌다.
 - (008-tdd, phase 1) plan 스킬의 낱말 "테스트가 있는 프로젝트"의 "빌드 매니페스트에 테스트 명령"이 예를 들지 않아, 수행이 `package.json`의 `scripts.test`와 `Makefile`의 `test:`만 보기로 정했다("계획과 달라진 점"). 테스트 파일 없이 다른 매니페스트에만 테스트 명령이 있는 프로젝트는 plan이 테스트 먼저 "예"를 적어도 훅이 검사하지 않는다.
 - (008-tdd, phase 1) retro 스킬 3번의 "맥락 문서와 어긋나지 않는가"가 머리의 결정이 바꾸기로 한 맥락 문서를 가리지 않는다. 이 phase의 훅은 지금의 `docs/ARCHITECTURE.md`("훅은 두지 않는다")와 `docs/PRD.md`(범위 밖의 훅 줄)와 어긋나지만, 결정이 그 줄을 바꾸기로 했고 phase 4가 바꾼다. 이번에는 결정을 따라 문제로 적지 않았다.
+- (008-tdd, phase 2) 계획의 phase 2 TODO 3과 완료 조건 3은 엣지케이스 물음이 plan 본문 5번의 "질문마다 추천안과 이유를 붙인다"(76행)와 만나는 곳을 정하지 않았다. 추천안의 이유에 후보가 들면 완료 조건 9의 "그 답글에 후보가 없다"를 어길 수 있어, 수행이 80행에 "추천안의 이유에도 적지 않는다"를 더해 정했다("하네스에서 걸린 것").
+- (008-tdd, phase 2) 계획의 완료 조건 3과 그것을 옮긴 plan 본문 200행의 "동작을 바꾸는 phase는 '예'다"는 테스트가 있는 프로젝트나 코드 파일로 좁히지 않는다. 머리의 목표는 테스트 먼저 순서를 "테스트가 있는 프로젝트에서"로 적고, 머리의 결정은 테스트 먼저 검사를 테스트가 있는 프로젝트의 코드 파일(`.md`가 아닌 파일)에만 건다. 그래서 테스트가 없는 프로젝트의 phase와 `.md` 본문만 바꾸는 phase(이 레포의 스킬 본문 고침)도 "예"가 되어 엣지케이스 물음이 나오지만, 훅은 그 phase의 편집을 테스트 먼저로 검사하지 않는다. 완료 조건 3대로 됐으므로 문제로 적지 않았다.
 
 ## 미룬 문제
 - (004-context-rules, 검증 1) 절대 규칙 5의 "저장소 밖의 파일을 열지 않는다"에는 다른 스킬을 이름으로 부를 때 도구가 여는 스킬 파일의 예외가 없다. `docs/TOOLS.md`의 Codex 절에는 Codex가 플러그인을 `~/.codex/plugins/cache/…`에 복사해 읽고, 본문에 "plate의 setup 스킬(`plate:setup`)을 불러"라고만 있으면 그 `SKILL.md`를 열어 따른다고 적혀 있다. 그래서 같은 본문의 0번(셋업이 안 됐으면 `plate:setup`을 부른다)을 Codex에서 따르면 절대 규칙 5를 어긴다. 본문 하나가 도구가 바뀌어도 같게 작동한다는 ADR-004, 본문을 계속 도구에 기대지 않게 쓴다는 ADR-018과 어긋난다 (`plugins/plate/skills/context/SKILL.md` 18행). 기준: 맥락 문서
