@@ -48,3 +48,17 @@
 
 ## 하네스에서 걸린 것
 없음
+
+## 회고 1: 확인만
+
+**확인**
+- 완료 조건 8이 참이다.
+  - `grep -n '멈춘 이유는 없음' docs/ADR.md` → 출력 없음(종료 코드 1). 통과
+  - `docs/TOOLS.md` 3행(머리글), 9행("지금 상태" 표), 66~75행(훅 묶음)과 `docs/ADR.md` 20행(ADR-018 이유), 26행(ADR-019 트레이드오프)을 읽었다 → 머리글이 "6단계에서 확인한 것은 마지막 phase에서 판정을 돌리면서 적었다"까지 적고, 표의 Claude Code 행에 "6단계(TDD와 엣지케이스)"가 있다. 훅 묶음 72행에 2만 막고 1이나 127 같은 다른 0이 아닌 코드는 막지 않는다는 것이 출처(code.claude.com/docs/en/hooks의 "Exit code output", "Other exit codes", 2026-10-17)와 함께, 73행에 `python3`는 스크립트 파일을 열지 못하면 2로 끝난다는 것이, 74행에 macOS와 Linux는 `sh -c`, Windows는 Git Bash, 없으면 PowerShell이라는 것이 출처("Exec form and shell form", 2026-10-17)와 함께 있다. ADR-019 트레이드오프가 "`python3`가 없거나 스크립트 파일이 없을 때 훅이 돌지 않고 규칙 구간만 남는다."이고, ADR-018 이유 끝이 "멈춘 이유는 없다."다. 통과
+- 완료 조건 14가 참이다.
+  - `grep -h '"version"' plugins/plate/.claude-plugin/plugin.json plugins/plate/.codex-plugin/plugin.json` → 두 줄 모두 `  "version": "0.9.1",`. 통과
+
+**문제**
+- 없음
+
+**판정**: 통과
