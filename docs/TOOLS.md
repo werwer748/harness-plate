@@ -1,12 +1,12 @@
 # 도구별로 확인해 둔 사실
 
-레일을 돌리는 도구(Claude Code, Codex, Grok Build)마다 확인해 둔 사실과 확인을 멈춘 지점을 적는다. 1단계부터 3단계까지를 만들면서 확인한 것을 단계 설계 문서에서 옮겼고(ADR-018), 4단계에서 확인한 것은 판정하면서 바로 적었고, 5단계에서 확인한 것은 마지막 phase에서 판정 기록을 읽어 적었다. 사실마다 확인한 날짜나 버전을 적었고, 그 뒤로 바뀌었을 수 있다.
+레일을 돌리는 도구(Claude Code, Codex, Grok Build)마다 확인해 둔 사실과 확인을 멈춘 지점을 적는다. 1단계부터 3단계까지를 만들면서 확인한 것을 단계 설계 문서에서 옮겼고(ADR-018), 4단계에서 확인한 것은 판정하면서 바로 적었고, 5단계에서 확인한 것은 마지막 phase에서 판정 기록을 읽어 적었고, 6단계에서 확인한 것은 마지막 phase에서 판정을 돌리면서 적었다. 사실마다 확인한 날짜나 버전을 적었고, 그 뒤로 바뀌었을 수 있다.
 
 ## 지금 상태
 
 | 도구 | 상태 |
 |---|---|
-| Claude Code | 완성 판정을 이 도구로 한다. 1단계(셋업), 2단계(맥락 채우기), 3단계(계획), 4단계(실행), 5단계(검증)의 판정을 여기서 돌렸다 |
+| Claude Code | 완성 판정을 이 도구로 한다. 1단계(셋업), 2단계(맥락 채우기), 3단계(계획), 4단계(실행), 5단계(검증), 6단계(TDD와 엣지케이스)의 판정을 여기서 돌렸다 |
 | Codex | 2026-10-08에 확인을 멈췄다. 1단계 전부와 2단계 판정의 일부만 확인했다. 남은 것은 아래 "Codex에서 확인을 멈춘 지점"에 있다 |
 | Grok Build | 이 Mac에 설치돼 있지 않다. 판정을 돌린 적이 없다 |
 
@@ -69,6 +69,9 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
 - 서브에이전트의 편집 호출에도 돈다. tdd-edit에서 메인이 띄운 서브에이전트의 Edit가 PreToolUse 훅에 막혔고 파일은 바뀌지 않았다. tdd-run에서는 수행 에이전트가 테스트 파일을 먼저 써서 한 번도 막히지 않았다.
 - 훅이 종료 코드 2로 막으면 에이전트는 그 호출의 결과로 훅의 stderr를 받는다. 기록에는 `"type": "user"` 줄의 `tool_result`로 남는다. `is_error`가 `true`이고, 내용은 `PreToolUse:Edit hook error: [<훅 명령>]: <stderr>` 뒤에 빈 줄과 `This hook comes from the plate@inline plugin.`이 붙은 글이다. 같은 줄의 `tool_use_result`는 그 글 앞에 `Error: `가 붙은 것이고, `tool_result_meta`의 `permission_decision`은 `{"decision": "reject", "source": "hook", "reason_type": "hook"}`다. 서브에이전트의 호출이면 그 줄에 `parent_tool_use_id`가 있다.
 - PreToolUse 훅은 stream-json 기록에 `hook_started`·`hook_response` 줄을 남기지 않는다. 그 줄은 SessionStart 훅에만 나왔다. 그래서 훅이 통과시킨 호출은 기록만으로는 훅이 돌았는지 알 수 없다.
+- 종료 코드는 2만 막는다. 0은 통과이고, 2는 PreToolUse에서 그 호출을 막는다. 1이나 127 같은 다른 0이 아닌 코드는 막지 않는 오류여서 호출이 그대로 가고, 기록에 `<훅 이름> hook error` 알림이 남는다. 훅 설정에 `"onFailure": "block"`이 있으면 다르다. 셸 꼴에서 스크립트 경로가 없으면 셸이 127 같은 코드로 끝나 막지 않는 오류가 된다(문서 code.claude.com/docs/en/hooks의 "Exit code output", "Other exit codes"로 2026-10-17에 확인했다).
+- `python3`는 스크립트 파일을 열지 못하면 2로 끝난다. `python3 /nonexistent_script.py`가 `can't open file '/nonexistent_script.py': [Errno 2] No such file or directory`를 내고 종료 코드 2였다(Python 3.13.2, 2026-10-17). 그래서 훅 명령은 스크립트 파일이 없으면 `python3`를 부르지 않고 0으로 끝낸다(`plugins/plate/hooks/hooks.json`). 그 명령을 `sh -c`로 돌려 보니 스크립트 파일이 없으면 0, `python3`가 없으면 127, 있으면 스크립트의 종료 코드였다(2026-10-17).
+- 명령(`args`가 없는 셸 꼴)은 macOS와 Linux에서 `sh -c`로 돌고, Windows에서는 Git Bash, Git Bash가 없으면 PowerShell로 돈다. 훅 설정의 `shell`로 정할 수도 있다(문서 code.claude.com/docs/en/hooks의 "Exec form and shell form"으로 2026-10-17에 확인했다).
 - 실행 시간. tdd-edit이 27초, tdd-plan이 네 턴에 86초, 28초, 212초, 111초, phase 하나를 회고하고 검증해 합친 tdd-run이 626초였다. 폴더가 다른 실행 셋을 한꺼번에 돌렸다.
 
 **플러그인 폴더의 편집과 권한 모드** (2026-10-13. 이 레포에서 `/plate:run 004`를 돌린 자기 적용에서 봤다)
