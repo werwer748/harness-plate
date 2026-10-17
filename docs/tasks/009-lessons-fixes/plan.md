@@ -35,7 +35,7 @@
 8. 맥락 문서가 바뀐다. `docs/TOOLS.md`의 머리글과 "지금 상태" 표가 6단계까지 적는다. TOOLS.md의 훅 묶음에 종료 코드와 명령 실행의 사실이 출처 문서와 함께 있다: 2만 막고 1이나 127 같은 다른 0이 아닌 코드는 막지 않는다, `python3`는 스크립트 파일을 열지 못하면 2로 끝난다, 명령은 macOS와 Linux에서 `sh -c`로 돌고, Windows에서는 Git Bash, Git Bash가 없으면 PowerShell로 돈다. `docs/ADR.md`의 ADR-019 트레이드오프가 `python3`가 없거나 스크립트 파일이 없을 때 훅이 돌지 않고 규칙 구간만 남는다고 적고, ADR-018의 이유 끝이 "멈춘 이유는 없다."다.
    - 확인: `grep -n '멈춘 이유는 없음' docs/ADR.md` → 출력 없음
    - 확인: `docs/TOOLS.md`의 머리글, "지금 상태" 표, 훅 묶음과 `docs/ADR.md`의 ADR-019를 읽는다 → 위의 것이 있다
-9. 006의 실행 시험 여섯이 바뀐 본문으로 통과한다. `~/plate-rail-test`의 run-vrule, run-nogit, run-small, run-all, run-wt, run-wt-gate를 `bin/vfmake.sh`로 다시 만들어 돌린다. `bin/runcheck.py`의 기대는 이 작업의 결정이 바꾼 동작에 걸리는 것만 고치고, 고쳤으면 고친 곳과 까닭을 phase 기록에 적는다.
+9. 006의 실행 시험 여섯이 바뀐 본문으로 통과한다. `~/plate-rail-test`의 run-vrule, run-nogit, run-small, run-all, run-wt, run-wt-gate를 `bin/vfmake.sh`로 다시 만들어 돌린다. `bin/runcheck.py`의 기대는 셋에 걸리는 것만 고친다: 이 작업의 결정이 바꾼 동작, 앞 작업이 바꾼 run 본문의 동작(같은 뜻의 줄은 LESSONS에 다시 더하지 않는다), 검증이 무엇을 찾느냐에 따라 달라지는 턴과 검증 절의 수. 고쳐서 판정이 덜 보는 곳이 생기면 그것을 읽을 것으로 내게 한다. 고친 곳과 까닭은 phase 기록에 적는다.
    - 확인: `python3 ~/plate-rail-test/bin/runcheck.py <폴더>`를 여섯 폴더마다 돌린다 → 실패한 항목이 없다
    - 확인: `N=$(ls -t plugins/plate/skills/*/SKILL.md plugins/plate/hooks/* | head -1); find ~/plate-rail-test/logs -name '*.jsonl' -newer "$N"` → 여섯 시험의 기록이 모두 든다
 10. 옛 셋업에서 LESSONS의 위치를 추천안이 아닌 곳으로 답하면 run이 그 위치에 만든다. `~/plate-rail-test/run-oldsetup`을 `bin/vfmake.sh`로 다시 만들어 `/plate:run 001`을 헤드리스로 돌리고, 위치 물음에 `docs/notes/lessons.md`로 답하는 턴을 잇는다. 그 파일이 LESSONS의 양식으로 생기고, 문서 지도에 그 위치의 행이 생기고, `docs/LESSONS.md`는 없고, `verify.md`의 마지막 검증 절 아래에 `LESSONS로 옮겼다`가 있다.
@@ -72,3 +72,4 @@
 - 훅 phase의 엣지케이스는 논의하지 않고 수행 에이전트가 정한다. 이유: 고칠 동작은 이 계획의 답으로 이미 정해졌다.
 - 버전은 0.9.1로 올린다. 이유: 스킬의 동작이 바뀌면 단계 밖의 작업이어도 버전을 올리고, 단계 안의 고침은 patch다. (추천안으로 정함)
 - TOOLS.md의 훅 명령 실행 사실에 Windows의 셸을 함께 적는다. 이유: phase 1 회고가 출처 문서에서 Windows는 `sh`로 돌지 않는다는 것을 찾았다. 바뀐 명령이 PowerShell에서 어떻게 끝나는지는 이 작업이 다루지 않는다.
+- `runcheck.py`의 기대는 앞 작업이 바꾼 run 본문의 동작과, 검증에 따라 달라지는 턴·검증 절의 수에 걸리는 것도 고친다. 이유: 006 때의 판정 도구는 007의 같은 뜻 줄 규칙 뒤로 검증이 두 번 이상 도는 실행에서 맞지 않고, run-all의 턴 수는 다시 돌려도 정해지지 않는다.

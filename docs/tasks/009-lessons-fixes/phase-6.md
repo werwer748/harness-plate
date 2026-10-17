@@ -15,7 +15,7 @@
 **TODO**
 - [x] run-vrule, run-nogit, run-small, run-all이 `bin/vfmake.sh`로 다시 만들어지고 바뀐 본문으로 돌아 `runcheck.py`에 실패한 항목이 없다. 옛 셋업을 바탕으로 한 폴더가 LESSONS의 위치를 물으면 `docs/LESSONS.md`로 답하는 턴을 잇는다 (`~/plate-rail-test/`)
 - [x] run-wt와 run-wt-gate가 다시 만들어지고 돌아 `runcheck.py`에 실패한 항목이 없다. run-wt는 worktree에서 검증이 닫힌 뒤 원래 자리에서 부르면 합칠지 묻고, run-wt-gate는 worktree에 닫힌 검증이 없어 그 worktree에서 run을 부르라고 안내한다 (`~/plate-rail-test/`)
-- [x] `runcheck.py`의 기대 가운데 이 작업의 결정이 바꾼 동작(`verify.md`의 `LESSONS로 옮겼다` 줄, 고칠 phase 양식, 0번의 worktree 갈래)에 걸리는 것만 고쳐지고, 고친 곳과 까닭이 phase 기록에 적힌다 (`~/plate-rail-test/bin/runcheck.py`)
+- [x] `runcheck.py`의 기대 가운데 완료 조건 9가 정한 셋(이 작업의 결정이 바꾼 동작인 `verify.md`의 `LESSONS로 옮겼다` 줄·고칠 phase 양식·0번의 worktree 갈래, 앞 작업이 바꾼 run 본문의 동작, 검증에 따라 달라지는 턴과 검증 절의 수)에 걸리는 것만 고쳐지고, 고친 곳과 까닭이 phase 기록에 적힌다 (`~/plate-rail-test/bin/runcheck.py`)
 
 **통과 조건**
 - 완료 조건 9가 참이다.
