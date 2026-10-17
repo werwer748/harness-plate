@@ -15,7 +15,7 @@ import subprocess
 import sys
 
 DOCS_MAP_START = "<!-- plate:docs-map:start -->"
-TASKS_DIR = os.path.join("docs", "tasks")
+TASKS_DIR = "docs/tasks"
 TEST_DIRS = {"tests", "test", "__tests__"}
 TEST_NAMES = ("test_*", "*_test.*", "*.test.*", "*.spec.*")
 MARKER = re.compile(r"^\*\*테스트 먼저\*\*:\s*(.*)$")
@@ -50,7 +50,11 @@ def git(root, *args):
 
 
 def is_code_file(rel):
-    return not rel.lower().endswith(".md") and rel.split("/")[0] != ".worktrees"
+    return (
+        not rel.lower().endswith(".md")
+        and rel.split("/")[0] != ".worktrees"
+        and not rel.startswith(TASKS_DIR + "/")
+    )
 
 
 def is_test_file(rel):
@@ -58,6 +62,11 @@ def is_test_file(rel):
     if TEST_DIRS.intersection(parts[:-1]):
         return True
     return any(fnmatch.fnmatchcase(parts[-1], name) for name in TEST_NAMES)
+
+
+def is_bytecode(rel):
+    """테스트를 돌리기만 해도 생기는 Python 파일. 테스트 변경으로 세지 않는다."""
+    return "__pycache__" in rel.split("/") or rel.endswith(".pyc")
 
 
 def is_setup(root):
@@ -156,12 +165,18 @@ def has_uncommitted_test_change(root):
         if "R" in item[:2] or "C" in item[:2]:  # 이름을 바꾼 항목은 다음 칸이 옛 경로다
             paths.append(items[i])
             i += 1
-    return any(is_code_file(p) and is_test_file(p) for p in paths)
+    return any(is_code_file(p) and is_test_file(p) and not is_bytecode(p) for p in paths)
 
 
 def count_block(root, phase, lines, rel):
-    """같은 phase의 계획이 바뀌지 않은 동안 이 파일을 테스트 먼저 때문에 막은 횟수를 하나 늘려 돌려준다."""
+    """같은 phase의 계획 줄과 plan.md가 바뀌지 않은 동안 이 파일을 테스트 먼저 때문에 막은 횟수를
+    하나 늘려 돌려준다."""
     plan = "\n".join(re.sub(r"^(\s*- )\[[xX]\]", r"\1[ ]", line) for line in lines).rstrip()
+    try:
+        with open(os.path.join(root, os.path.dirname(phase), "plan.md"), encoding="utf-8") as f:
+            plan += "\n" + f.read()
+    except OSError:
+        pass
     digest = hashlib.sha256(plan.encode("utf-8")).hexdigest()
     store = os.path.join(git(root, "rev-parse", "--absolute-git-dir").strip(), COUNT_FILE)
     try:

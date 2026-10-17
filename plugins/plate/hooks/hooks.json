@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/edit_guard.py\""
+            "command": "f=\"${CLAUDE_PLUGIN_ROOT}/hooks/edit_guard.py\"; [ -f \"$f\" ] || exit 0; exec python3 \"$f\""
           }
         ]
       }

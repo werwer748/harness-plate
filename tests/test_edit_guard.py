@@ -13,7 +13,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-HOOK = Path(__file__).resolve().parent.parent / "plugins" / "plate" / "hooks" / "edit_guard.py"
+PLUGIN_ROOT = Path(__file__).resolve().parent.parent / "plugins" / "plate"
+HOOK = PLUGIN_ROOT / "hooks" / "edit_guard.py"
+HOOKS_JSON = PLUGIN_ROOT / "hooks" / "hooks.json"
 
 GIT_ENV = dict(
     os.environ,
@@ -99,20 +101,23 @@ class Project:
             self.write("docs/tasks/%s/phase-%d.md" % (name, n), phase_text(n, marker))
         self.commit("plan: " + name)
 
-    def edit(self, rel, tool="Edit"):
-        """rel을 고치는 편집 도구의 호출을 훅에 준다. (종료 코드, stderr)를 돌려준다."""
+    def payload(self, rel, tool="Edit"):
+        """rel을 고치는 편집 도구의 호출을 Claude Code가 훅에 넘기는 JSON 글로 만든다."""
         path = str(rel) if os.path.isabs(str(rel)) else str(self.root / rel)
         key = "notebook_path" if tool == "NotebookEdit" else "file_path"
-        payload = {
+        return json.dumps({
             "session_id": "test",
             "transcript_path": "/dev/null",
             "cwd": str(self.root),
             "hook_event_name": "PreToolUse",
             "tool_name": tool,
             "tool_input": {key: path},
-        }
+        })
+
+    def edit(self, rel, tool="Edit"):
+        """rel을 고치는 편집 도구의 호출을 훅에 준다. (종료 코드, stderr)를 돌려준다."""
         done = subprocess.run(
-            [sys.executable, str(HOOK)], input=json.dumps(payload), env=GIT_ENV,
+            [sys.executable, str(HOOK)], input=self.payload(rel, tool), env=GIT_ENV,
             capture_output=True, text=True,
         )
         return done.returncode, done.stderr
@@ -150,6 +155,14 @@ class SetupAndCodeFileTest(GuardTestCase):
         self.assertPassed(p.edit("docs/notes.md"))
         self.assertPassed(p.edit("README.MD", tool="Write"))
         self.assertPassed(p.edit(".worktrees/009-x/src/app.py"))
+
+    def test_docs_tasks_files_are_not_code(self):
+        p = self.project()  # 문서 지도가 있고 남은 phase가 없다
+        self.assertBlocked(p.edit("src/app.py"), PLAN_FIRST)
+        self.assertPassed(p.edit("docs/tasks/.gitkeep", tool="Write"))
+        p.add_task("001-a", {1: "예"})  # 테스트 먼저인 phase에서도 같다
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+        self.assertPassed(p.edit("docs/tasks/001-a/notes.txt", tool="Write"))
 
     def test_file_outside_project_passes(self):
         p = self.project()
@@ -228,6 +241,17 @@ class TestFirstTest(GuardTestCase):
         p.add_task("001-a", {1: "예"})
         p.write("web/app.test.ts", "test('a', () => {})\n")
         p.git("add", "web/app.test.ts")
+        self.assertPassed(p.edit("src/app.py"))
+
+    def test_python_bytecode_is_not_a_test_change(self):
+        # .gitignore가 없는 Python 프로젝트에서 테스트를 돌리기만 하면 생기는 파일
+        p = self.project()
+        p.add_task("001-a", {1: "예"})
+        p.write("tests/__pycache__/test_app.cpython-313.pyc", "bytecode")
+        p.write("tests/test_app.pyc", "bytecode")
+        p.write("src/__pycache__/app.cpython-313.pyc", "bytecode")
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+        p.write("tests/test_app.py", "import unittest\n# 바뀜\n")
         self.assertPassed(p.edit("src/app.py"))
 
     def test_test_change_committed_already_does_not_count(self):
@@ -354,12 +378,49 @@ class ThirdBlockTest(GuardTestCase):
         err = self.assertBlocked(self.p.edit("src/app.py"), TEST_FIRST)
         self.assertNotIn(STOP, err)
 
+    def test_plan_md_change_resets_count(self):
+        self.p.edit("src/app.py")
+        self.p.edit("src/app.py")
+        # 논의로 정한 해결책을 결정에 한 줄 더한다. phase 파일의 계획 줄은 그대로다
+        self.p.write("docs/tasks/001-a/plan.md", "# 시험 작업\n\n## 결정\n- 해결책을 따른다. 이유: 논의\n")
+        self.p.commit("plan: 001-a 결정 더함")
+        err = self.assertBlocked(self.p.edit("src/app.py"), TEST_FIRST)
+        self.assertNotIn(STOP, err)
+
     def test_checkbox_and_record_do_not_reset_count(self):
         self.p.edit("src/app.py")
         self.p.edit("src/app.py")
         checked = phase_text(1, "예").replace("- [ ]", "- [x]") + "\n## 한 일\n- 없음\n"
         self.p.write("docs/tasks/001-a/phase-1.md", checked)
         self.assertBlocked(self.p.edit("src/app.py"), STOP)
+
+
+class HooksJsonCommandTest(GuardTestCase):
+    """hooks.json의 명령 글을 Claude Code처럼 `sh -c`로 돌린다.
+
+    `${CLAUDE_PLUGIN_ROOT}`는 명령 글에 그대로 바뀌어 들어가고 같은 이름의 환경 변수로도 넘어간다.
+    """
+
+    def run_command(self, plugin_root, stdin):
+        with open(HOOKS_JSON, encoding="utf-8") as f:
+            command = json.load(f)["hooks"]["PreToolUse"][0]["hooks"][0]["command"]
+        done = subprocess.run(
+            ["sh", "-c", command.replace("${CLAUDE_PLUGIN_ROOT}", str(plugin_root))],
+            input=stdin, env=dict(GIT_ENV, CLAUDE_PLUGIN_ROOT=str(plugin_root)),
+            capture_output=True, text=True,
+        )
+        return done.returncode, done.stderr
+
+    def test_missing_script_exits_zero(self):
+        p = self.project()  # 남은 phase가 없다: 스크립트가 있으면 막는 호출이다
+        missing = Path(self.base) / "no-such-plugin"
+        self.assertPassed(self.run_command(missing, p.payload("src/app.py")))
+        self.assertPassed(self.run_command(missing, p.payload("docs/notes.md")))
+
+    def test_existing_script_exit_code_passes_through(self):
+        p = self.project()
+        self.assertBlocked(self.run_command(PLUGIN_ROOT, p.payload("src/app.py")), PLAN_FIRST)
+        self.assertPassed(self.run_command(PLUGIN_ROOT, p.payload("docs/notes.md")))
 
 
 if __name__ == "__main__":
