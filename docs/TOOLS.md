@@ -74,6 +74,15 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
 - 명령(`args`가 없는 셸 꼴)은 macOS와 Linux에서 `sh -c`로 돌고, Windows에서는 Git Bash, Git Bash가 없으면 PowerShell로 돈다. 훅 설정의 `shell`로 정할 수도 있다(문서 code.claude.com/docs/en/hooks의 "Exec form and shell form"으로 2026-10-17에 확인했다).
 - 실행 시간. tdd-edit이 27초, tdd-plan이 네 턴에 86초, 28초, 212초, 111초, phase 하나를 회고하고 검증해 합친 tdd-run이 626초였다. 폴더가 다른 실행 셋을 한꺼번에 돌렸다.
 
+**세션 도중의 스킬 본문 고침** (2.1.302, 2026-10-17. 헤드리스 세션 하나에서 직접 돌려 확인했다. 실행 스크립트는 `~/plate-rail-test/bin/reload.py`, 시험 폴더는 `reload-probe`, 시험용 플러그인은 `probe-plugin`, 기록은 `logs/reload-probe.jsonl`이다)
+
+- 명령의 꼴은 `claude -p --input-format stream-json --output-format stream-json --verbose --plugin-dir <플러그인 폴더> --permission-mode acceptEdits --forward-subagent-text --allowedTools "<항목>" …`이다. 프로세스 하나의 표준 입력에 `{"type": "user", "message": {"role": "user", "content": "<글>"}}` 줄을 하나씩 넣고, 앞 줄의 `result` 줄이 나온 뒤에 다음 줄을 넣었다. `/probe:lead 1`과 `/reload-plugins`도 이 줄로 넣어 돌았다.
+- 차례는 `/probe:lead 1`(메인이 lead를 부르고 에이전트 1이 work를 부른다), 디스크의 `probe-plugin/skills/work/SKILL.md`에서 표식을 `자두-7391`에서 `앵두-2604`로 바꾼다, 에이전트 2를 띄워 work를 부르게 한다, `/reload-plugins`, 에이전트 3을 띄워 work를 부르게 한다였다. 끝난 뒤 본문을 되돌렸다.
+- 본문을 고친 뒤 띄운 에이전트 2는 고치기 전의 본문(`표식: 자두-7391`)을 받았다. 같은 세션에서 `/reload-plugins`가 `Reloaded: 6 plugins · 172 skills · 6 agents · 24 hooks · 0 plugin LSP servers`를 낸 뒤 띄운 에이전트 3은 고친 본문(`표식: 앵두-2604`)을 받았다. 받은 본문은 기록에서 `parent_tool_use_id`가 그 에이전트인 `Base directory for this skill:` 줄로 봤고, 에이전트가 쓴 `out-N.txt`의 표식도 같았다.
+- 그래서 스킬 본문을 고치는 작업을 그 플러그인을 실은 세션에서 실행하면 그 뒤에 띄운 에이전트는 고치기 전의 본문을 받는다. 고친 본문을 받게 하려면 띄우기 전에 `/reload-plugins`를 돌리거나 세션을 새로 연다. 문서도 세션 도중에 플러그인의 파일을 고치면 `/reload-plugins`로 싣는다고 적는다(code.claude.com/docs/en/plugins/create의 "Load a plugin for one session"). `-p` 세션에서도 `/reload-plugins`가 돈다(code.claude.com/docs/en/plugins/cli-reference의 "Sessions without an interactive terminal", v2.1.260 이상).
+- 세 에이전트 모두 work의 커밋을 `git -C <절대 경로> add`로 하다 막혀 `out-N.txt`는 커밋되지 않았다(위의 `-C` 사실과 같다).
+- 확인하지 않은 것: 고치기 전에 그 세션에서 한 번도 부르지 않은 스킬도 고치기 전의 본문을 주는지.
+
 **플러그인 폴더의 편집과 권한 모드** (2026-10-13. 이 레포에서 `/plate:run 004`를 돌린 자기 적용에서 봤다)
 
 - `--plugin-dir`로 실은 폴더는 보호 경로다. 그 안의 쓰기는 설정의 `permissions.allow`로 미리 허락할 수 없고, 묻지 않고 지나가는 모드는 bypassPermissions뿐이다. 수동 모드와 acceptEdits에서는 묻고, 띄운 에이전트의 물음도 주 세션에 뜬다(문서 code.claude.com/docs/en/permission-modes의 "Protected paths"로 확인했다).
