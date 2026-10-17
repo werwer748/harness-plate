@@ -14,6 +14,8 @@
 - (008-tdd, phase 1) 훅이 테스트 먼저로 막은 횟수는 git 폴더(`git rev-parse --absolute-git-dir`)의 `plate-test-first.json`에 남고 작업 트리에는 보이지 않는다. 같은 git 폴더에서 계획을 바꾸지 않고 다시 돌리면 앞의 횟수가 이어진다.
 - (008-tdd, phase 2) plan 본문 78행과 80행대로면 테스트 먼저 "예"인 phase가 있는 계획은 다른 물을 것이 없어도 5번을 건너뛰지 않고, 다른 물음을 마친 뒤 엣지케이스 물음에서 한 번 멈춘다. plan을 헤드리스로 돌리는 시험(완료 조건 9의 tdd-plan)은 앞의 물음들과 이 물음에 답하는 턴을 둬야 한다.
 - (008-tdd, phase 3) 이 회고의 점검 에이전트가 `plate:retro`를 불러 받은 본문은 phase 3 전의 글이었다. 낱말, 1번, 5번이 "계획 네 항목"이고 3번에 테스트 먼저 기록의 점검이 없었다. 디스크의 `plugins/plate/skills/retro/SKILL.md`는 고친 글이다. 이 작업의 phase 파일에는 테스트 먼저 표시가 없어(머리의 결정) 그 점검이 걸리지 않으므로 이번 판정은 달라지지 않는다.
+- (008-tdd, phase 5) 훅이 막은 호출의 `tool_result_meta`는 객체 하나가 아니라 목록이고, 원소마다 그 호출의 `id`와 `permission_decision`을 담는다(`~/plate-rail-test/logs/tdd-edit.jsonl` 18행). `docs/TOOLS.md`의 "훅" 묶음은 `permission_decision`의 값만 적는다.
+- (008-tdd, phase 5) 시험 폴더에서 새로 연 헤드리스 세션의 에이전트는 고친 본문을 받았다. `logs/tdd-run.jsonl`에 retro 3번과 verify 3번의 테스트 먼저 기록 점검 문장과 "계획 다섯 항목"이 있다. 이 작업을 실행하는 세션에서 띄운 이 회고의 에이전트는 옛 본문을 받았다(아래 하네스의 문제점).
 
 ## 하네스의 문제점
 - (007-harness-issues, phase 2) `~/plate-rail-test`는 git 레포가 아니라서 이 phase에서 고친 `bin/vfmake.sh`와 새로 생긴 `run-oldsetup`, `logs/run-oldsetup.*`는 커밋에 넣지 못했다. 커밋에는 `plugins/plate/skills/run/SKILL.md`와 `phase-2.md`만 든다.
@@ -43,6 +45,9 @@
 - (008-tdd, phase 4) 계획의 phase 4 TODO 3("ADR에 훅 스크립트의 런타임(Python 3 표준 라이브러리) 항목이 생긴다")과 그 근거인 머리의 결정은 ADR 항목의 번호와 트레이드오프를 정하지 않아 수행이 둘 다 정했다. 번호는 phase 기록에 적힌 context 스킬의 규칙("있는 번호 뒤에 잇는다")대로 ADR-019인데, 이 번호는 커밋 `9b0dfb6`에서 지운 옛 ADR-019("2단계의 완성 판정과 시험 폴더")와 겹친다. `git log --oneline -S'ADR-019' -- docs`에 `9b0dfb6` 전의 커밋이 여럿 나오고, 그 커밋들의 ADR-019는 지금의 ADR-019와 다른 결정이다. 트레이드오프("`python3`가 없는 환경에서는 훅이 돌지 않고 규칙 구간만 남는다")는 확인되지 않았다. 이 회고에서 `env PATH=/nonexistent /bin/sh -c 'python3 /x'`는 종료 코드 127(막는 코드 2가 아님)이었지만, Claude Code가 그 종료 코드를 통과로 다루는지는 `docs/TOOLS.md`에 없고 이 회고에서 보지 않았다.
 - (008-tdd, phase 4) 통과 조건의 확인(`python3 -m unittest discover -s tests`)을 돌리면 `tests/__pycache__/`가 추적되지 않는 파일로 생긴다(phase 기록의 "하네스에서 걸린 것"). `docs/LESSONS.md`의 (008-tdd, phase 1) 줄과 같은 일이고, 이 회고에서도 생겨 지웠다.
 - (008-tdd, phase 4) 이 회고가 `plate:retro`를 불러 받은 본문은 디스크의 `plugins/plate/skills/retro/SKILL.md`와 달랐다. 받은 본문은 낱말이 "계획 네 항목"이고 3번에 테스트 먼저 기록의 점검이 없다. 디스크의 글은 26행이 "계획 다섯 항목", 60행이 그 점검이다. `docs/LESSONS.md`의 (008-tdd, phase 3) 줄과 같은 일이고, 이 phase에는 테스트 먼저 표시가 없어 판정에 영향이 없다.
+- (008-tdd, phase 5) retro 스킬의 회고 절 양식은 "확인"에 통과 조건의 확인만 두고, 3번의 테스트 먼저 기록 점검은 걸렸을 때만 "문제"에 적는다. 점검이 통과하면 적을 자리가 없다. tdd-run의 회고 1(`2332cb3`의 `phase-1.md`)과 검증 1(`docs/tasks/002-list-command/verify.md`)은 그 점검을 담은 본문을 받았지만(`logs/tdd-run.jsonl`) 실패·통과 출력을 보았다는 글이 없어, 기록만으로는 점검했는지 알 수 없다. phase 기록의 "하네스에서 걸린 것" 셋째 줄과 같다.
+- (008-tdd, phase 5) plan 스킬 5번의 "뺀 것은 머리의 범위 밖에 적는다"는 요청이 이미 정한 동작과 겹치는 후보를 말하지 않는다. tdd-plan에서 plan이 낸 후보 3(`booklog.db`가 없는 폴더에서 `책이 없습니다.`와 종료 코드 0)은 요청과 그 계획의 완료 조건 2가 정한 동작이다. 뺀 뒤 범위 밖에 "따로 보는 테스트"로 적혔지만, TODO 넷째 항목의 테스트도 `booklog.db`가 없는 `empty_dir`(`tests/test_search.py`의 픽스처)에서 같은 출력과 종료 코드를 본다(`~/plate-rail-test/tdd-plan/docs/tasks/002-list-command/`). 완료 조건 9의 확인은 뺀 것이 범위 밖에 있는지만 보아 이 겹침을 가리지 못한다.
+- (008-tdd, phase 5) 계획의 phase 5 TODO 다섯째 항목과 완료 조건 12는 `docs/TOOLS.md`의 Claude Code 절만 가리킨다. 같은 문서의 "지금 상태" 표(9행, "1단계 … 5단계(검증)의 판정을 여기서 돌렸다")와 머리글 문단(3행, 5단계까지 어떻게 적었는지)은 6단계를 적지 않은 채 남았다.
 
 ## 미룬 문제
 - (004-context-rules, 검증 1) 절대 규칙 5의 "저장소 밖의 파일을 열지 않는다"에는 다른 스킬을 이름으로 부를 때 도구가 여는 스킬 파일의 예외가 없다. `docs/TOOLS.md`의 Codex 절에는 Codex가 플러그인을 `~/.codex/plugins/cache/…`에 복사해 읽고, 본문에 "plate의 setup 스킬(`plate:setup`)을 불러"라고만 있으면 그 `SKILL.md`를 열어 따른다고 적혀 있다. 그래서 같은 본문의 0번(셋업이 안 됐으면 `plate:setup`을 부른다)을 Codex에서 따르면 절대 규칙 5를 어긴다. 본문 하나가 도구가 바뀌어도 같게 작동한다는 ADR-004, 본문을 계속 도구에 기대지 않게 쓴다는 ADR-018과 어긋난다 (`plugins/plate/skills/context/SKILL.md` 18행). 기준: 맥락 문서
