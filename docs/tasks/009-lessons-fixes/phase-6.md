@@ -89,3 +89,26 @@
 - 이 회고를 부를 때 Skill 도구가 넘긴 retro 본문은 디스크의 본문이 아니라 `9bd206e`(이 작업의 phase 3)가 고치기 전의 판이었다. 3번의 "머리의 결정이나 완료 조건이 바꾸기로 한 맥락 문서의 줄" 문장, 4번의 "그 본문이 그 phase의 커밋이 바꾼 파일이거나 계획의 읽을 것이면" 예외, 양식과 적는 규칙의 "테스트 먼저 기록" 항목이 없었고, 이 셋은 `9bd206e^`의 판에 없고 디스크의 판에 있다. 이 회고는 받은 본문대로 하되, run 본문의 "`docs/LESSONS.md`" 절은 이 phase의 읽을 것이라 디스크의 판 4번대로 읽었다. phase 6은 테스트 먼저가 "아니오"이고 맥락 문서를 바꾸지 않아 두 판의 차이가 판정을 바꾸지 않는다. 완료 조건 12가 확인하려는 동작(띄운 에이전트가 받는 본문)에 걸린다.
 
 **판정**: 문제 있음
+
+## 회고 2: 회고
+
+**확인**
+- 완료 조건 9가 참이다.
+  - `python3 ~/plate-rail-test/bin/runcheck.py <폴더>`를 run-vrule, run-nogit, run-small, run-all, run-wt, run-wt-gate마다 돌렸다 → 통과한 항목이 차례로 38, 20, 51, 128, 51, 7개이고 실패한 항목은 모두 0개다. 여섯 모두 마지막 줄이 `=> 실행 대조: 모두 통과`이고 종료 코드 0이다. run-all은 검증 2에서 둘, 검증 3에서 셋의 "LESSONS에 글자 그대로 없는 줄"을 읽을 것으로 냈고, `~/plate-rail-test/run-all/docs/LESSONS.md`에 대어 읽으니 모두 이미 있는 줄(4~7번째 줄의 검증 1 배운 것 넷, 9번째 줄의 테스트가 DB를 직접 열지 않는다는 줄, 24번째 줄의 테스트 먼저 항목이 없을 때의 줄)과 같은 뜻이다. `runcheck.py.orig`와 지금 파일의 차이를 읽으니 고친 기대는 모두 완료 조건 9의 세 갈래에 들고, 덜 보게 된 셋(메인이 고쳐도 되는 파일의 `verify.md`, 검증 통과 커밋의 `verify.md`, 옮긴 줄의 수)은 차례로 그 줄만 붙인 Edit인지, 그 커밋의 차이가 그 줄 하나인지 보는 항목과 읽을 것으로 내는 줄이 있다. 통과
+  - `N=$(ls -t plugins/plate/skills/*/SKILL.md plugins/plate/hooks/* | head -1); find ~/plate-rail-test/logs -name '*.jsonl' -newer "$N"` → `N`은 `plugins/plate/skills/run/SKILL.md`(10-17 19:34)이고, `run-all`, `run-all-2`, `run-all-3`, `run-nogit`, `run-nogit-2`, `run-small`, `run-vrule`, `run-wt-a`, `run-wt-b`, `run-wt-c1`, `run-wt-c2`, `run-wt-gate`의 `.jsonl` 12개가 나왔다. 여섯 시험의 기록이 모두 든다. 통과
+
+**문제**
+- 없음
+
+**배운 것**
+- `~/plate-rail-test/vrule-base`는 지금도 옛 LESSONS 양식(`## 미룬 문제` 절이 없고 문서 지도의 행이 "회고에서 배운 것과 하네스의 문제점")이다. `bin/vfmake.sh`의 run-vrule 갈래만 phase 1 통과 커밋 뒤에 `[000] LESSONS를 지금의 양식으로 맞춘다` 커밋을 넣어 맞춘다.
+- 고친 `~/plate-rail-test/bin/runcheck.py`는 메인의 `verify.md` 편집 가운데 `old_string` 뒤에 `LESSONS로 옮겼다` 한 줄만 붙인 Edit만 받아들이고(Write나 다른 꼴의 편집이면 "메인이 직접 고친 파일" 항목이 실패한다), 검증 통과 커밋의 `verify.md` 차이도 그 한 줄을 더한 것만 받아들인다.
+- run-all의 판정은 옮긴 줄의 수를 "많지 않다"로만 보고 글자 그대로 없는 줄은 `(참고)` 줄로 낸다. 완료 조건 9를 다시 확인하는 쪽(검증)도 그 줄을 LESSONS에 대어 읽어야 한다.
+
+**하네스의 문제점**
+- 이 회고를 부를 때 Skill 도구가 넘긴 retro 본문은 회고 1 때와 같이 `9bd206e`(이 작업의 phase 3)가 고치기 전의 판이었다. 디스크의 `plugins/plate/skills/retro/SKILL.md`에 있는 3번의 "머리의 결정이나 완료 조건이 바꾸기로 한 맥락 문서의 줄" 문장(58행), 4번의 "그 phase의 커밋이 바꾼 파일이거나 계획의 읽을 것이면" 예외(64행), 양식과 적는 규칙의 "테스트 먼저 기록"(99, 119, 120행)이 받은 본문에 없었다. 받은 본문대로 하되 run 본문은 이 phase의 읽을 것이라 디스크의 판 4번대로 읽었다(`4226c5c`의 차이와 "`docs/LESSONS.md`" 절). phase 6은 테스트 먼저가 "아니오"이고 맥락 문서를 바꾸지 않아 두 판의 차이가 판정을 바꾸지 않는다. 완료 조건 12가 확인하려는 동작에 걸린다.
+- retro 스킬 1번은 "그 phase의 커밋이 바꾼 것"을 읽게 하고, git 레포가 아닐 때만 "한 일"에 적힌 파일을 읽게 한다. phase 6이 바꾼 파일(`~/plate-rail-test/bin/runcheck.py`, `bin/vfmake.sh`, `answers/run-nogit-2.md`, `answers/run-all-3.md`)은 모두 레포 밖의 git이 아닌 시험 폴더에 있어, 그 phase의 커밋(`582cc98`, `e71dad1`)에는 `phase-6.md`만 든다. 이번에는 "한 일"이 가리킨 수행의 사본(`runcheck.py.orig`, `runcheck.before-fix.py`, `vfmake.sh.orig`)에 대어 차이를 읽었는데, 그 사본은 레포나 시험 폴더가 아닌 세션의 scratchpad 폴더에 있다.
+- 계획의 완료 조건 9(처음 판)는 판정 도구의 기대를 고칠 범위만 정하고 고친 기대가 덜 보게 되는지 볼 것을 정하지 않았고, retro 스킬 3번의 넷에도 테스트나 판정 코드를 고친 변경이 전보다 덜 보게 됐는지가 따로 적혀 있지 않다. 그래서 처음 수행이 메인의 `verify.md` 편집과 검증 통과 커밋의 `verify.md`를 받아들이며 그 내용을 보지 않게 된 것(`runcheck.before-fix.py`와 지금 파일의 차이가 그 두 항목이다)을 회고 1이 문제로 적지 않았고, 계획 고침(`ef85d52`)이 "덜 보는 곳이 생기면 읽을 것으로 내게 한다"를 더한 뒤에야 고쳐졌다. 시험 폴더 run-all에서 고칠 phase가 테스트를 약하게 한 것을 고칠 phase 양식의 통과 조건과 verify 스킬 3번의 테스트 먼저 기록 점검이 가려내지 못한 것(`~/plate-rail-test/run-all/docs/LESSONS.md`의 22, 25, 28번째 줄)과 같은 뿌리다.
+- 계획의 읽을 것은 LESSONS의 (006-verify, 검증 1) 줄을 따라 run-vrule의 실패를 바뀐 본문으로 다시 돌리지 않은 탓으로 보았지만, 바탕 폴더 `vrule-base`의 LESSONS가 옛 양식이라 다시 돌려도 풀리지 않았다. run 스킬의 "`docs/LESSONS.md`" 절은 이미 있는 문서에 "이미 있는 항목은 고치지 않고 절의 끝에 더한다"(281행)만 적고 옛 양식의 절과 문서 지도의 행을 지금 양식으로 맞추는 곳이 없으며, 문서 지도에서 이 문서를 내용 칸 "회고에서 배운 것, 하네스의 문제점, 미룬 문제"로 찾는데(286행) 옛 행의 글은 "회고에서 배운 것과 하네스의 문제점"이다.
+
+**판정**: 통과
