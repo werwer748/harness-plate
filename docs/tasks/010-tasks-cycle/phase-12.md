@@ -64,3 +64,25 @@
 
 ## 하네스에서 걸린 것
 - 이 phase가 이 레포 `AGENTS.md`의 규칙 구간을 새 글(retro, review, eval)로 바꿔, 아직 0.9.1 레일(verify)로 도는 010의 남은 단계(이 phase의 회고와 작업 검증)를 맡은 에이전트에게 새 규칙이 실린다. 010의 검증 에이전트가 `verify.md` 대신 retro·review·eval을 찾을 수 있다.
+
+## 회고 1: 확인만
+
+**확인**
+- 완료 조건 2, 10, 11, 12가 참이다
+  - 완료 조건 2: `grep -n "작업" plugins/plate/skills/*/SKILL.md plugins/plate/hooks/edit_guard.py README.md docs/PRD.md docs/ARCHITECTURE.md AGENTS.md` → 10줄. 모두 읽었다: context:8 "다음 작업의 근거"(일반의 일), edit_guard.py:23 "작업 트리"(git의 working tree), AGENTS.md:16과 setup:132 "## 작업 규칙", setup:3과 setup:10 "작업 규칙"(규칙 구간의 이름), PRD:4 "작업하게 하는"(동사)과 "작업 규칙", PRD:7 "그 프로젝트의 모든 작업"과 PRD:24 "모든 작업이 파이프라인을 거친다"(일반의 일), ARCHITECTURE:36 "작업 디렉터리"(working directory). tasks, task, phase를 가리키는 "작업"은 없다. 통과
+  - 완료 조건 2: 낱말 절이 있는 스킬 여덟(check, context, eval, phase, plan, retro, review, run. setup에는 낱말 절이 없고, context의 낱말 절에는 tasks, task, phase의 정의가 없다)의 절을 `awk`로 뽑아 읽었다 → tasks는 요청 하나를 계획한 묶음으로 `docs/tasks/`에 하나, task(task 폴더)는 `NNN-slug/` 폴더 하나, phase는 `phase-N.md` 하나(통과하면 `done-phase-N.md`), tasks 머리는 제목·이름·여섯 절, task 머리는 제목·네 절로 결정의 정의와 어긋나지 않는다. 통과
+  - 완료 조건 10: `grep -n "verify\|LESSONS\|worktree" docs/PRD.md docs/ARCHITECTURE.md README.md AGENTS.md` → 0줄(종료 코드 1). 통과
+  - 완료 조건 10: `diff <(sed -n '/<!-- plate:rules:start -->/,/<!-- plate:rules:end -->/p' AGENTS.md) <(sed -n '/<!-- plate:rules:start -->/,/<!-- plate:rules:end -->/p' plugins/plate/skills/setup/SKILL.md)` → 출력 없음(종료 코드 0). 통과
+  - 완료 조건 10: `grep -hF '| `docs/tasks/' AGENTS.md plugins/plate/skills/setup/SKILL.md | sort -u | wc -l` → `1`. 통과
+  - 완료 조건 10: `grep -c "^## 명령" docs/ARCHITECTURE.md` → `1`, `grep -n -A5 "^## 명령" docs/ARCHITECTURE.md` → `- 빌드: 없음`, `- 린트: 없음`, ``- 테스트: `python3 -m unittest discover -s tests` ``. 통과
+  - 완료 조건 10: `docs/PRD.md` 전체와 `docs/ARCHITECTURE.md` 전체를 `cat`으로 읽었다 → PRD 핵심 기능 5(task 회고, `retro.md`, `FRICTION.md`), 7(두 실행 방식, 멈추는 자리), 8(다섯 범주와 여섯 기준의 A~E, Sonar way, 고칠지 묻기, 고침 task, ADR-020의 이슈, `docs/BACKLOG.md`, 011의 PR·CI)과 ARCHITECTURE의 디렉터리 구조(아홉 스킬), 패턴과 규칙(새 규칙 구간, `tasks/<이름>` 브랜치, 비운 뒤 합칠지 묻기), 데이터 흐름(셋업 → 맥락 → 계획 → 실행 → tasks 끝)이 아홉 스킬과 새 흐름을 말한다. 통과
+  - 완료 조건 11: `grep -n "^### ADR-020" docs/ADR.md` → `28:### ADR-020: plate 자체의 고칠 거리는 GitHub 이슈로 모은다` 1줄. 항목을 읽어 결정(`gh`로 `werwer748/harness-plate`에 이슈, "다시 나옴" 댓글), 이유, 트레이드오프가 있다. 통과
+  - 완료 조건 12: `grep -h '"version"' plugins/plate/.claude-plugin/plugin.json plugins/plate/.codex-plugin/plugin.json` → 두 줄 모두 `  "version": "0.10.0",`. 통과
+  - 완료 조건 12: 두 매니페스트의 `description`을 `python3`의 `json`으로 읽었다 → setup, context, plan, run, phase, check, retro, review, eval 아홉 스킬이 있고, `grep -n verify` 두 매니페스트 → 0줄(종료 코드 1). 통과
+- 완료 조건 15가 참이다
+  - `python3 -m unittest discover -s tests` → `Ran 39 tests in 13.789s`, 마지막 줄 `OK`. 통과
+
+**문제**
+- 없음
+
+**판정**: 통과
