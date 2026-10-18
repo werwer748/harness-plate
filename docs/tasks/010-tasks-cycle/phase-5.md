@@ -55,3 +55,16 @@
 - 읽을 것의 https://testing.googleblog.com/2020/08/code-coverage-best-practices.html 은 WebFetch가 본문 없이 제목과 댓글만 돌려줘서 `curl`로 받아 60%·75%·90% 문장을 읽었다. https://platform.claude.com/docs/en/test-and-evaluate/develop-tests 는 길어서 WebFetch의 첫 결과에 채점 지침이 없었고 `offset: 100000`으로 다시 읽어 "Encourage reasoning" 줄을 찾았다.
 - 읽을 것에 기본 브랜치를 정하는 법이 없어 `plugins/plate/skills/run/SKILL.md`의 "기본 브랜치" 정의(37줄)를 grep으로 찾아 그대로 옮겼다. run 본문은 아직 옛 낱말이라 뒤 phase에서 run이 바뀌면 이 정의와 어긋나지 않는지 볼 곳이다.
 - 계획은 커밋 메시지를 "tasks 이름으로 시작하는 메시지"로만 정해서 `<tasks 이름>: 코드 평가`로 정했다. 일괄 실행의 커밋 순서를 보는 tasks 완료 조건 6과 run이 이 메시지를 알아야 한다.
+
+## 회고 1: 확인만
+
+**확인**
+- review 본문이 TODO대로다
+  - `plugins/plate/skills/review/SKILL.md`를 읽음 → TODO 1: 51줄(tasks 머리와 task 머리를 읽음), 28~30줄(기본 브랜치, 갈라진 곳, 바뀐 코드 파일), 53줄(바뀐 코드 파일의 diff만 읽음). TODO 2: 104~110줄(다섯 범주의 A~E 등급표), 173~190줄(범주마다 근거와 등급), 213줄(총점 없음), 70줄과 114줄(기능 적합성은 완료 조건 확인을 직접 돌려 매김). TODO 3: 60~66줄(명령 절, 커버리지, 중복, 정적 분석, 보안 검사를 도구로 재고 없으면 "측정 못함"), 160~167줄과 210줄(명령과 결과를 적음). TODO 4: 74~81줄(범주마다 Google 리뷰 지침의 항목), 18줄, 83줄, 91줄, 211줄(근거(파일:줄) 먼저, 그 뒤 등급표), 37줄, 91줄, 212줄(칸에 못 들면 "판단 못함"). TODO 5: 116~125줄과 192~197줄(Sonar way 조건마다 통과 여부). TODO 6: 199~200줄과 214줄(번호 붙은 한 줄: 무엇, 파일:줄, 범주). TODO 7: 129줄(`docs/tasks/review.md`에 적음), 133줄(그 파일만 `<tasks 이름>: 코드 평가`로 커밋), 16줄과 19줄(고치지 않음, 묻지 않음), 135~144줄(등급, 게이트, 문제, 기록 네 줄). 통과
+- 완료 조건 2 가운데 review 본문의 몫이 참이다
+  - `grep -n "작업" plugins/plate/skills/review/SKILL.md` → 0줄(exit 1). tasks, task, phase를 가리키는 "작업"이 없다. 통과
+
+**문제**
+- 없음
+
+**판정**: 통과
