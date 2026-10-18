@@ -88,3 +88,36 @@
 - plan을 헤드리스로 여러 턴 돌리는 장면은 물음의 수와 꼴이 실행마다 달라, 앞 판정의 답 파일을 다시 쓸 수 없다. 턴마다 답을 읽고 답 파일을 새로 써야 했다
 - 다시 돌린 `t-all`에서 고침 task `003-fixes`의 회고 1이 `docs/BACKLOG.md`(문서 지도에 행이 생겨 맥락 문서가 됐다)의 항목이 고친 코드와 맞지 않는다고 문제로 적었고, run이 묻지 않고 더한 고칠 phase(`d005c00`)의 수행이 BACKLOG의 그 항목 글을 고쳤다(`99764ec`). plate:run 절대 규칙 5는 BACKLOG를 run이 고치는 파일로 두는데, 맥락 문서로 보는 회고와 수행도 고치게 된다
 - 다시 돌린 하네스 eval이 plate 자체의 고칠 거리를 아홉 냈다(`t-all`의 `f09e5eb:docs/tasks/eval.md`). TODO대로 1번만 이슈로 올렸고 지웠다. 나머지 여덟(완료 조건을 맡는 phase가 없는 것을 수행과 확인이 기록만 하고 통과시킴, 확인을 참조로 적는 계획, 거짓이어도 통과하는 확인, 고칠 phase의 읽을 것에 든 phase 파일, 회고가 한 원인을 두 문제로 적음, 코드 평가의 임시 사본을 막는 편집 막이 훅, 계획 커밋 앞의 계획 없는 커밋, eval의 더한 phase 정의와 규칙 준수 표)은 그 기록에만 있다
+
+## 회고 1: 확인만
+
+**확인**
+- 완료 조건 3~8이 참이다
+  - 3-1: `grep -n "plate:context\|이어서 채울지\|verify" plugins/plate/skills/setup/SKILL.md` → 0줄(종료 코드 1). 통과
+  - 3-2: `bin/summ.py logs/t2-setup-1.jsonl`, `t2-setup-2.jsonl`의 마지막 답 → UI 물음과 만든 것·옮긴 것·건드리지 않은 것·"직접 채우실 칸"의 보고뿐이고 채울지 묻는 글이 없다. setup 본문 111~123줄(문서 지도 구간)에서 `docs/DESIGN.md` 행을 뺀 것 + 빈 줄 + 131~137줄(규칙 구간)을 `~/plate-rail-test/t-setup/AGENTS.md`와 파이썬으로 견줌 → `True`. 통과
+  - 4-1: `logs/t2-plan-1`~`12`의 마지막 답에서 "승인하시나요" → `t2-plan-9`(tasks 머리, `## task 목록`이 든 초안), `t2-plan-10`(`001-book-list`), `t2-plan-11`(`002-book-delete`)에 하나씩, 나머지 0. `t2-plan-1`~`11.state`의 `git status --short`와 `ls docs/tasks` → 모두 빈 출력. 통과
+  - 4-2: `t-plan`의 `git log -1 --stat` → `9b33f72 plan: list-delete`에 `docs/tasks/plan.md`, `001-book-list/plan.md`, `001-book-list/phase-1.md`, `002-book-delete/plan.md`, `002-book-delete/phase-1.md` 다섯 파일. `docs/tasks/plan.md`의 완료 조건 절에 조건 셋. 통과
+  - 4-3: `grep -n '^## ' t-plan/docs/ARCHITECTURE.md` → 기술 스택, 디렉터리 구조, 패턴과 규칙, 데이터 흐름(명령 절 없음). `001-book-list/phase-1.md`의 TODO 첫 항목 → "`docs/ARCHITECTURE.md`에 `## 명령` 절이 생기고 …". 통과
+  - 4-4: `logs/t2-plan-add.jsonl`의 답 → 진행 중인 tasks `list-delete`를 말하고 "이번 요청(…)을 이 tasks에 새 task `003-…`로 더할지 정해 주세요". 그 턴의 `.state`에 새 파일 없음. 통과
+  - 5-1: `t-run`에서 `git branch --show-current` → `tasks/list-delete`. `git log --oneline` → `50d2478 001-list-command: phase 1`, `5413ec7 … phase 1 확인`, `9aab8f4 … phase 1 통과`, `7bcb52b … phase 2`, `6e2cb4a … phase 2 확인`, `d0bd125 … phase 2 통과`, `df023bc 001-list-command: 회고`가 이 차례. 통과
+  - 5-2: `ls docs/tasks/001-list-command` → `done-phase-1.md`, `done-phase-2.md`, `plan.md`, `retro.md`. 통과
+  - 5-3: `t2-run-1`의 답 → "어느 방식으로 실행할까요?"와 두 방식. `t2-run-2`의 답 → 회고 통과 보고 뒤 "다음 task는 **`002-delete-command`** … 이 task로 갈까요?". 통과
+  - 5-4: `t-run/docs/tasks/RUNLOG.md` → 에이전트 줄 5(줄마다 토큰, 도구 호출, 시간), 물음 줄 2(실행 방식, 다음 task). `bin/tagents.py logs/t2-run-*.jsonl` → 에이전트 5(phase·check 둘씩, retro 하나). 기록의 물음은 `t2-run-1`, `t2-run-2`의 둘. `FRICTION.md` → `` - `001-list-command` 없음 ``. 통과
+  - 6-1: `logs/t2-all-1`~`4`의 마지막 답 → 실행 방식(1), 고칠 안대로 할지(2), 고친 안대로 할지(3), 합칠지(4). 네 기록 모두 `AskUserQuestion` 0번. `git show fe56a34^:docs/tasks/RUNLOG.md`의 물음 줄 → 실행 방식 하나, 고칠지 둘. 통과
+  - 6-2: `t-all`의 `git log --oneline` → `7423698 plan: 001-list-command 수정`(`001-list-command/phase-2.md`를 더함)과 그 phase의 `d821abb`·`2a03c8e`·`6418c59`, `2dbe37d list-delete: 코드 평가`, `f09e5eb list-delete: 하네스 eval`, `a1c4f21 plan: 003-fixes 더함`과 `003-fixes`의 수행·확인·통과·회고 커밋, `fe56a34 list-delete: 비움`이 이 차례. 통과
+  - 6-3: `git show fe56a34^:docs/tasks/review.md` → 신뢰성 C, 보안 A, 유지보수성 A, 테스트 적절성 C, 기능 적합성 A, Sonar way 게이트 조건 넷과 "게이트: 실패", 범주의 근거마다 파일:줄(`booklog/stats.py:12`, `booklog/store.py:50`, `tests/test_delete.py:38-44` 등). `git show fe56a34^:docs/tasks/eval.md` → 결과 성공 A, 일관성 B, 효율 C, 규칙 준수 D("수행이나 확인이 자기 스킬의 읽기 범위 밖을 읽은 곳이 셋이다(C의 위반이 둘 이상)"), 사람 개입률 A, 실패 양상 E, `**스킬로 만들 후보**` 절에 후보 둘. 통과
+  - 6-4: `t-all/docs/BACKLOG.md` → 미룬 소스 문제 다섯, 항목마다 "나온 tasks: `list-delete`". `grep -n BACKLOG AGENTS.md` → 11줄, 문서 지도의 `docs/BACKLOG.md` 행. `ls -A docs/tasks` → `.gitkeep`. 통과
+  - 7-1: `bin/calls.py logs/t2-all-4.jsonl` → `gh issue create --repo werwer748/harness-plate --title "plan: task 머리의 완료 조건을 맡는 phase가 없어도 계획이 그대로 쓰인다" --body "…"` → `https://github.com/werwer748/harness-plate/issues/2`. `bin/calls.py logs/t2-again-3.jsonl` → `gh issue comment 2 --repo werwer748/harness-plate --body-file - <<'EOF'`(첫 줄 `다시 나옴`) → `…/issues/2#issuecomment-6250671472`. 통과
+  - 7-2: `gh issue view 2 --repo werwer748/harness-plate` → `GraphQL: Could not resolve to an issue or pull request with the number of 2. (repository.issue)`, 종료 코드 1. 처음 판정의 #1도 같은 오류, 종료 코드 1. `gh issue list --state all` → `[]`. 통과
+  - 8-1: `t-stop/docs/tasks/001-prd-scope/phase-1.md` → `## 확인 1`, `## 확인 2`, `## 확인 3`, 판정 셋 모두 `실패`. `git log --format=%s d8bafef..HEAD` → 0줄(`d8bafef`는 확인 3의 커밋이고 HEAD). 통과
+  - 8-2: `logs/t2-stop-2.jsonl`의 마지막 답 → "### 원인"(확인 셋의 같은 두 실패, 수행 기록의 남은 것과 하네스에서 걸린 것), "### 해결책" 하나(`--deselect`로 stamp 테스트를 빼고 바꿀 곳), "이 해결책으로 진행할까요?"로 끝난다. `grep -c '다른 안\|다른 길\|^- [A-C]\.\|멈추는\|선택\|고르'` → 0. `AskUserQuestion` 0번. 통과
+  - 3-3, 4-5, 5-5, 6-5, 7-3, 8-3: 아래 완료 조건 13의 결과에 `t2-setup-*`, `t2-plan-*`, `t2-run-*`, `t2-all-*`, `t2-again-*`, `t2-stop-*`가 든다. 통과
+- 완료 조건 13이 참이다
+  - `N=$(ls -t plugins/plate/skills/*/SKILL.md plugins/plate/hooks/*.py plugins/plate/hooks/*.json | head -1); find ~/plate-rail-test/logs -name '*.jsonl' -newer "$N"` → N은 `plugins/plate/skills/eval/SKILL.md`(10월 18 20:53). 나온 기록은 `t2-setup-1`~`2`, `t2-plan-1`~`12`, `t2-plan-add`, `t2-run-1`~`3`, `t2-all-1`~`4`, `t2-again-1`~`3`, `t2-stop-1`~`2`로 네 장면이 모두 든다. 통과
+- 완료 조건 14가 참이다
+  - `docs/TOOLS.md`의 Claude Code 절(17줄, 86~92줄)을 읽음 → 버전 줄에 "010-tasks-cycle(0.10.0)의 판정은 2.1.302(2026-10-18)", "tasks 실행의 판정에서 본 것"(2.1.302, gh 2.89.0, 2026-10-18)에 에이전트 결과의 사용량(`<usage>subagent_tokens …`, `totalTokens` 등), `gh issue create`·`comment`·`delete`와 그 출력, 시험 폴더(`tasksmake.sh`의 여섯 폴더, `-try1`)와 기록 위치(`logs/<이름>-<턴>.jsonl`, `t2-`), 처음과 다시 돌린 판정의 실행 시간. 통과
+
+**문제**
+- 없음
+
+**판정**: 통과
