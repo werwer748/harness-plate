@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """plate의 편집 훅. Claude Code의 PreToolUse(Edit|Write|MultiEdit|NotebookEdit)에서 돈다.
 
-막는 실패: 남은 phase가 있는 작업 없이 코드를 고치는 것, 테스트 먼저인 phase에서
+막는 실패: 남은 phase가 있는 task 없이 코드를 고치는 것, 테스트 먼저인 phase에서
 실패하는 테스트 없이 구현부터 하는 것. 막을 때는 종료 코드 2로 끝나고 stderr의 글이
 에이전트에게 간다. 파일 편집 도구의 호출만 보고 Bash 명령은 보지 않는다.
 """
@@ -23,7 +23,7 @@ PHASE_FILE = re.compile(r"^phase-(\d+)\.md$")
 COUNT_FILE = "plate-test-first.json"  # git 폴더 안에 둔다. 작업 트리에 변경을 만들지 않는다
 
 PLAN_FIRST = (
-    "plate: 남은 phase가 있는 작업이 없어서 코드 파일을 고치지 않는다: `{rel}`\n"
+    "plate: 남은 phase가 있는 task가 없어서 코드 파일을 고치지 않는다: `{rel}`\n"
     "계획부터 세운다. plate의 plan 스킬(`plate:plan`)로 계획을 세우고, "
     "plate의 run 스킬(`plate:run`)로 실행한다.\n"
 )
@@ -52,7 +52,6 @@ def git(root, *args):
 def is_code_file(rel):
     return (
         not rel.lower().endswith(".md")
-        and rel.split("/")[0] != ".worktrees"
         and not rel.startswith(TASKS_DIR + "/")
     )
 
@@ -78,7 +77,8 @@ def is_setup(root):
 
 
 def unfinished_tasks(root):
-    """끝나지 않은 작업의 폴더 이름마다 남은 phase의 번호를 작은 것부터 돌려준다."""
+    """끝나지 않은 task의 폴더 이름마다 남은 phase(`phase-N.md`)의 번호를 작은 것부터 돌려준다.
+    `done-phase-N.md`만 있는 task는 끝난 task다."""
     tasks = {}
     base = os.path.join(root, TASKS_DIR)
     try:
@@ -101,11 +101,8 @@ def task_number(name):
     return (int(m.group()) if m else float("inf"), name)
 
 
-def current_task(root, tasks):
-    """지금 브랜치가 task/NNN-slug이고 그 작업이 끝나지 않았으면 그것, 아니면 번호가 가장 작은 것."""
-    branch = (git(root, "symbolic-ref", "--short", "-q", "HEAD") or "").strip()
-    if branch.startswith("task/") and branch[len("task/"):] in tasks:
-        return branch[len("task/"):]
+def current_task(tasks):
+    """끝나지 않은 task 가운데 번호가 가장 작은 것."""
     return min(tasks, key=task_number)
 
 
@@ -218,7 +215,7 @@ def check(data):
 
     if not top or is_test_file(rel):
         return None
-    name = current_task(root, tasks)
+    name = current_task(tasks)
     phase = "/".join(["docs", "tasks", name, "phase-%d.md" % tasks[name][0]])
     with open(os.path.join(root, phase), encoding="utf-8") as f:
         lines = plan_lines(f.read())

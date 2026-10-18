@@ -154,7 +154,8 @@ class SetupAndCodeFileTest(GuardTestCase):
         self.assertBlocked(p.edit("src/app.py"), PLAN_FIRST)
         self.assertPassed(p.edit("docs/notes.md"))
         self.assertPassed(p.edit("README.MD", tool="Write"))
-        self.assertPassed(p.edit(".worktrees/009-x/src/app.py"))
+        # `.worktrees/` 아래도 코드 파일이다
+        self.assertBlocked(p.edit(".worktrees/009-x/src/app.py"), PLAN_FIRST)
 
     def test_docs_tasks_files_are_not_code(self):
         p = self.project()  # 문서 지도가 있고 남은 phase가 없다
@@ -179,6 +180,30 @@ class PlanFirstTest(GuardTestCase):
         self.assertBlocked(p.edit("nb/x.ipynb", tool="NotebookEdit"), PLAN_FIRST)
         # 테스트 파일도 코드 파일이다
         self.assertBlocked(p.edit("tests/test_app.py"), PLAN_FIRST)
+
+    def test_plan_first_message_says_task(self):
+        p = self.project()
+        err = self.assertBlocked(p.edit("src/app.py"), "남은 phase가 있는 task가 없어서")
+        self.assertNotIn("작업", err)
+
+    def test_done_phase_only_task_is_finished(self):
+        p = self.project()
+        p.add_task("001-a", {})  # 통과한 phase가 모두 done-phase-N.md로 바뀐 task
+        p.write("docs/tasks/001-a/done-phase-1.md", phase_text(1, "예"))
+        p.write("docs/tasks/001-a/done-phase-2.md", phase_text(2, None))
+        p.write("docs/tasks/001-a/retro.md", "## 회고 1\n")
+        p.commit()
+        self.assertBlocked(p.edit("src/app.py"), PLAN_FIRST, "plate:plan")
+
+    def test_tasks_files_are_not_tasks(self):
+        p = self.project()
+        p.write("docs/tasks/plan.md", "# 시험 tasks\n")
+        p.write("docs/tasks/FRICTION.md", "- 001-a: 없음\n")
+        p.write("docs/tasks/RUNLOG.md", "- 수행 001-a phase 1\n")
+        p.commit()
+        self.assertBlocked(p.edit("src/app.py"), PLAN_FIRST, "plate:plan")
+        p.add_task("001-a", {1: "예"})
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST, "001-a")
 
     def test_finished_task_does_not_count(self):
         p = self.project()
@@ -328,14 +353,16 @@ class CurrentPhaseTest(GuardTestCase):
         p.add_task("002-b", {1: "예"})
         self.assertPassed(p.edit("src/app.py"))
 
-    def test_task_branch_picks_its_task(self):
+    def test_branch_does_not_pick_task(self):
         p = self.project()
         p.add_task("001-a", {1: "아니오"})
         p.add_task("002-b", {1: "예"})
-        p.git("switch", "-q", "-c", "task/002-b")
-        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST, "002-b")
-        p.git("switch", "-q", "-c", "task/001-a")
-        self.assertPassed(p.edit("src/app.py"))
+        for branch in ("task/002-b", "tasks/x"):
+            with self.subTest(branch=branch):
+                p.git("switch", "-q", "-c", branch)
+                self.assertPassed(p.edit("src/app.py"))
+        p.add_task("000-z", {1: "예"})  # 번호가 더 작은 끝나지 않은 task
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST, "000-z")
 
     def test_finished_task_is_skipped(self):
         p = self.project()
