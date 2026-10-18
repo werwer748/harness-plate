@@ -58,3 +58,19 @@
 ## 하네스에서 걸린 것
 - `RUNLOG.md`의 줄 꼴은 이 phase의 읽을 것에 없다(run 본문에 정해질 것). 그래서 retro 5번은 "물은 줄 가운데 이 task를 실행하며 물은 것"을 뜻으로만 가리켰다. 물은 줄에 task 이름이 들지 않으면 retro가 이 task의 물음을 가려내지 못할 수 있다.
 - verify를 지운 뒤에도 `plugins/plate/skills/run/SKILL.md`, 두 매니페스트, `README.md`, `AGENTS.md`, `docs/PRD.md`, `docs/ARCHITECTURE.md`에 verify가 남아 있다. 이 phase의 TODO가 아니라 고치지 않았다(머리의 완료 조건 5, 10, 12의 몫).
+
+## 회고 1: 확인만
+
+**확인**
+- retro 본문이 TODO대로다
+  - `plugins/plate/skills/retro/SKILL.md`를 읽음 → TODO 1: 0번(38줄, 넘겨받은 task 폴더), 2번(54줄, task 머리의 완료 조건 확인), 3번(60줄, 명령 절의 빌드·린트·테스트, 없는 명령은 "없음"). TODO 2: 4번(64~69줄, task의 커밋이 바꾼 것 전부를 목표와 결정·범위 밖·맥락 문서·결함 넷에 대어 봄), 73줄(테스트 먼저 "예"인 `done-phase-N.md`마다 실패·통과 출력 순서). TODO 3: 6번(91줄)과 회고 절 양식(125~140줄, 번호·확인·문제·판정 통과 | 문제 있음), 9번(110~114줄, 판정·문제 수·기록 세 줄). TODO 4: 5번(79~81줄, "하네스에서 걸린 것"·`RUNLOG.md`의 물은 줄·점검에서 본 것), 7번(97~99줄, task 이름을 붙인 한 줄, 없으면 "없음", 파일이 없으면 `# FRICTION`으로 만듦)과 줄 양식(146~147줄). TODO 5: 절대 규칙 1·4·5(16~20줄)와 8번(104줄, `NNN-slug: 회고`). TODO 6: 본문에 phase 하나의 회고 절차·확인만·끝나지 않은 작업·배운 것이 없고, 40줄이 `phase-N.md`가 남은 task는 회고하지 않는다고 적음. TODO 7: 아래 `ls`. TODO 8: description(3줄)이 task 회고, 두 파일에 적기, 두 파일만 커밋, run이 부르는 때, 쓰지 않는 일을 말함. 통과
+- verify가 없고 retro에 옛 방식이 남지 않았다
+  - `ls plugins/plate/skills/verify` → `ls: plugins/plate/skills/verify: No such file or directory`. 통과
+  - `grep -n "verify\|확인만\|배운 것" plugins/plate/skills/retro/SKILL.md` → 0줄. 통과
+- 완료 조건 2 가운데 retro 본문의 몫이 참이다
+  - `grep -n "작업" plugins/plate/skills/retro/SKILL.md` → 0줄(읽을 줄이 없어 tasks, task, phase를 가리키는 "작업"이 없다). 통과
+
+**문제**
+- 없음
+
+**판정**: 통과
