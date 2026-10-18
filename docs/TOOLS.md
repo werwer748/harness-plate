@@ -14,7 +14,7 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
 
 ## Claude Code
 
-1단계는 2.1.291(2026-10-06), 2단계의 2026-10-08 판정은 2.1.293, 3단계의 판정은 2.1.294(2026-10-08), 4단계의 판정은 2.1.296(2026-10-13), 작업 004-context-rules의 판정은 2.1.300(2026-10-15), 5단계의 판정은 2.1.300(2026-10-15~16)과 2.1.301(2026-10-16), 6단계의 판정은 2.1.302(2026-10-17)에서 돌렸다.
+1단계는 2.1.291(2026-10-06), 2단계의 2026-10-08 판정은 2.1.293, 3단계의 판정은 2.1.294(2026-10-08), 4단계의 판정은 2.1.296(2026-10-13), 작업 004-context-rules의 판정은 2.1.300(2026-10-15), 5단계의 판정은 2.1.300(2026-10-15~16)과 2.1.301(2026-10-16), 6단계의 판정은 2.1.302(2026-10-17), 010-tasks-cycle(0.10.0)의 판정은 2.1.302(2026-10-18)에서 돌렸다.
 
 - `claude --plugin-dir <플러그인 폴더>`로 시작하면 그 폴더의 플러그인을 그 세션에만 불러온다. 설치 기록과 마켓플레이스 등록을 건드리지 않는다.
 - 설치된 `plate@harness-plate`는 옛 0.3.0이고 꺼져 있다(2026-10-08). 시험은 `--plugin-dir`로 레포의 본문을 읽는다.
@@ -82,6 +82,16 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
 - 그래서 스킬 본문을 고치는 작업을 그 플러그인을 실은 세션에서 실행하면 그 뒤에 띄운 에이전트는 고치기 전의 본문을 받는다. 고친 본문을 받게 하려면 띄우기 전에 `/reload-plugins`를 돌리거나 세션을 새로 연다. 문서도 세션 도중에 플러그인의 파일을 고치면 `/reload-plugins`로 싣는다고 적는다(code.claude.com/docs/en/plugins/create의 "Load a plugin for one session"). `-p` 세션에서도 `/reload-plugins`가 돈다(code.claude.com/docs/en/plugins/cli-reference의 "Sessions without an interactive terminal", v2.1.260 이상).
 - 세 에이전트 모두 work의 커밋을 `git -C <절대 경로> add`로 하다 막혀 `out-N.txt`는 커밋되지 않았다(위의 `-C` 사실과 같다).
 - 확인하지 않은 것: 고치기 전에 그 세션에서 한 번도 부르지 않은 스킬도 고치기 전의 본문을 주는지.
+
+**tasks 실행의 판정에서 본 것** (2.1.302, gh 2.89.0, 2026-10-18. 0.10.0의 run, check, retro, review, eval을 헤드리스로 돌렸다. 시험 폴더는 `~/plate-rail-test/bin/tasksmake.sh`가 만드는 `t-setup`, `t-plan`, `t-run`, `t-all`, `t-again`, `t-stop`이다. 한 턴은 `bin/tturn.sh`가 `bin/run.sh`로 돌리고, 기록은 `logs/<이름>-<턴>.jsonl`(run과 eval의 본문을 고친 뒤 다시 돌린 판정의 기록은 `logs/t2-all-2.jsonl`처럼 `t2-`로 시작하고, 처음 판정의 폴더는 `t-all-try1`처럼 `-try1`을 붙여 옮겼다), 턴 뒤의 상태는 `.state`, 세션 id는 `.sid`에 남는다)
+
+- 에이전트의 사용량은 결과와 함께 돌아온다. 메인이 받는 `tool_result` 글 끝에 `<usage>subagent_tokens: 44836\ntool_uses: 18\nduration_ms: 64837</usage>`가 붙고, 같은 줄의 `tool_use_result`에도 `totalTokens`, `totalToolUseCount`, `totalDurationMs`가 있다. run은 이 값을 `RUNLOG.md`의 에이전트 줄에 옮겼고 시간은 초로 반올림했다. 기록에서 뽑는 도구는 `bin/tagents.py`다.
+- `gh`는 `werwer748`(keyring, 범위 `repo`)로 인증돼 있고, 허용 목록에 `"Bash(gh:*)"`를 뒀다. run이 `gh issue create --repo werwer748/harness-plate --title "…" --body "$(cat <<'EOF' … EOF)"`로 #1을 올렸고 명령은 이슈 주소 한 줄을 냈다. tasks 이름을 바꿔 되살린 폴더에서는 `gh issue comment 1 --repo werwer748/harness-plate --body "$(cat <<'EOF' 다시 나옴 … EOF)"`로 댓글을 달았고 댓글 주소(`…/issues/1#issuecomment-…`)를 냈다. 본문의 명령 치환은 승인을 요구하지 않았다.
+- 시험에서 올린 이슈는 `gh issue delete 1 --repo werwer748/harness-plate --yes`로 지웠다. 출력 없이 종료 코드 0이었고, 그 뒤 `gh issue view 1 --repo werwer748/harness-plate`는 `GraphQL: Could not resolve to an issue or pull request with the number of 1. (repository.issue)`와 종료 코드 1을 냈다. 다시 돌린 판정에서 새로 올린 이슈는 #2였다. 지운 이슈의 번호는 다시 쓰이지 않는다.
+- `gh issue list --search`에 제목의 낱말을 여럿 주면 있는 이슈를 찾지 못했다. 올린 지 20분 뒤에 `--search "plan 완료 조건 phase 통과 조건"`은 `[]`였고 `--search "완료 조건"`은 #1을 냈다. 되살린 폴더의 run은 열린 이슈를 모두 나열해(`gh issue list --state open --limit 50`) #1을 찾았다.
+- 허용 목록에 든 명령도 출력을 프로젝트 밖으로 돌리면(`… > /tmp/x.txt 2>&1`) 승인을 요구했다. `/tmp` 아래를 지우는 명령도 "outside the working directories"로 막혔다. 코드 평가 에이전트가 `/tmp/booklog-review-cov`에 만든 커버리지 파일을 지우지 못했다.
+- 확인 에이전트는 결과가 커밋마다 뒤집히는 테스트의 까닭을 찾아 적고, 고침 수행은 그것을 읽고 멈춘다. HEAD까지의 커밋 수가 짝수여야 통과하는 테스트를 둔 `t-stop-parity`에서는 고침 수행이 "계획이 틀림"으로, 같은 조건을 `.venv/lib/python3.12/site-packages`의 `.pth`에 숨긴 `t-stop-pth`에서는 확인이 그 파일을 찾았고 고침 수행이 "막힘"으로 돌아왔다. 둘 다 확인이 한 번에 그쳤다. 확인이 세 번 실패한 `t-stop`은 계획의 결정에 수행이 그 테스트 때문에 멈추지 않는다고 적은 것이다.
+- 실행 시간. 실행 방식만 묻는 run의 첫 턴은 21~35초였다. tasks 일괄로 task 둘(phase 셋, 회고 넷)과 코드 평가, 하네스 eval까지 간 턴이 2915초(에이전트 11. 코드 평가 658초, 하네스 eval 546초)였다. 고칠 안을 고쳐 다시 묻는 턴은 62초였고, 승인 뒤 이슈, BACKLOG, 고침 task(에이전트 3), 비움까지 간 턴은 912초였다. 되살린 폴더의 끝 단계는 세 턴에 252초, 62초, 133초였고, check 세 번 실패로 멈춘 턴은 1424초(에이전트 6)였다. task 하나씩으로 task 하나를 회고까지 간 턴은 616초(에이전트 5), setup은 두 턴에 19초와 306초, plan의 첫 턴은 151초였다. 폴더가 다른 실행 둘을 한꺼번에 돌렸다. 다시 돌린 판정에서는 tasks 일괄 턴이 4166초(에이전트 11. 코드 평가 934초, 하네스 eval 727초), 고침 task가 고칠 phase를 하나 더 돈 끝 단계가 1773초(에이전트 6), check 세 번 실패로 멈춘 턴이 899초(에이전트 6), task 하나씩 턴이 917초(에이전트 5), 되살린 폴더의 끝 단계가 333초, 38초, 144초였다. 폴더가 다른 실행을 다섯까지 한꺼번에 돌렸다.
 
 **플러그인 폴더의 편집과 권한 모드** (2026-10-13. 이 레포에서 `/plate:run 004`를 돌린 자기 적용에서 봤다)
 
