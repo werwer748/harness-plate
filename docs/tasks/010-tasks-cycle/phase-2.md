@@ -46,3 +46,18 @@
 ## 하네스에서 걸린 것
 - `plugins/plate/skills/context/SKILL.md` 32줄이 "이때 setup의 끝 물음(이어서 채울지)은 하지 않는다"로 이 phase에서 없앤 끝 물음을 아직 가리킨다. 결정이 "context는 그대로 둔다"이고 이 phase의 TODO 밖이라 고치지 않았다
 - setup 3번은 문서 지도 구간이 이미 있으면 "표준 행만" 맞추는데, 옛 setup이 넣은 `docs/tasks/NNN-slug/` 행은 위치가 바뀌어 새 표준 행으로 알아볼 기준이 본문에 없다. 다시 setup을 돌리면 옛 행이 사용자가 더한 행으로 남을 수 있다. 이 phase의 TODO 밖이라 고치지 않았다
+
+## 회고 1: 확인만
+
+**확인**
+- 끝 물음과 verify가 본문에 없다
+  - `grep -n "plate:context\|이어서 채울지\|verify" plugins/plate/skills/setup/SKILL.md` → 출력 없음(종료 코드 1). 통과
+- 두 구간이 새 구조를 말한다
+  - `sed -n '/<!-- plate:docs-map:start -->/,/<!-- plate:docs-map:end -->/p;/<!-- plate:rules:start -->/,/<!-- plate:rules:end -->/p' plugins/plate/skills/setup/SKILL.md`로 두 구간을 읽음 → `docs/tasks/` 행에 tasks 머리 `plan.md`, `FRICTION.md`, `RUNLOG.md`, `review.md`, `eval.md`, task 폴더 `NNN-slug/`마다 task 머리 `plan.md`, `phase-N.md`(통과하면 `done-phase-N.md`), `retro.md`와 "tasks가 끝나면 비운다"가 있다. 규칙 구간에 plan 줄, task 회고(`plate:retro`) 줄, tasks 끝의 review·eval 평가와 전체 보고 줄, 건너뛰지 않는다는 줄이 있고 "verify"가 없다. 통과
+- 완료 조건 2 가운데 setup 본문의 몫이 참이다
+  - `grep -n "작업" plugins/plate/skills/setup/SKILL.md` → 3줄(3, 10, 132). 셋 모두 구간 이름 "작업 규칙"이고 tasks, task, phase를 가리키지 않는다. 통과
+
+**문제**
+- 없음
+
+**판정**: 통과
