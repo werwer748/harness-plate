@@ -61,3 +61,18 @@
 - `plugins/plate/skills/eval/SKILL.md`의 "정해 둔 물음"은 실행 방식, task 회고 뒤의 물음, tasks 끝의 고칠지와 합칠지만 든다. run은 시작할 때 커밋하지 않은 변경이 있으면 묻고(이 phase에서 지금처럼 두었다) 그 줄을 `RUNLOG.md`에 `커밋하지 않은 변경`으로 남기는데, eval이 이 줄을 멈춤으로 셀 수 있다. 이 phase의 TODO 밖이라 eval은 고치지 않았다.
 - task 하나씩에서 회고의 문제를 고칠 phase의 안을 사용자가 승인하지 않으면 run은 만들지 않고 보고로 끝난다. 옛 run에 있던 "남은 문제를 고치지 않기로 했다"처럼 문제를 남긴 채 task를 닫는 길은 계획에 없어 넣지 않았다. 다시 부르면 같은 안을 다시 묻는다.
 - 이 phase는 0.9.1 복사본의 레일에서 돌아, 넘겨받은 글이 옛 낱말(`작업 폴더:`)이고 읽은 phase 스킬도 옛 판이다. 새 phase 스킬은 `task 폴더:`를 받으므로 새 run 본문은 그 낱말로 넘긴다.
+
+## 회고 1: 확인만
+
+**확인**
+- run 본문이 TODO대로다
+  - `plugins/plate/skills/run/SKILL.md`를 읽어 TODO마다 찾음 → TODO 1: 낱말 절(22~42줄, tasks는 `docs/tasks/`에 하나)과 0번(44~48줄, tasks 머리가 없으면 `plate:plan`으로 안내하고 끝남). TODO 2: 1번(50~56줄, 계획의 커밋, 커밋하지 않은 변경의 물음, 기본 브랜치에서 `git switch -c tasks/<이름>`). TODO 3: 2번(58~67줄, `RUNLOG.md`의 `실행 방식` 줄로 잇거나 두 방식을 묻는다). TODO 4: 4번(97~111줄, `고칠 문제:` 줄), 5번(113~126줄, 실패면 묻지 않고 3번), 6번(128~133줄, `git mv`와 `NNN-slug: phase N 통과`), 3번의 phase 표(77~84줄). TODO 5: 7번(135~147줄), 8번(149~189줄, task 하나씩은 승인, tasks 일괄은 묻지 않음), 9번(191~197줄, task 하나씩은 묻고 tasks 일괄은 묻지 않음). TODO 6: "멈춘다"(211~228줄, 네 자리, 선택지 대신 원인과 해결책, 계획을 바꾸면 안을 보여 승인). TODO 7: "`RUNLOG.md`" 절(245~262줄, 에이전트 줄과 물음 줄, 없으면 만든다)과 108·123·144줄. TODO 8: "tasks 끝"(230~232줄, 제목과 한 줄). TODO 9: 절대 규칙 5(20줄)와 아래 grep. TODO 10: description(3줄). 통과
+- 옛 흐름이 남지 않았다
+  - `grep -n "LESSONS\|verify\|worktree\|전체 지시" plugins/plate/skills/run/SKILL.md` → 0줄(종료 코드 1). 통과
+- 완료 조건 2 가운데 run 본문의 몫이 참이다
+  - `grep -n "작업" plugins/plate/skills/run/SKILL.md` → 0줄(종료 코드 1). tasks, task, phase를 가리키는 "작업"이 없다. 통과
+
+**문제**
+- 없음
+
+**판정**: 통과
