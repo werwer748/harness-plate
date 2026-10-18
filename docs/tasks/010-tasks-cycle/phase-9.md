@@ -53,3 +53,20 @@
 
 ## 하네스에서 걸린 것
 - 수행 스킬 2번은 "처음부터 통과하면 바뀔 동작을 보지 못하는 테스트이니 실패하게 고친다"고 하지만, TODO 4의 두 테스트는 계획이 "지금 동작을 지키는 테스트라 처음부터 통과한다"고 적었다. 바뀔 동작의 테스트가 아니라서 실패하게 고치지 않고 계획대로 두었다. 실패 출력은 바뀔 동작의 세 테스트로 남겼다
+
+## 회고 1: 확인만
+
+**확인**
+- 완료 조건 9가 참이다
+  - `python3 -m unittest discover -s tests 2>&1 | tail -3` → `Ran 39 tests in 13.160s`, 마지막 줄 `OK`. 통과
+  - `grep -n 'task/\|\.worktrees' plugins/plate/hooks/edit_guard.py` → 출력 없음(종료 코드 1), 0줄. 통과
+  - `grep -c 'done-phase' tests/test_edit_guard.py` → `3`. 통과
+- 완료 조건 15가 참이다
+  - `python3 -m unittest discover -s tests` → `Ran 39 tests`, 마지막 줄 `OK`. 통과
+- 완료 조건 2 가운데 훅의 몫이 참이다
+  - `grep -n "작업" plugins/plate/hooks/edit_guard.py` → `23:COUNT_FILE = "plate-test-first.json"  # git 폴더 안에 둔다. 작업 트리에 변경을 만들지 않는다` 한 줄. 이 "작업 트리"는 git의 working tree를 가리키고 tasks, task, phase를 가리키지 않는다. 통과
+
+**문제**
+- 없음
+
+**판정**: 통과
