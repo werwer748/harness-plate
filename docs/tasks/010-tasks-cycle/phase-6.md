@@ -59,3 +59,18 @@
 - 읽을 것의 https://arxiv.org/abs/2406.12045 는 초록 쪽이라 pass^k의 정의가 없어 HTML판(https://arxiv.org/html/2406.12045)을 따로 읽었다. Prometheus(https://arxiv.org/abs/2310.08491)의 초록도 점수마다의 설명이 있는지는 말하지 않아, review와 같은 꼴(칸마다 설명)로 맞추고 MAST 유형마다 plate의 예를 두었다.
 - eval은 `RUNLOG.md`의 줄 꼴과 run이 정해 둔 물음의 자리를 읽어야 하는데 run 본문은 아직 옛 판(phase 7 이후에 바뀜)이라, tasks 머리의 결정에 적힌 내용(에이전트 줄의 다섯 값, 물은 줄의 두 값, 실행 방식·회고 뒤·고칠지·합칠지)으로만 적었다. run을 고칠 때 줄 꼴과 물음의 자리가 이 본문과 맞는지 봐야 한다.
 - 규칙 준수의 커밋 표는 phase, check, retro, review, plan 본문의 커밋 규칙을 옮겨 적은 것이라, 그 스킬들의 커밋 메시지나 넣는 파일이 바뀌면 이 표도 함께 고쳐야 한다. run의 커밋(`NNN-slug: phase N 통과`)은 넣는 파일이 아직 정해지지 않아 표에 넣지 않았다.
+
+## 회고 1: 확인만
+
+**확인**
+- eval 본문이 TODO대로다
+  - `plugins/plate/skills/eval/SKILL.md`를 읽음 → TODO 1은 1번(57~62줄: `FRICTION.md`, `RUNLOG.md`, `review.md`, task마다의 `done-phase-N.md`와 `retro.md`, tasks의 커밋), TODO 2는 3번(99~142줄: 근거를 먼저 적고 칸에 들지 못하면 "판단 못함", 첫 시도 통과율·되풀이 몫·개입률의 계산)과 등급표(148~154줄: 여섯 기준의 A~E 칸과 숫자 기준의 구간), 절대 규칙 3, TODO 3은 2번의 두 표(68~95줄)와 144줄, 양식의 "실패 양상"(230~231줄), TODO 4는 4번(159~163줄)과 양식의 "스킬로 만들 후보", TODO 5는 5번(165~170줄)과 양식의 "하네스 고칠 거리"(237~243줄), TODO 6은 6번, 7번(`<tasks 이름>: 하네스 eval`로 `eval.md`만 커밋), 8번(등급, 고칠 거리 수, 기록의 세 줄)과 절대 규칙 1·4에 있다. 통과
+- 완료 조건 1이 참이다
+  - `ls plugins/plate/skills` → `check`, `context`, `eval`, `phase`, `plan`, `retro`, `review`, `run`, `setup` 아홉만 나오고 `verify`는 없다. 통과
+- 완료 조건 2 가운데 eval 본문의 몫이 참이다
+  - `grep -n "작업" plugins/plate/skills/eval/SKILL.md` → 0줄(exit 1). 통과
+
+**문제**
+- 없음
+
+**판정**: 통과
