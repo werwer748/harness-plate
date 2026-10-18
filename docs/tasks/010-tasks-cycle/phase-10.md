@@ -64,3 +64,30 @@
 - 허용 목록 밖의 꼴로 막힌 명령이 실행을 늘렸다(막힌 하나마다 약 65초, `docs/TOOLS.md`의 사실과 같다): setup의 명령 넷(`: > docs/tasks/.gitkeep`을 이은 것, `for` 변수를 쓴 것, `xxd`를 이은 것, `git -C <절대 경로> status`. t-setup-2가 310초), run 메인의 `git -C <절대 경로> status`와 `awk`, 회고 에이전트의 따옴표 든 이은 명령과 `/tmp` 쓰기(회고 250초)
 - 회고 에이전트가 `FRICTION.md`에 하네스의 문제 줄 둘을 적었다: plan이 쓴 완료 조건의 확인이 `result.output`(표준 출력과 표준 오류를 합친 것)을 봐 "표준 출력으로"를 다 보지 못한다는 것, 완료 조건의 확인과 명령 절의 테스트가 같은 명령이라 check와 retro가 두 번 돌린다는 것(`~/plate-rail-test/t-run/docs/tasks/FRICTION.md`). 손으로 쓴 시험 계획에서 난 것이라 이 레포의 본문을 고칠 거리인지는 보지 않았다
 - plan이 한국어 요청에 1~8턴을 영어로 답했다(setup과 run은 한국어). 시험 세션에 실리는 사용자 전역 지침의 영향으로 보이나 확인하지 않았다. 판정에는 걸리지 않았다
+
+## 회고 1: 확인만
+
+**확인**
+- 완료 조건 3이 참이다
+  - `grep -n "plate:context\|이어서 채울지\|verify" plugins/plate/skills/setup/SKILL.md` → 0줄(종료 코드 1). 통과
+  - `~/plate-rail-test/logs/t-setup-2.jsonl`의 `result`(setup을 부른 기록의 마지막 답)를 읽음 → "만든 것", "옮긴 것과 건드리지 않은 것", "직접 채울 칸", `AGENTS.md` 크기로 끝나고 채울지, 이어 갈지 묻는 글이 없다. 통과
+  - `~/plate-rail-test/t-setup/AGENTS.md`의 두 구간을 setup 본문의 "문서 지도 구간", "규칙 구간" 블록과 줄 단위로 견줌(python) → 문서 지도 구간은 본문에만 있는 줄이 `docs/DESIGN.md` 행 하나, 파일에만 있는 줄은 없고 차례가 같다. 규칙 구간은 같다. `python3 bin/setupcheck.py t-setup PRD,ARCHITECTURE,ADR` → `=> 셋업 대조: 모두 통과`. 통과
+  - `N=$(ls -t plugins/plate/skills/*/SKILL.md plugins/plate/hooks/*.py plugins/plate/hooks/*.json | head -1); find ~/plate-rail-test/logs -name '*.jsonl' -newer "$N"` (N은 `plugins/plate/hooks/edit_guard.py`) → `t-setup-1.jsonl`, `t-setup-2.jsonl`이 든다. 기록의 `init`에서 plate의 경로가 `/Users/gangjungi/Desktop/harness-plate/plugins/plate`다. 통과
+- 완료 조건 4가 참이다
+  - `~/plate-rail-test/logs/t-plan-1`~`t-plan-9.jsonl`의 `result`에서 `쓸 위치` 줄과 물음을 찾음(python) → 승인 물음은 6턴(`docs/tasks/plan.md`, "Should I go ahead with this tasks header?"), 7턴(`docs/tasks/001-book-list/`), 8턴(`docs/tasks/002-book-delete/`) 셋이다. 1~5턴은 물음 하나씩이고 9턴은 쓴 뒤 실행으로 이어 갈지 묻는다. tasks 머리에 한 번, task마다 한 번이다. 아홉 턴의 세션 id가 하나다. 통과
+  - `~/plate-rail-test/logs/t-plan-1`~`t-plan-8.state` → 여덟 턴 모두 `git status --short`와 `ls docs/tasks`가 빈 출력이고 `git log` 맨 위가 `1006f5b 셋업 직후`다. 통과
+  - `~/plate-rail-test/t-plan`에서 `git log -1 --stat` → `f29d6a4 plan: book-list-delete`에 `docs/tasks/plan.md`, `001-book-list/plan.md`, `001-book-list/phase-1.md`, `002-book-delete/plan.md`, `002-book-delete/phase-1.md` 다섯 파일(139줄). `docs/tasks/plan.md`의 완료 조건 절에 조건 넷과 확인이 있다. 통과
+  - 그 폴더에서 `grep -c '^## 명령' docs/ARCHITECTURE.md` → `0`. `docs/tasks/001-book-list/phase-1.md` 17번 줄이 `docs/ARCHITECTURE.md`에 `## 명령` 절을 쓰는 TODO다. 통과
+  - `~/plate-rail-test/logs/t-plan-add.jsonl`의 `result` → "이 요청(`booklog rename <번호> <새 제목>`)을 지금 tasks에 task로 더할까요?"와 더한다/더하지 않는다. `t-plan-add.state` → `git status --short` 빈 출력, `git log` 맨 위가 `f29d6a4`. 통과
+  - 위의 `find` → `t-plan-1.jsonl`~`t-plan-9.jsonl`, `t-plan-add.jsonl`이 든다. 통과
+- 완료 조건 5가 참이다
+  - `~/plate-rail-test/t-run`에서 `git branch --show-current` → `tasks/list-delete`. `git log --oneline --reverse` → `3714b11 plan: list-delete` 뒤에 `001-list-command: phase 1`, `phase 1 확인`, `phase 1 통과`, `phase 2`, `phase 2 확인`, `phase 2 통과`, `001-list-command: 회고`가 이 순서다. 통과
+  - `ls -A docs/tasks/001-list-command` → `done-phase-1.md`, `done-phase-2.md`, `plan.md`, `retro.md`. `phase-N.md`가 없다. 통과
+  - `~/plate-rail-test/logs/t-run-1.jsonl`의 `result` → "실행 방식을 골라 주세요."와 task 하나씩, tasks 일괄. `t-run-2.jsonl`의 `result` → 회고 통과 뒤 "다음 task `002-delete-command`(책 지우기 명령)로 갈까요?". `t-run-3.jsonl`의 `result`에는 물음이 없다. 통과
+  - `grep -c '^- 에이전트 |' docs/tasks/RUNLOG.md` → `5`. 기록 셋에서 메인이 띄운 `Agent` 도구 호출을 직접 셈(python) → t-run-2에 5, 나머지 0, 안쪽 에이전트 0. `python3 bin/tagents.py logs/t-run-1.jsonl logs/t-run-2.jsonl logs/t-run-3.jsonl` → `= 모두: 에이전트 5`이고 줄마다의 토큰, 도구 호출, 시간이 RUNLOG의 다섯 줄과 같다. 에이전트 줄 가운데 `토큰 [0-9]+ \| 도구 호출 [0-9]+ \| 시간 [0-9]+초`로 끝나지 않는 줄 → `0`. `grep -c '^- 물음 |' docs/tasks/RUNLOG.md` → `2`(실행 방식, 다음 task)이고 기록의 물음도 둘이다. `grep -c '^- \`001-list-command\`' docs/tasks/FRICTION.md` → `2`. 통과
+  - 위의 `find` → `t-run-1.jsonl`, `t-run-2.jsonl`, `t-run-3.jsonl`이 든다. 통과
+
+**문제**
+- 없음
+
+**판정**: 통과
