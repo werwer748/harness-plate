@@ -1,7 +1,7 @@
 {
   "name": "plate",
-  "version": "0.9.1",
-  "description": "레일 하네스. 도구가 바뀌어도 같은 규격으로 작업을 진행하게 한다. 지금은 프로젝트에 하네스 문서의 위치 기준과 작업 규칙을 세우는 setup 스킬, 그 문서의 남은 칸을 채우는 context 스킬, 요청 하나를 작업으로 계획하는 plan 스킬, 계획된 작업을 phase 하나씩 실행하는 run 스킬, phase 하나를 수행하는 phase 스킬, 수행이 끝난 phase를 회고하는 retro 스킬, 모든 phase가 끝난 작업을 검증하는 verify 스킬이 있다. Claude Code에서는 계획 없는 코드 편집과, 테스트 먼저인 phase에서 테스트보다 앞선 구현을 막는 훅이 함께 돈다.",
+  "version": "0.10.0",
+  "description": "레일 하네스. 도구가 바뀌어도 같은 규격으로 작업을 진행하게 한다. 지금은 프로젝트에 하네스 문서의 위치 기준과 작업 규칙을 세우는 setup 스킬, 그 문서의 남은 칸을 채우는 context 스킬, 요청 하나를 tasks로 계획해 task와 phase로 나누는 plan 스킬, 계획된 tasks를 실행 방식(task 하나씩, tasks 일괄)대로 phase 하나씩 실행하는 run 스킬, phase 하나를 수행하는 phase 스킬, 수행이 끝난 phase를 확인하는 check 스킬, phase가 모두 통과한 task를 회고하는 retro 스킬, tasks 끝에 바뀐 코드를 평가하는 review 스킬, tasks 끝에 하네스를 평가하는 eval 스킬이 있다. Claude Code에서는 계획 없는 코드 편집과, 테스트 먼저인 phase에서 테스트보다 앞선 구현을 막는 훅이 함께 돈다.",
   "author": { "name": "hugo" },
   "repository": "https://github.com/werwer748/harness-plate"
 }
