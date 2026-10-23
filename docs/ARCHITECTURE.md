@@ -13,6 +13,8 @@
 plugins/plate/
 ├── .claude-plugin/plugin.json     # Claude Code용 매니페스트
 ├── .codex-plugin/plugin.json      # Codex용 매니페스트
+├── ci/
+│   └── verdict.py                 # 판정 스크립트. CI의 워크플로가 PR 모드 review의 등급 묶음으로 자동 머지, 머지 요청, 닫기 가운데 하나를 고른다
 ├── hooks/
 │   ├── hooks.json                 # Claude Code 훅 설정. 파일 편집 도구의 PreToolUse에 edit_guard.py를 건다
 │   └── edit_guard.py              # 계획 없는 코드 편집과, 테스트 먼저인 phase에서 테스트보다 앞선 구현을 막는 훅
@@ -26,7 +28,9 @@ plugins/plate/
     ├── retro/SKILL.md             # task 회고 스킬. run이 task의 phase가 모두 통과한 뒤 띄운 에이전트가 부른다
     ├── review/SKILL.md            # 코드 평가 스킬. run이 tasks 끝에 띄운 에이전트가 부른다
     └── eval/SKILL.md              # 하네스 eval 스킬. run이 tasks 끝에 코드 평가 뒤 띄운 에이전트가 부른다
-tests/                             # 훅의 단위 테스트(`python3 -m unittest discover -s tests`)
+tests/                             # 단위 테스트(`python3 -m unittest discover -s tests`)
+├── test_edit_guard.py             # 훅의 테스트
+└── test_verdict.py                # 판정 스크립트의 테스트
 docs/                              # 이 레포의 하네스 기록. 위치는 AGENTS.md의 문서 지도를 따른다
 ```
 
