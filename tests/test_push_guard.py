@@ -1,0 +1,262 @@
+"""plate의 푸시 훅(plugins/plate/hooks/push_guard.py)을 시험한다.
+
+시험마다 임시 폴더에 프로젝트를 만들고, Claude Code가 Bash의 PreToolUse 훅에 넘기는
+JSON을 훅에 주어 돌린다. 종료 코드 2가 막음, 0이 통과다. 막을 때의 글은 stderr다.
+원격은 설정과 원격 추적 브랜치만 두고 실제로 푸시하지 않는다.
+"""
+
+import json
+import shutil
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+from test_edit_guard import GIT_ENV, Project
+
+PLUGIN_ROOT = Path(__file__).resolve().parent.parent / "plugins" / "plate"
+HOOK = PLUGIN_ROOT / "hooks" / "push_guard.py"
+HOOKS_JSON = PLUGIN_ROOT / "hooks" / "hooks.json"
+
+BLOCKED = "기본 브랜치"
+
+
+def with_origin(p, head="main"):
+    """origin 원격을 더하고, 원격의 HEAD가 `head` 브랜치를 가리키게 한다."""
+    p.git("remote", "add", "origin", "https://example.invalid/origin.git")
+    p.git("update-ref", "refs/remotes/origin/" + head, "HEAD")
+    p.git("symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/" + head)
+    return p
+
+
+def payload(command, cwd):
+    return json.dumps({
+        "session_id": "test",
+        "transcript_path": "/dev/null",
+        "cwd": str(cwd),
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Bash",
+        "tool_input": {"command": command, "description": "시험"},
+    })
+
+
+def bash(command, cwd):
+    """Bash 호출을 훅에 준다. (종료 코드, stderr)를 돌려준다."""
+    done = subprocess.run(
+        [sys.executable, str(HOOK)], input=payload(command, cwd), env=GIT_ENV,
+        capture_output=True, text=True,
+    )
+    return done.returncode, done.stderr
+
+
+class PushGuardTestCase(unittest.TestCase):
+    def setUp(self):
+        self.base = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.base)
+
+    def project(self, head="main", **kwargs):
+        return with_origin(Project(self.base, **kwargs), head)
+
+    def assertPassed(self, result):
+        code, err = result
+        self.assertEqual(code, 0, "통과해야 하는데 막았다: " + err)
+
+    def assertBlocked(self, result, *phrases):
+        code, err = result
+        self.assertEqual(code, 2, "막아야 하는데 통과시켰다 (종료 코드 %d): %s" % (code, err))
+        for phrase in (BLOCKED,) + phrases:
+            self.assertIn(phrase, err)
+        return err
+
+
+class BlockTest(PushGuardTestCase):
+    def test_push_without_target_on_default_branch(self):
+        p = self.project()
+        for command in (
+            "git push",
+            "git push origin",
+            "git push -u origin",
+            "git push --force",
+            "git push 2>&1 | tail -5",
+        ):
+            with self.subTest(command=command):
+                self.assertBlocked(bash(command, p.root), "`main`")
+
+    def test_push_to_default_branch(self):
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        for command in (
+            "git push origin main",
+            "git push origin HEAD:main",
+            "git push origin tasks/x:main",
+            "git push origin +tasks/x:main",
+            "git push origin tasks/x:refs/heads/main",
+            "git push --force origin main",
+            "git push -u origin main",
+            "git push origin tasks/x main",
+        ):
+            with self.subTest(command=command):
+                self.assertBlocked(bash(command, p.root), "`main`")
+
+    def test_push_head_while_on_default_branch(self):
+        p = self.project()
+        self.assertBlocked(bash("git push origin HEAD", p.root))
+        self.assertBlocked(bash("git push -u origin HEAD", p.root))
+
+    def test_delete_default_branch(self):
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        for command in (
+            "git push origin --delete main",
+            "git push --delete origin main",
+            "git push -d origin main",
+            "git push origin :main",
+            "git push origin :refs/heads/main",
+        ):
+            with self.subTest(command=command):
+                self.assertBlocked(bash(command, p.root), "`main`")
+
+    def test_push_inside_chained_command(self):
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        for command in (
+            "git add -A && git commit -m 'x' && git push origin main",
+            "git status; git push origin main",
+            "git status;git push origin main",
+            "git fetch || git push origin main",
+            "git status\ngit push origin main",
+        ):
+            with self.subTest(command=command):
+                self.assertBlocked(bash(command, p.root), "`main`")
+
+    def test_push_inside_git_c_uses_that_folder(self):
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        elsewhere = tempfile.mkdtemp(dir=self.base)  # git 레포가 아닌 폴더에서 부른다
+        self.assertBlocked(bash("git -C %s push origin main" % p.root, elsewhere), "`main`")
+        self.assertBlocked(bash("cd /tmp && git -C '%s' push origin :main" % p.root, elsewhere))
+        self.assertPassed(bash("git -C %s push origin tasks/x" % p.root, elsewhere))
+
+    def test_git_c_folder_has_its_own_default_branch(self):
+        here = self.project()  # 기본 브랜치가 main
+        there = self.project(head="trunk")  # 기본 브랜치가 trunk
+        self.assertPassed(bash("git -C %s push origin main" % there.root, here.root))
+        self.assertBlocked(bash("git -C %s push origin trunk" % there.root, here.root), "`trunk`")
+
+    def test_default_branch_is_origin_head(self):
+        p = self.project(head="develop")
+        p.git("switch", "-q", "-c", "tasks/x")
+        self.assertBlocked(bash("git push origin develop", p.root), "`develop`")
+        self.assertPassed(bash("git push origin main", p.root))
+
+    def test_default_branch_without_origin_head(self):
+        p = Project(self.base)  # 브랜치 main, origin 없음
+        p.git("remote", "add", "origin", "https://example.invalid/origin.git")
+        p.git("switch", "-q", "-c", "tasks/x")
+        self.assertBlocked(bash("git push origin main", p.root), "`main`")
+        self.assertPassed(bash("git push origin master", p.root))
+
+    def test_master_when_no_main(self):
+        p = Project(self.base)
+        p.git("branch", "-q", "-m", "main", "master")
+        p.git("remote", "add", "origin", "https://example.invalid/origin.git")
+        self.assertBlocked(bash("git push", p.root), "`master`")
+        self.assertBlocked(bash("git push origin master", p.root), "`master`")
+
+    def test_message_names_command(self):
+        p = self.project()
+        err = self.assertBlocked(bash("git push origin main", p.root))
+        self.assertIn("git push origin main", err)
+
+
+class PassTest(PushGuardTestCase):
+    def test_push_to_other_branch(self):
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        for command in (
+            "git push",
+            "git push origin",
+            "git push -u origin HEAD",
+            "git push -u origin tasks/x",
+            "git push origin tasks/x:tasks/y",
+            "git push origin --delete tasks/old",
+            "git push origin main:tasks/x",
+            "git push origin v1.0",
+            "git push --tags origin",
+        ):
+            with self.subTest(command=command):
+                self.assertPassed(bash(command, p.root))
+
+    def test_push_to_remote_other_than_origin(self):
+        p = self.project()
+        p.git("remote", "add", "fork", "https://example.invalid/fork.git")
+        self.assertPassed(bash("git push fork main", p.root))
+        self.assertPassed(bash("git push fork", p.root))
+        self.assertPassed(bash("git push fork --delete main", p.root))
+
+    def test_project_not_set_up(self):
+        p = self.project(setup=False)
+        self.assertPassed(bash("git push", p.root))
+        self.assertPassed(bash("git push origin main", p.root))
+        self.assertPassed(bash("git push origin :main", p.root))
+
+    def test_commands_that_are_not_push(self):
+        p = self.project()
+        for command in (
+            "git status",
+            "git log --grep push",
+            "echo 'git push origin main'",
+            "git commit -m 'git push origin main'",
+            "ls && git fetch origin main",
+        ):
+            with self.subTest(command=command):
+                self.assertPassed(bash(command, p.root))
+
+    def test_outside_git(self):
+        folder = tempfile.mkdtemp(dir=self.base)
+        self.assertPassed(bash("git push origin main", folder))
+
+    def test_call_without_command(self):
+        p = self.project()
+        done = subprocess.run(
+            [sys.executable, str(HOOK)], env=GIT_ENV, capture_output=True, text=True,
+            input=json.dumps({"cwd": str(p.root), "tool_name": "Bash", "tool_input": {}}),
+        )
+        self.assertEqual(done.returncode, 0, done.stderr)
+
+
+class HooksJsonTest(PushGuardTestCase):
+    """hooks.json에서 Bash에 건 명령 글을 Claude Code처럼 `sh -c`로 돌린다."""
+
+    def bash_command(self):
+        with open(HOOKS_JSON, encoding="utf-8") as f:
+            entries = json.load(f)["hooks"]["PreToolUse"]
+        matched = [e for e in entries if "Bash" in e["matcher"].split("|")]
+        self.assertEqual(len(matched), 1, "Bash의 PreToolUse에 건 훅이 하나여야 한다")
+        return matched[0]["hooks"][0]["command"]
+
+    def run_command(self, plugin_root, stdin):
+        done = subprocess.run(
+            ["sh", "-c", self.bash_command().replace("${CLAUDE_PLUGIN_ROOT}", str(plugin_root))],
+            input=stdin, env=dict(GIT_ENV, CLAUDE_PLUGIN_ROOT=str(plugin_root)),
+            capture_output=True, text=True,
+        )
+        return done.returncode, done.stderr
+
+    def test_command_runs_push_guard(self):
+        self.assertIn("push_guard.py", self.bash_command())
+
+    def test_missing_script_exits_zero(self):
+        p = self.project()
+        missing = Path(self.base) / "no-such-plugin"
+        self.assertPassed(self.run_command(missing, payload("git push origin main", p.root)))
+
+    def test_existing_script_exit_code_passes_through(self):
+        p = self.project()
+        self.assertBlocked(self.run_command(PLUGIN_ROOT, payload("git push origin main", p.root)))
+        self.assertPassed(self.run_command(PLUGIN_ROOT, payload("git status", p.root)))
+
+
+if __name__ == "__main__":
+    unittest.main()
