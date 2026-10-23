@@ -253,11 +253,22 @@ class TestFirstTest(GuardTestCase):
         self.assertBlocked(p.edit("src/new.py", tool="Write"), TEST_FIRST)
         self.assertBlocked(p.edit("package.json"), TEST_FIRST)
 
-    def test_new_ci_workflow_blocks_without_test_change(self):
-        # setup이 CI 워크플로를 처음 쓰는 예외는 남은 phase가 없을 때만이다
+    def test_setup_writes_new_ci_workflow_in_test_first_phase(self):
+        # 이미 셋업된 프로젝트에서 남은 phase가 테스트 먼저일 때 setup을 다시 불러 CI 에이전트를 승인한 경우
         p = self.project()
         p.add_task("001-a", {1: "예"})
+        self.assertPassed(p.edit(".github/workflows/plate-review.yml", tool="Write"))
+        self.assertBlocked(p.edit(".github/workflows/other.yml", tool="Write"), TEST_FIRST)
+        # 이미 있는 워크플로를 고치는 것은 막는다
+        p.write(".github/workflows/plate-review.yml", "name: plate review\n")
+        p.commit()
+        self.assertBlocked(p.edit(".github/workflows/plate-review.yml"), TEST_FIRST)
         self.assertBlocked(p.edit(".github/workflows/plate-review.yml", tool="Write"), TEST_FIRST)
+
+    def test_setup_writes_new_ci_workflow_in_phase_without_test_first(self):
+        p = self.project()
+        p.add_task("001-a", {1: "아니오"})
+        self.assertPassed(p.edit(".github/workflows/plate-review.yml", tool="Write"))
 
     def test_other_uncommitted_change_does_not_count(self):
         p = self.project()
