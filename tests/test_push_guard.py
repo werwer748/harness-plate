@@ -117,6 +117,41 @@ class BlockTest(PushGuardTestCase):
             with self.subTest(command=command):
                 self.assertBlocked(bash(command, p.root), "`main`")
 
+    def test_push_without_naming_default_branch(self):
+        """기본 브랜치를 이름으로 적지 않아도 로컬의 기본 브랜치를 origin의 기본 브랜치로 보내는 꼴."""
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        for command in (
+            "git push --all origin",
+            "git push origin --all",
+            "git push --all",
+            "git push --branches origin",
+            "git push --mirror origin",
+            "git push --mirror",
+            "git push origin 'refs/heads/*:refs/heads/*'",
+            "git push origin '+refs/heads/*:refs/heads/*'",
+            "git push origin 'refs/heads/*'",
+            "git push origin '*:*'",
+            "git push origin :",
+            "git push origin +:",
+        ):
+            with self.subTest(command=command):
+                self.assertBlocked(bash(command, p.root), "`main`")
+
+    def test_push_after_heredoc(self):
+        """heredoc의 본문이 끝난 뒤의 줄과 `<<`가 있는 줄의 나머지는 명령이다."""
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        for command in (
+            "cat > notes.md <<'EOF'\nhello\nEOF\ngit push origin main",
+            "cat > notes.md <<'EOF'\ndon't\nEOF\ngit push origin main",
+            "cat > notes.md <<'EOF' && git push origin main\nhello\nEOF",
+            "cat <<< 'x'\ngit push origin main",
+            "grep -n '<<' notes.md\ngit push origin main",
+        ):
+            with self.subTest(command=command):
+                self.assertBlocked(bash(command, p.root), "`main`")
+
     def test_push_inside_chained_command(self):
         p = self.project()
         p.git("switch", "-q", "-c", "tasks/x")
@@ -184,6 +219,20 @@ class PassTest(PushGuardTestCase):
             "git push origin main:tasks/x",
             "git push origin v1.0",
             "git push --tags origin",
+            "git push origin 'refs/heads/tasks/*:refs/heads/tasks/*'",
+        ):
+            with self.subTest(command=command):
+                self.assertPassed(bash(command, p.root))
+
+    def test_push_only_tags_on_default_branch(self):
+        """기본 브랜치에 있어도 태그만 보내는 push는 기본 브랜치로 가지 않는다."""
+        p = self.project()
+        for command in (
+            "git push --tags",
+            "git push --tags origin",
+            "git push origin --tags",
+            "git push -u origin --tags",
+            "git push origin 'refs/tags/*:refs/tags/*'",
         ):
             with self.subTest(command=command):
                 self.assertPassed(bash(command, p.root))
@@ -194,6 +243,22 @@ class PassTest(PushGuardTestCase):
         self.assertPassed(bash("git push fork main", p.root))
         self.assertPassed(bash("git push fork", p.root))
         self.assertPassed(bash("git push fork --delete main", p.root))
+        self.assertPassed(bash("git push --all fork", p.root))
+        self.assertPassed(bash("git push --mirror fork", p.root))
+
+    def test_heredoc_body_is_not_a_command(self):
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        for command in (
+            "cat > notes.md <<'EOF'\ngit push origin main\nEOF",
+            "git commit -F - <<'EOF'\ngit push origin main\nEOF",
+            "cat <<EOF > notes.md\ngit push origin main\nEOF\ngit status",
+            "cat <<-EOF\n\tgit push origin main\n\tEOF",
+            "cat <<'A' <<'B'\ngit push origin main\nA\ngit push origin main\nB",
+            "git commit -m \"$(cat <<'EOF'\ngit push origin main\nEOF\n)\"",
+        ):
+            with self.subTest(command=command):
+                self.assertPassed(bash(command, p.root))
 
     def test_project_not_set_up(self):
         p = self.project(setup=False)
