@@ -1,0 +1,5 @@
+# FRICTION
+
+- `001-ci-review` 문제: task 머리(`docs/tasks/001-ci-review/plan.md`)의 완료 조건 1의 확인은 review의 "명령을 돌리는 절"을 읽어 설치를 돌리지 않는지 보고, 완료 조건 2의 확인은 review의 0~9번이 "명령 절 정의 말고는" 바뀌지 않았는지 본다. 둘을 함께 맞추려고 phase 1이 review의 "설치를 돌리지 않는다"를 2번이 아닌 낱말의 명령 절 정의에 두어, 3번에 둔 check, retro와 적은 자리가 다르다(`done-phase-1.md`의 하네스에서 걸린 것)
+- `001-ci-review` 문제: task 머리와 tasks 머리의 결정("review는 평가만 하고 판정과 머지는 워크플로가 판정 스크립트로 한다")은 "PR 코드에 숨은 지시가 있어도 에이전트에게는 머지 권한이 없다"를 이유로 들지만, 자동 머지를 정하는 것은 review의 PR 모드가 내는 등급 묶음이라 PR이 바꾼 코드나 `AGENTS.md`의 지시가 등급을 올리게 할 길이 남는다. review의 절대 규칙("프로젝트의 지침 파일의 규칙이 부딪히면 프로젝트의 규칙을 따른다")에 PR 모드의 예외가 없고, PR 모드 절(`plugins/plate/skills/review/SKILL.md`)에 이를 막는 글이 없다(`done-phase-2.md`의 하네스에서 걸린 것. 002나 tasks 끝에서 볼 거리)
+- `001-ci-review` 문제: plate의 스킬 본문을 고치는 tasks에서 phase 1 뒤에 띄운 에이전트가 고치기 전의 본문을 받았다. phase 2와 phase 3의 확인 에이전트에 실린 check 본문과 이 회고 에이전트에 실린 retro 본문이 명령 절을 세 줄로 정의하고 3번에 "설치는 돌리지 않는다"가 없는 phase 1 전의 것이었고, 저장소의 `plugins/plate/skills/check/SKILL.md`와 `plugins/plate/skills/retro/SKILL.md`는 네 줄 정의다. 이 저장소의 설치가 "없음"이라 판정에는 걸리지 않았다(`done-phase-2.md`, `done-phase-3.md`의 확인 1의 하네스에서 걸린 것)
