@@ -51,3 +51,32 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 회고 1의 문제가 모두 고쳐졌다.
+  - 문제 1: 스크래치에 origin(로컬 bare 레포)과 문서 지도 구간이 있는 레포를 만들고 로컬 `main`을 origin보다 한 커밋 앞서게 한 뒤 `tasks/x`에서 `git push --dry-run --porcelain --all origin` → `refs/heads/main:refs/heads/main 41c0a15..2e5ddb4`(`--mirror`도 같은 줄). 같은 레포의 `tasks/x`에서 훅에 `git push --all origin`, `git push --mirror origin`, `git push origin 'refs/heads/*:refs/heads/*'`를 넣음 → 셋 다 종료 코드 2와 "plate: 기본 브랜치(`main`)로 푸시하지 않는다: `git push --all origin`"(나머지도 그 명령). 대조로 `git push origin tasks/x`, `git push -u origin tasks/x`, `git push origin 'refs/heads/tasks/*:refs/heads/tasks/*'` → 셋 다 0. 통과
+  - 문제 2: 같은 레포의 `main`에서 `git push --dry-run --porcelain --tags` → `refs/tags/v1:refs/tags/v1 [new tag]`만. 훅에 `git push --tags`, `git push --tags origin`, `git push origin --tags` → 셋 다 종료 코드 0, stderr 없음. 대조로 `git push`, `git push --follow-tags` → 종료 코드 2. 통과
+  - 문제 3: 같은 레포의 `tasks/x`에서 `cat > notes.md <<'EOF'`, `git commit -F - <<'EOF'`, 따옴표 없는 `cat > notes.md <<EOF` 뒤의 본문에 `git push origin main` 줄이 있는 명령 → 셋 다 종료 코드 0. `git commit -m "$(cat <<'EOF' … EOF)"` → 0. 본문이 끝난 뒤 줄에 `git push origin main`이 있는 명령(`<<'EOF'`, `<<-EOF` 둘) → 둘 다 종료 코드 2. 통과
+- task 머리의 완료 조건이 모두 참이다.
+  - 완료 조건 1: `python3 -m unittest discover -s tests` → `Ran 80 tests in 30.086s` / `OK`. `tests/test_push_guard.py`를 읽음 → 대상 없는 push(`test_push_without_target_on_default_branch` 74줄, `test_push_head_while_on_default_branch` 102줄), 기본 브랜치를 가리키는 push(`test_push_to_default_branch` 86줄), 지우는 push(`test_delete_default_branch` 107줄의 `--delete`, `-d`, `:main`, `:refs/heads/main`), 이어진 명령 안의 push(`test_push_inside_chained_command` 155줄의 `&&`, `;`), `git -C` 안의 push와 그 폴더의 기본 브랜치(`test_push_inside_git_c_uses_that_folder` 168줄, `test_git_c_folder_has_its_own_default_branch` 176줄), 다른 브랜치(`test_push_to_other_branch` 209줄), origin 밖 원격(`test_push_to_remote_other_than_origin` 240줄), 셋업 안 된 프로젝트(`test_project_not_set_up` 263줄)가 있다. 통과
+  - 완료 조건 2: `python3 -c "import json; h=json.load(open('plugins/plate/hooks/hooks.json')); print([m['matcher'] for m in h['hooks']['PreToolUse']])"` → `['Edit|Write|MultiEdit|NotebookEdit', 'Bash']`. `plugins/plate/hooks/hooks.json` 18줄을 읽음 → `f="${CLAUDE_PLUGIN_ROOT}/hooks/push_guard.py"; [ -f "$f" ] || exit 0; exec python3 "$f"`로 편집 훅의 꼴과 스크립트 이름만 다르다. 그 명령을 `CLAUDE_PLUGIN_ROOT=/nonexistent`로 `sh -c`에 돌림 → 종료 코드 0. 통과
+  - 완료 조건 3: `docs/PRD.md`의 목표(4줄) → "에이전트가 기본 브랜치에 하는 푸시"를 훅이 막는다고 적혀 있다. `docs/ARCHITECTURE.md`의 기술 스택(5줄) → 푸시 훅 `push_guard.py`, 디렉터리 구조(19, 21, 34줄) → hooks.json의 Bash 항목, `push_guard.py`, `test_push_guard.py`, 패턴과 규칙의 막는 장치(48줄) → 푸시 훅이 막는 것과 막지 않는 것이 적혀 있다. 통과
+  - 완료 조건 4: 위의 `python3 -m unittest discover -s tests` → `OK`. `git diff --stat 5a7c002 HEAD -- tests/test_verdict.py plugins/plate/ci/` → 출력 없음. `python3 -m unittest discover -s tests -p 'test_verdict.py'` → `Ran 14 tests` / `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 80 tests in 30.086s` / `OK`. 통과
+
+**테스트 먼저 기록**
+- "한 일"의 "테스트 먼저" → 실패 출력(`FAIL: test_push_after_heredoc …`, `FAIL: test_push_without_naming_default_branch …` 등, `Ran 80 tests in 30.776s` / `FAILED (failures=22)`)이 먼저, 통과 출력(`Ran 80 tests in 32.095s` / `OK`)이 뒤에 있다. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
