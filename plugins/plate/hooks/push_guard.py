@@ -3,7 +3,8 @@
 
 막는 실패: 에이전트가 끝의 평가와 보고까지 가지 않은 변경을 기본 브랜치에 푸시하는 것.
 Bash 명령을 `&&`, `||`, `;`, `|`, 줄바꿈으로 나눠 그 안의 `git push`가 origin의 기본 브랜치를
-바꾸거나 지우면 종료 코드 2로 끝나고 stderr의 글이 에이전트에게 간다. heredoc의 본문은 명령으로 보지 않는다.
+바꾸거나 지우면 종료 코드 2로 끝나고 stderr의 글이 에이전트에게 간다. heredoc의 본문과 `#` 주석은 명령으로 보지 않고,
+줄 잇기(`\\`+줄바꿈)는 명령의 경계로 보지 않는다.
 사람의 푸시는 보지 않는다.
 """
 
@@ -44,18 +45,26 @@ def lexer(text):
     return lex
 
 
-def without_heredocs(command):
-    """heredoc의 본문 줄을 뺀 명령 글. 본문은 명령이 아니라 그 명령의 입력이다."""
+def without_non_commands(command):
+    """셸이 명령으로 읽지 않는 글을 뺀 명령 글. heredoc의 본문은 그 명령의 입력이고,
+    `#` 주석은 그 줄 끝까지 버려지고, 줄 잇기(`\\`+줄바꿈)는 지워져 앞뒤가 한 명령이 된다."""
     out, pending, quote, i = [], [], None, 0
+    word_start = True  # 따옴표 밖에서 다음 글자가 낱말의 첫 글자인가. 그 자리의 `#`만 주석이다
     while i < len(command):
         c = command[i]
         if c == "\\" and quote != "'":  # 뒤의 글자는 따옴표나 `<<`로 읽지 않는다
-            out.append(command[i:i + 2])
+            if command[i + 1:i + 2] != "\n":
+                out.append(command[i:i + 2])
+                word_start = False
             i += 2
             continue
         if quote:
             if c == quote:
                 quote = None
+        elif c == "#" and word_start:  # 줄바꿈은 남겨 명령의 경계와 heredoc의 시작으로 읽는다
+            end = command.find("\n", i)
+            i = len(command) if end < 0 else end
+            continue
         elif c in "'\"":
             quote = c
         elif command.startswith("<<", i) and not command.startswith("<<<", i) and command[i - 1:i] != "<":
@@ -64,10 +73,12 @@ def without_heredocs(command):
             pending.append((lexer(command[j:]).get_token(), strip))
             out.append(command[i:j])
             i = j
+            word_start = True
             continue
         elif c == "\n" and pending:
             out.append(c)
             i += 1
+            word_start = True
             for delimiter, strip in pending:  # 본문은 `<<`가 있는 줄의 다음 줄부터 끝 줄까지다
                 while i < len(command):
                     end = command.find("\n", i)
@@ -79,13 +90,14 @@ def without_heredocs(command):
             continue
         out.append(c)
         i += 1
+        word_start = not quote and c in " \t\n;&|()<>"
     return "".join(out)
 
 
 def segments(command):
-    """명령 글을 단순 명령마다의 낱말 목록으로 나눈다. heredoc의 본문, 리다이렉션과 그 대상은 뺀다."""
+    """명령 글을 단순 명령마다의 낱말 목록으로 나눈다. heredoc의 본문, `#` 주석, 리다이렉션과 그 대상은 뺀다."""
     try:
-        tokens = list(lexer(without_heredocs(command)))
+        tokens = list(lexer(without_non_commands(command)))
     except ValueError:  # 닫히지 않은 따옴표: 셸도 돌리지 않는다
         return []
     parts, words, skip = [], [], False

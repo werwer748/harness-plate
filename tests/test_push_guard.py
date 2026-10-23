@@ -152,6 +152,33 @@ class BlockTest(PushGuardTestCase):
             with self.subTest(command=command):
                 self.assertBlocked(bash(command, p.root), "`main`")
 
+    def test_push_across_line_continuation(self):
+        """셸은 `\\`+줄바꿈을 지우고 앞뒤를 한 명령으로 잇는다."""
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        for command in (
+            "git push \\\n  origin main",
+            "git push origin \\\n  main",
+            "git add -A && \\\n  git push origin main",
+        ):
+            with self.subTest(command=command):
+                self.assertBlocked(bash(command, p.root), "`main`")
+
+    def test_push_after_comment(self):
+        """`#` 주석은 그 줄 끝까지다. 다음 줄, 따옴표 안의 `#`, 낱말 가운데의 `#` 뒤는 명령이다."""
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        for command in (
+            "# push it (it's ready)\ngit push origin main",
+            "echo \"it's\" # don't\ngit push origin main",
+            "git status # check\ngit push origin main",
+            "echo '# x'; git push origin main",
+            "echo a#b; git push origin main",
+            "echo $#; git push origin main",
+        ):
+            with self.subTest(command=command):
+                self.assertBlocked(bash(command, p.root), "`main`")
+
     def test_push_inside_chained_command(self):
         p = self.project()
         p.git("switch", "-q", "-c", "tasks/x")
@@ -256,6 +283,28 @@ class PassTest(PushGuardTestCase):
             "cat <<-EOF\n\tgit push origin main\n\tEOF",
             "cat <<'A' <<'B'\ngit push origin main\nA\ngit push origin main\nB",
             "git commit -m \"$(cat <<'EOF'\ngit push origin main\nEOF\n)\"",
+        ):
+            with self.subTest(command=command):
+                self.assertPassed(bash(command, p.root))
+
+    def test_line_continuation_is_one_command(self):
+        """기본 브랜치에 있어도 줄 잇기로 다른 브랜치를 적은 push는 기본 브랜치로 가지 않는다."""
+        p = self.project()
+        for command in (
+            "git push \\\n  origin tasks/x",
+            "git push -u \\\n  origin HEAD:tasks/x",
+        ):
+            with self.subTest(command=command):
+                self.assertPassed(bash(command, p.root))
+
+    def test_comment_is_not_a_command(self):
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        for command in (
+            "echo hi # ; git push origin main",
+            "# git push origin main",
+            "git status # && git push origin main",
+            "git status\n  # git push origin main\ngit log",
         ):
             with self.subTest(command=command):
                 self.assertPassed(bash(command, p.root))
