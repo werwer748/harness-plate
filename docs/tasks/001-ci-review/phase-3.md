@@ -48,3 +48,31 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 3이 참이다.
+  - `python3 -m unittest discover -s tests` → `Ran 53 tests in 15.481s` / `OK`. 통과
+  - `tests/test_verdict.py`를 읽음 → 커버리지 79·79.9는 request, 80·80.0은 merge(`CoverageTest.test_boundary_79_and_80`). 신뢰성·보안·유지보수성의 A는 merge, B는 request(`GradeTest.test_a_merges_b_requests`). 보안 B는 request, C·D·E는 close(`GradeTest.test_security_b_requests_c_and_below_close`). 모름은 빌드·린트·테스트의 `"unmeasured"`, 세 등급의 `"unjudged"`가 request(`UnknownTest` 두 테스트), 커버리지 `"unmeasured"`가 request(`CoverageTest.test_coverage_unmeasured_requests`). 빌드·린트·테스트의 `"fail"`은 close(`CloseTest.test_failed_command_closes`). 커버리지 `"skipped"`에서 다른 조건이 맞으면 merge(`MergeTest.test_coverage_skipped_does_not_block_merge`). 통과
+  - `docs/ARCHITECTURE.md`의 디렉터리 구조를 읽음 → `plugins/plate/` 아래 `ci/verdict.py`(판정 스크립트)와 `tests/` 아래 `test_verdict.py`(판정 스크립트의 테스트)가 있다. 통과
+- 완료 조건 1이 그대로 참이다.
+  - `grep -n "설치" plugins/plate/skills/plan/SKILL.md plugins/plate/skills/check/SKILL.md plugins/plate/skills/retro/SKILL.md plugins/plate/skills/review/SKILL.md` → 네 파일 모두 명령 절 정의의 설치 줄을 낸다(plan 29줄, check 29줄, retro 29줄, review 34줄). 통과
+  - `grep -c "^- 설치: 없음$" docs/ARCHITECTURE.md` → `1`. 통과
+  - `plugins/plate/skills/plan/SKILL.md` 3번(62줄)과 5번(76줄)을 읽음 → 3번은 설치, 빌드, 린트, 테스트 가운데 적히지 않은 것을 찾고 못 찾으면 5번에서 묻는다, 5번은 찾지 못한 명령(설치, 빌드, 린트, 테스트)도 묻는다. check 3번(48줄)과 retro 3번(60줄)은 "설치는 돌리지 않는다". review 2번(64줄)은 빌드·린트·테스트만 돌리고 낱말(34줄)에 "tasks 끝의 코드 평가는 설치를 돌리지 않는다", 설치는 PR 모드 절차(168줄)에만 있다. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 53 tests in 15.481s` / `OK`. 통과
+
+**테스트 먼저 기록**
+- `phase-3.md`의 "한 일"의 테스트 먼저 → 실패 출력(`verdict.py`가 없어 test_verdict 27개 실패, `FAILED (failures=27)`)이 먼저, 통과 출력(`Ran 53 tests` / `OK`)이 뒤에 있다. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 이 확인 에이전트에 실린 check 스킬 본문은 명령 절을 빌드·린트·테스트 세 줄로 정의하고 "설치는 돌리지 않는다"가 없는 옛 본문이었고, 저장소의 `plugins/plate/skills/check/SKILL.md`는 phase 1이 고친 네 줄 정의다. 세션이 띄워질 때 실린 플러그인 본문이 이 tasks의 변경을 따라오지 않는다. 이 저장소의 설치가 "없음"이라 판정에는 걸리지 않았다
+
+**판정**: 통과
