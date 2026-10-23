@@ -51,3 +51,33 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 회고 3의 문제가 모두 고쳐졌다.
+  - `retro.md`의 `## 회고 3` 문제를 다시 읽고 재현을 스크래치(`check4/`)에 다시 만듦: 문서 지도 구간이 있는 `AGENTS.md`와 커밋된 `tests/test_x.py`가 있는 git 레포마다 지금의 `edit_guard.py`에 Write·Edit의 훅 입력을 넣음 → 남은 phase 없음: 새 `plate-review.yml` Write 0, `other.yml` Write 2(계획 먼저), 커밋해 둔 `plate-review.yml`의 Edit 2, Write 2(계획 먼저). 테스트 먼저 "아니오"인 `docs/tasks/001-a/phase-1.md`: 새 `plate-review.yml` Write 0(`other.yml`과 이미 있는 파일의 Edit·Write도 다른 코드 파일처럼 0). "예"인 `phase-1.md`, 커밋되지 않은 테스트 변경 없음: 새 `plate-review.yml` Write 0, `other.yml` Write 2("plate: 지금 phase(`docs/tasks/001-a/phase-1.md`)는 테스트 먼저다. …"), 이미 있는 `plate-review.yml`의 Edit 2, Write 2(테스트 먼저). setup이 새 워크플로를 쓸 수 있는지가 phase 표시에 따라 갈리지 않는다. 예외는 `edit_guard.py` 212~215줄로 `is_code_file`·`is_setup` 검사 뒤, `unfinished_tasks` 앞에 있다. 통과
+- 편집 훅이 task 머리의 결정대로, 아직 없는 `plate-review.yml`의 Write를 남은 phase가 없을 때, 테스트 먼저가 "아니오"인 phase가 남았을 때, "예"인 phase가 남았을 때 모두 통과시키고, 이미 있는 그 파일의 Edit·Write와 `other.yml`의 Write는 막는다. `docs/ARCHITECTURE.md`와 코드의 주석이 같은 범위를 적는다.
+  - `python3 -m unittest discover -s tests` → `Ran 56 tests in 17.722s` / `OK`. `tests/test_edit_guard.py`를 읽음 → 남은 phase 없음은 `PlanFirstTest.test_setup_writes_new_ci_workflow`(234~243줄: 새 파일 Write 통과, `other.yml` Write와 이미 있는 파일의 Edit·Write는 계획 먼저로 막음), "예"는 `TestFirstTest.test_setup_writes_new_ci_workflow_in_test_first_phase`(256~266줄: 새 파일 Write 통과, `other.yml` Write와 이미 있는 파일의 Edit·Write는 테스트 먼저로 막음), "아니오"는 `TestFirstTest.test_setup_writes_new_ci_workflow_in_phase_without_test_first`(268~271줄: 새 파일 Write 통과). "아니오"에서 막는 시험은 없고, 위의 재현대로 그때는 다른 코드 파일처럼 통과한다. task 머리 결정의 "지금처럼 막는다"에 맞다. 통과
+  - `docs/ARCHITECTURE.md` 46줄("`phase-N.md`가 있는 task가 없을 때의 코드 편집과 테스트 먼저인 phase에서 테스트 변경 없는 구현 편집을 막는다. setup이 아직 없는 `.github/workflows/plate-review.yml`을 쓰는 것은 두 막음에서 모두 뺀다"), 48줄("훅은 아직 없는 이 파일을 쓰는 것을 남은 phase가 있든 없든, 테스트 먼저든 아니든 막지 않아서, 이미 셋업된 프로젝트에서 setup을 다시 불러도 쓴다. 이미 있는 이 파일의 편집과 다른 워크플로 파일은 다른 코드 파일처럼 막는다"), `edit_guard.py` 213~214줄 주석("setup이 승인받아 처음 쓰는 것. 남은 phase가 있든 없든, 테스트 먼저든 아니든 통과시킨다. 이미 있으면 아래의 막음을 그대로 받는다")을 읽음 → 같은 범위다. 통과
+- task 머리의 완료 조건이 모두 참이다.
+  - 완료 조건 1: `plugins/plate/skills/setup/SKILL.md`를 읽음 → 1번 24줄 "여섯 가지를 판정", 48줄 GitHub 원격(`git remote -v`에 `github.com`), 50줄 plate 워크플로(`.github/workflows/` 아래 `plate@harness-plate`가 적힌 파일). 2번 63줄 승인 표의 행 "GitHub 원격이 있고 plate 워크플로가 없다 | CI 에이전트를 둘지. …". 3번 73줄 "아래에 적힌 것만 한다", 84줄 "CI 에이전트를 승인받았으면 … `.github/workflows/plate-review.yml`을 가져와 그 경로에 쓴다. 거절했으면 쓰지 않는다". 4번 109줄 `claude setup-token`으로 토큰을 만들어 `gh secret set CLAUDE_CODE_OAUTH_TOKEN`이나 Settings → Secrets and variables → Actions로 넣는 방법. 양식 절 294줄 `.github/workflows/plate-review.yml`. 통과
+  - 완료 조건 2: 양식의 YAML 블록(299~371줄)을 `sed -n`으로 스크래치 `wf.yml`에 뽑아 `ruby -ryaml`로 파싱하고 `python3 -I`로 봄 → 트리거 `{"pull_request": {"types": ["opened", "synchronize", "reopened"]}}`, `review` 잡 권한 `{'contents': 'read', 'pull-requests': 'read'}`, 출력 `bundle: ${{ steps.review.outputs.structured_output }}`, `anthropics/claude-code-action@v1`의 with 키 `claude_code_oauth_token, github_token, plugin_marketplaces, plugins, prompt, claude_args`(마켓플레이스 토큰 입력 없음), `plugin_marketplaces` `https://github.com/werwer748/harness-plate.git`, `plugins` `plate@harness-plate`, prompt `/plate:review PR 모드, 기준 브랜치: origin/${{ github.base_ref }}, 평가서 파일: ${{ runner.temp }}/plate-review.md`, `claude_args`를 `shlex`로 나눈 `--json-schema`의 required 일곱 키와 `additionalProperties: False`, `verdict` 잡 `needs: review`, 권한 `{'contents': 'write', 'pull-requests': 'write'}`. 통과
+  - 완료 조건 2: 양식의 `python3 harness-plate/plugins/plate/ci/verdict.py`(stdin으로 `$BUNDLE`)와 `docs/ARCHITECTURE.md` 16~17줄의 `plugins/plate/ci/verdict.py`를 견줌 → 같은 파일이고 입력은 stdin의 등급 묶음 JSON 하나. 스키마의 키와 enum을 `verdict.py` 4~9줄 docstring과 `COMMANDS`, `GRADES`에 대어 `python3 -I`의 assert로 견줌 → "schema matches verdict.py docstring, COMMANDS, GRADES". `verdict` 잡의 run을 가짜 `gh`와 실제 `verdict.py`로 `bash --noprofile --norc -eo pipefail`에서 돌림 → 전부 A·커버리지 85.5: 종료 0, "판정: 자동 머지", `gh pr comment 7 --body-file comment.md` 뒤 `gh pr merge 7 --merge --delete-branch --match-head-commit abc`. 커버리지 `unmeasured`: 종료 0, "판정: 머지 요청", 댓글만. 빌드 fail·보안 C: 종료 0, "판정: 닫기", 댓글 뒤 `gh pr close 7`. 통과
+  - 완료 조건 3: `docs/ARCHITECTURE.md`와 `docs/ADR.md`를 읽음 → 디렉터리 구조 16~17줄 `ci/verdict.py`, 22줄 setup이 CI 워크플로(`.github/workflows/plate-review.yml`) 양식을 담는다, 패턴과 규칙 46줄 훅의 예외, 48줄 PR의 CI 항목(ADR-021), 데이터 흐름 52줄 셋업이 승인하면 `.github/workflows/plate-review.yml`, 67~71줄 PR → review 잡 → verdict 잡. `docs/ADR.md` 33줄부터 ADR-021(결정, 이유, 트레이드오프). 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 56 tests in 17.722s` / `OK`. 통과
+
+**테스트 먼저 기록**
+- "한 일"의 "테스트 먼저" → 실패 출력(`FAIL: test_setup_writes_new_ci_workflow_in_test_first_phase …` / `AssertionError: 2 != 0 : 통과해야 하는데 막았다: …` / `FAILED (failures=1)`)이 먼저, 통과 출력(`Ran 2 tests in 1.027s` / `OK`)이 그다음에 있다. 스크래치에 phase 4 전의 훅(`git show b9f17ec^:plugins/plate/hooks/edit_guard.py`)과 지금의 `tests/`를 두고 같은 두 시험을 돌림 → `AssertionError: 2 != 0 : 통과해야 하는데 막았다: plate: 지금 phase(`docs/tasks/001-a/phase-1.md`)는 테스트 먼저다. …` / `FAILED (failures=1)`, 저장소에서는 `OK`. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 통과 조건 2의 "이미 있는 그 파일의 Edit·Write와 `other.yml`의 Write는 막는다"가 세 경우 가운데 어디에 걸리는지 적지 않았다. 앞의 "task 머리의 결정대로"와 결정의 "지금처럼 막는다"로 읽어, 테스트 먼저가 "아니오"인 phase에서 다른 코드 파일처럼 통과하는 것은 실패로 넣지 않았다 (`docs/tasks/002-ci-workflow/phase-4.md`의 통과 조건)
+
+**판정**: 통과
