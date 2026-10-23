@@ -209,11 +209,11 @@ def check(data):
         return None
     if not is_code_file(rel) or not is_setup(root):
         return None
-    if rel == CI_WORKFLOW and not os.path.exists(os.path.join(root, rel)):
-        return None  # 셋업된 프로젝트에서 setup을 다시 불러 처음 쓰는 것. 이미 있으면 고치지 못하게 둔다
 
     tasks = unfinished_tasks(root)
     if not tasks:
+        if rel == CI_WORKFLOW and not os.path.exists(os.path.join(root, rel)):
+            return None  # 남은 phase가 없을 때 setup을 다시 불러 처음 쓰는 것. 이미 있으면 고치지 못하게 둔다
         return PLAN_FIRST.format(rel=rel)
 
     if not top or is_test_file(rel):

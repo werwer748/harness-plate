@@ -253,6 +253,12 @@ class TestFirstTest(GuardTestCase):
         self.assertBlocked(p.edit("src/new.py", tool="Write"), TEST_FIRST)
         self.assertBlocked(p.edit("package.json"), TEST_FIRST)
 
+    def test_new_ci_workflow_blocks_without_test_change(self):
+        # setup이 CI 워크플로를 처음 쓰는 예외는 남은 phase가 없을 때만이다
+        p = self.project()
+        p.add_task("001-a", {1: "예"})
+        self.assertBlocked(p.edit(".github/workflows/plate-review.yml", tool="Write"), TEST_FIRST)
+
     def test_other_uncommitted_change_does_not_count(self):
         p = self.project()
         p.add_task("001-a", {1: "예"})
