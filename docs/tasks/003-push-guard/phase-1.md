@@ -50,3 +50,30 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 1, 2, 3, 4가 참이다.
+  - 완료 조건 1: `python3 -m unittest discover -s tests` → `Ran 76 tests in 26.630s` / `OK`. 통과
+  - 완료 조건 1: `tests/test_push_guard.py`를 읽음 → 대상 없이 기본 브랜치에서 하는 push(`test_push_without_target_on_default_branch`, `test_push_head_while_on_default_branch`), 기본 브랜치를 가리키는 push(`test_push_to_default_branch`), 지우는 push의 `--delete`·`-d`·`:main`·`:refs/heads/main`(`test_delete_default_branch`), `&&`·`;` 등으로 이어진 명령 안의 push(`test_push_inside_chained_command`), `git -C` 안의 push와 그 폴더의 기본 브랜치(`test_push_inside_git_c_uses_that_folder`, `test_git_c_folder_has_its_own_default_branch`), 다른 브랜치(`test_push_to_other_branch`), origin 밖 원격(`test_push_to_remote_other_than_origin`), 셋업 안 된 프로젝트(`test_project_not_set_up`, `Project(setup=False)`는 `AGENTS.md`를 `# 지침`만으로 쓴다)가 있다. 막는 시험은 `assertBlocked`로 종료 코드 2와 stderr의 "기본 브랜치"를 본다. 통과
+  - 완료 조건 2: `python3 -c "import json; h=json.load(open('plugins/plate/hooks/hooks.json')); print([m['matcher'] for m in h['hooks']['PreToolUse']])"` → `['Edit|Write|MultiEdit|NotebookEdit', 'Bash']`. 통과
+  - 완료 조건 2: `plugins/plate/hooks/hooks.json`의 Bash 항목을 읽음 → `f="${CLAUDE_PLUGIN_ROOT}/hooks/push_guard.py"; [ -f "$f" ] || exit 0; exec python3 "$f"`로, 스크립트가 없으면 `python3`를 부르지 않고 0으로 끝나며 `edit_guard.py`를 거는 명령과 같은 꼴이다. 통과
+  - 완료 조건 3: `docs/PRD.md`의 목표와 `docs/ARCHITECTURE.md`의 기술 스택, 디렉터리 구조, 패턴과 규칙의 막는 장치를 읽음 → PRD 목표에 "에이전트가 기본 브랜치에 하는 푸시", 기술 스택에 푸시 훅 `push_guard.py`, 디렉터리 구조에 hooks.json의 Bash 항목·`push_guard.py`·`test_push_guard.py`, 막는 장치에 푸시 훅이 막는 것과 막지 않는 것이 적혀 있다. 통과
+  - 완료 조건 4: `python3 -m unittest discover -s tests` → `OK`(위와 같다). `git diff --stat 5a7c002 HEAD -- tests/test_verdict.py plugins/plate/ci/` → 출력 없음, phase 1 커밋(`f8f219b`)이 바꾼 파일에도 둘이 없다. `python3 -m unittest discover -s tests -p 'test_verdict.py'` → `Ran 14 tests` / `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 76 tests in 26.630s` / `OK`. 통과
+
+**테스트 먼저 기록**
+- "한 일"의 "테스트 먼저" → 실패 출력(`FAILED (failures=50)`, `push_guard.py` 없음)이 먼저, 통과 출력(`Ran 76 tests` / `OK`)이 뒤에 있다. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
