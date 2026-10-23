@@ -19,7 +19,7 @@ plugins/plate/
 │   ├── hooks.json                 # Claude Code 훅 설정. 파일 편집 도구의 PreToolUse에 edit_guard.py를 건다
 │   └── edit_guard.py              # 계획 없는 코드 편집과, 테스트 먼저인 phase에서 테스트보다 앞선 구현을 막는 훅
 └── skills/
-    ├── setup/SKILL.md             # 셋업 스킬. 본문 하나를 두 도구가 함께 쓴다
+    ├── setup/SKILL.md             # 셋업 스킬. 본문 하나를 두 도구가 함께 쓴다. GitHub 원격이 있는 프로젝트에 둘 CI 워크플로(`.github/workflows/plate-review.yml`)의 양식도 담는다
     ├── context/SKILL.md           # 맥락 채우기 스킬. 본문 하나를 두 도구가 함께 쓴다
     ├── plan/SKILL.md              # 계획 스킬. 본문 하나를 두 도구가 함께 쓴다
     ├── run/SKILL.md               # 실행 스킬. 조율만 하고 수행, 확인, 회고, 코드 평가, 하네스 eval은 아래 다섯 스킬에 맡긴다
@@ -45,10 +45,11 @@ docs/                              # 이 레포의 하네스 기록. 위치는 A
 - 대상 프로젝트의 규칙이 스킬의 규칙과 부딪히면 프로젝트의 규칙이 우선한다. 스킬의 절대 규칙도 든다. 단계를 건너뛰라는 규칙은 들지 않는다. 일곱 스킬(plan, run, phase, check, retro, review, eval)의 본문에 넣었고, 따른 곳은 보고나 기록에 적는다.
 - 막는 장치는 setup이 대상 프로젝트의 `AGENTS.md`에 넣는 규칙 구간(`<!-- plate:rules:start -->`부터 `<!-- plate:rules:end -->`까지)이다. 코드를 고치는 요청은 계획부터 세우고, task는 task 회고가 통과해야 끝나고, tasks는 끝의 코드 평가와 하네스 eval을 담은 전체 보고가 나와야 끝나며, 다른 규칙이 이 단계들을 건너뛰라고 해도 따르지 않는다. 이 규칙 구간이 기본이고, 훅(`plugins/plate/hooks/`)은 Claude Code의 구현으로 더 막는다. 훅은 파일 편집 도구의 호출만 보고, `phase-N.md`가 있는 task가 없을 때의 코드 편집과 테스트 먼저인 phase에서 테스트 변경 없는 구현 편집을 막는다. 같은 파일을 테스트 먼저 때문에 세 번 막으면 더 시도하지 않고 막힘으로 멈춰 까닭과 해결책을 논의하며, 훅을 끄는 스위치는 두지 않는다. 이유: 세 도구가 모두 `AGENTS.md`를 읽고 서브에이전트에도 실린다. 훅은 Claude Code에서만 돌므로 규칙을 대신하지 않고, 잘못 막을 때는 끄는 대신 까닭을 찾아 해결책을 논의한다.
 - run은 기본 브랜치(`origin`의 HEAD, 없으면 `main`, 그다음 `master`)에서 시작하면 tasks마다 하나인 `tasks/<이름>` 브랜치를 만들어 실행하고, tasks 끝에서 `docs/tasks/`를 비운 뒤 기본 브랜치로 합칠지 묻는다. 실행 방식과 상관없이 묻는다. 이유: 끝의 평가와 보고까지 가지 않은 tasks가 기본 브랜치에 들어가지 않게 한다.
+- PR의 CI는 setup이 대상 프로젝트에 쓰는 워크플로(`.github/workflows/plate-review.yml`)가 한다. setup은 GitHub 원격이 있고 plate 워크플로가 없을 때 둘지 묻고, 승인하면 `AGENTS.md`를 고치기 전에 쓴다(훅이 셋업된 프로젝트에서 남은 phase가 없으면 `.md`가 아닌 파일의 편집을 막는다). `review` 잡은 읽기 권한만으로 토큰 없이 공개 마켓플레이스(`werwer748/harness-plate`)에서 plate를 받아 review의 PR 모드를 부르고 등급 묶음을 구조화 출력으로 낸다. `verdict` 잡이 쓰기 권한으로 등급 묶음을 판정 스크립트(`plugins/plate/ci/verdict.py`)에 넘겨 평가서를 PR 댓글로 달고, 자동 머지면 merge commit으로 합치고 머리 브랜치를 지우며, 닫기면 PR을 닫는다. 이유: 판정 규칙은 숫자와 등급만 보므로 스크립트가 늘 같은 답을 내고, PR 코드에 숨은 지시가 있어도 에이전트에게는 머지 권한이 없다(ADR-021).
 
 ## 데이터 흐름
 ```
-셋업(AGENTS.md의 문서 지도와 규칙 구간, docs/의 양식. 설치만 하고 묻지 않고 끝난다)
+셋업(AGENTS.md의 문서 지도와 규칙 구간, docs/의 양식, GitHub 원격이 있고 승인하면 .github/workflows/plate-review.yml. 설치만 하고 묻지 않고 끝난다)
 → 맥락(docs/PRD.md, docs/ARCHITECTURE.md, docs/ADR.md, UI 프로젝트면 docs/DESIGN.md)
 → 계획(docs/tasks/에 tasks 머리 plan.md와, task 폴더 NNN-slug/마다 task 머리 plan.md와 phase-N.md를 쓰고 한 커밋으로 넣는다
        → tasks가 진행 중이면 새 요청을 지금 tasks에 task로 더할지 묻는다)
@@ -62,6 +63,12 @@ docs/                              # 이 레포의 하네스 기록. 위치는 A
        → 전체 보고와 고칠 안을 한 번에 묻는다
        → 승인받은 대로 plate 자체의 고칠 거리는 GitHub 이슈로 올리고, 미룬 소스 문제는 docs/BACKLOG.md에 적고, 고칠 것은 고침 task로 더해 같은 레일로 돌린다
        → docs/tasks/를 비우고 기본 브랜치로 합칠지 묻는다)
+
+PR(CI 워크플로가 있는 프로젝트에서 열리거나 갱신되면)
+→ review 잡(읽기 권한만. 공개 마켓플레이스에서 받은 plate의 review가 PR 모드로 평가서 파일과 등급 묶음(구조화 출력)을 낸다)
+→ verdict 잡(쓰기 권한. 판정 스크립트가 등급 묶음으로 자동 머지, 머지 요청, 닫기 가운데 하나를 고른다
+       → 평가서를 PR 댓글로 단다
+       → 자동 머지면 merge commit으로 합치고 머리 브랜치를 지우고, 닫기면 PR을 닫고, 머지 요청이면 사람이 머지하도록 둔다)
 ```
 
 어느 실행 방식이든 막힘, 훅의 세 번째 막음, 계획이 틀림, 같은 phase의 확인이나 같은 task의 회고의 세 번 실패에서는 멈추고 원인과 해결책을 보여 논의한다. tasks의 기록은 비운 커밋의 부모에 남고, `docs/BACKLOG.md`는 `docs/tasks/` 밖에 있어 비워도 남는다.

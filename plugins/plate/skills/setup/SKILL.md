@@ -1,13 +1,13 @@
 ---
 name: setup
-description: 프로젝트에 하네스를 설치한다. `docs/`에 문서 양식(PRD, ARCHITECTURE, ADR, 화면이 있는 프로젝트면 DESIGN)과 tasks 기록 폴더를 만들고, `AGENTS.md`에 문서 지도와 작업 규칙을 넣고, `CLAUDE.md`가 `AGENTS.md`를 불러오게 한다. 설치만 하고 보고로 끝나며, 끝에 다른 일로 이어 갈지 묻지 않는다. plate를 프로젝트에 처음 쓸 때, 또는 "하네스 셋업해줘", "문서 위치 잡아줘"라고 할 때 쓴다. 문서 내용을 채우는 일에는 쓰지 않는다.
+description: 프로젝트에 하네스를 설치한다. `docs/`에 문서 양식(PRD, ARCHITECTURE, ADR, 화면이 있는 프로젝트면 DESIGN)과 tasks 기록 폴더를 만들고, `AGENTS.md`에 문서 지도와 작업 규칙을 넣고, `CLAUDE.md`가 `AGENTS.md`를 불러오게 한다. GitHub 원격이 있고 plate 워크플로가 없으면 PR마다 review로 평가해 판정대로 자동 머지, 머지 요청, 닫기를 하는 CI 워크플로를 둘지 묻고, 승인하면 `.github/workflows/`에 쓰고 보고에 시크릿 등록 방법을 적는다. 설치만 하고 보고로 끝나며, 끝에 다른 일로 이어 갈지 묻지 않는다. plate를 프로젝트에 처음 쓸 때, 또는 "하네스 셋업해줘", "문서 위치 잡아줘"라고 할 때 쓴다. 문서 내용을 채우는 일에는 쓰지 않는다.
 ---
 
 # 셋업
 
 **막는 실패**: 기록을 둘 위치가 정해져 있지 않으면 세션마다 다른 곳에 문서를 만들고, 다음 세션은 그 문서를 찾지 못한다.
 
-프로젝트에 하네스 문서의 위치 기준을 세운다. 끝나면 `docs/`에 문서 양식과 tasks 기록 폴더가 있고, `AGENTS.md`에 문서 지도와 작업 규칙이 있고, `CLAUDE.md`가 `AGENTS.md`를 불러온다. 문서의 내용은 채우지 않고, 4번의 보고로 끝난다.
+프로젝트에 하네스 문서의 위치 기준을 세운다. 끝나면 `docs/`에 문서 양식과 tasks 기록 폴더가 있고, `AGENTS.md`에 문서 지도와 작업 규칙이 있고, `CLAUDE.md`가 `AGENTS.md`를 불러온다. CI 에이전트를 승인했으면 `.github/workflows/plate-review.yml`이 있다. 문서의 내용은 채우지 않고, 4번의 보고로 끝난다.
 
 ## 절대 규칙
 
@@ -21,7 +21,7 @@ description: 프로젝트에 하네스를 설치한다. `docs/`에 문서 양식
 - git 레포인지 확인한다.
 - 파일 목록을 본다. git 레포면 `git ls-files --cached --others --exclude-standard`, 아니면 숨김 파일을 포함한 전체 목록을 쓴다.
 - `AGENTS.md`, `CLAUDE.md`, `docs/`가 있으면 읽는다.
-- 아래 기준으로 네 가지를 판정한다. 기준에 없는 것을 근거로 판정하지 않는다.
+- 아래 기준으로 여섯 가지를 판정한다. 기준에 없는 것을 근거로 판정하지 않는다.
 
 **빈 프로젝트**: 소스 코드 파일과 빌드 매니페스트(`package.json`, `pyproject.toml`, `build.gradle`, `build.gradle.kts`, `pom.xml`, `Cargo.toml`, `go.mod`, `Gemfile`, `pubspec.yaml`, `Package.swift`)가 하나도 없으면 빈 프로젝트다.
 
@@ -45,9 +45,13 @@ description: 프로젝트에 하네스를 설치한다. `docs/`에 문서 양식
 
 **`CLAUDE.md`의 상태**: 셋 중 하나다. 없음 / `@AGENTS.md` 한 줄뿐 / 다른 내용이 있음.
 
+**GitHub 원격**: git 레포이고 `git remote -v`에 URL이 `github.com`인 원격이 있으면 GitHub 원격이 있다.
+
+**plate 워크플로**: `.github/workflows/` 아래에 `plate@harness-plate`가 적힌 파일이 있으면 plate 워크플로가 있다.
+
 ## 2. 할 일을 표 하나로 보여 주고 한 번에 묻는다
 
-3번에서 할 일을 표 하나로 보여 준다(할 일, 대상, 승인이 필요한지). 승인이 필요한 일은 아래 다섯뿐이고, 해당하는 것을 한 번에 묻는다.
+3번에서 할 일을 표 하나로 보여 준다(할 일, 대상, 승인이 필요한지). 승인이 필요한 일은 아래 여섯뿐이고, 해당하는 것을 한 번에 묻는다.
 
 | 조건 | 묻는 것 |
 |---|---|
@@ -56,6 +60,7 @@ description: 프로젝트에 하네스를 설치한다. `docs/`에 문서 양식
 | git 레포가 아니다 | `git init`을 할지 |
 | 빈 프로젝트이고 `AGENTS.md`에 문서 지도 구간이 없다 | 화면이 있는 프로젝트인지 |
 | `AGENTS.md`에 문서 지도 구간이 있고 규칙 구간이 없다 | 규칙 구간을 더할지. 더할 글을 표 아래에 함께 보여 준다 |
+| GitHub 원격이 있고 plate 워크플로가 없다 | CI 에이전트를 둘지. PR이 열리거나 갱신될 때 review가 평가하고 판정대로 평가서 댓글을 달고 자동 머지하거나 PR을 닫는 워크플로이고, 저장소에 시크릿을 넣어야 돈다고 함께 알린다 |
 
 - 물을 것이 하나도 없으면 묻지 않고 3번으로 간다.
 - 요청에 이미 답이 적혀 있는 물음은 다시 묻지 않는다.
@@ -75,6 +80,8 @@ description: 프로젝트에 하네스를 설치한다. `docs/`에 문서 양식
 - `docs/PRD.md`, `docs/ARCHITECTURE.md`, `docs/ADR.md`: 표준 위치에 파일이 없고, 그 역할의 같은 역할 문서도 없을 때만 만든다.
 - `docs/DESIGN.md`: UI 프로젝트일 때만, 위와 같은 조건으로 만든다.
 - `docs/tasks/`: 폴더가 없으면 만들고 내용이 없는(0바이트) 파일 `.gitkeep`을 둔다.
+
+**CI 워크플로**: CI 에이전트를 승인받았으면 이 문서 끝의 "양식" 절에서 `.github/workflows/plate-review.yml`을 가져와 그 경로에 쓴다. `AGENTS.md`를 고치기 전에 쓴다. 이유: plate의 편집 훅은 `AGENTS.md`에 문서 지도 구간이 있는 프로젝트에서 남은 phase가 없으면 `.md`가 아닌 파일의 편집을 막는다. 거절했으면 쓰지 않는다.
 
 **`AGENTS.md`**: 순서대로 한다.
 1. `CLAUDE.md` 내용을 옮기기로 했으면, `CLAUDE.md`에서 `@AGENTS.md` 줄을 뺀 나머지를 한 글자도 바꾸지 않고 `AGENTS.md` 끝에 붙인다. `AGENTS.md`에 기존 내용이 있으면 그 뒤에 빈 줄 하나를 두고 붙인다. `AGENTS.md`가 없거나 비어 있으면 빈 줄 없이 첫 줄부터 적는다. `AGENTS.md`의 기존 내용은 바꾸지 않는다.
@@ -99,6 +106,7 @@ description: 프로젝트에 하네스를 설치한다. `docs/`에 문서 양식
 
 - 만든 것, 옮긴 것, 건드리지 않은 것(기존 문서와 거절한 일)
 - 사용자가 채울 칸: `{…}`가 남아 있는 파일
+- CI 워크플로를 썼으면 시크릿 등록 방법: 워크플로는 저장소 시크릿 `CLAUDE_CODE_OAUTH_TOKEN`이 있어야 돈다. 로컬에서 `claude setup-token`을 돌려 토큰을 만들고, `gh secret set CLAUDE_CODE_OAUTH_TOKEN`으로 넣거나 GitHub 저장소의 Settings → Secrets and variables → Actions에서 같은 이름으로 넣는다. 워크플로 파일은 커밋해 GitHub에 올린 뒤부터 돈다.
 - `AGENTS.md`가 32KiB(32,768바이트)를 넘으면 알린다. 그보다 큰 `AGENTS.md`는 끝까지 읽지 않는 도구가 있다.
 
 보고한 뒤에는 묻지 않고 끝난다.
@@ -283,6 +291,86 @@ components:
 - Don't: {하지 말 것 (예: 한 화면에 글꼴 굵기를 세 가지 이상 쓰지 않는다)}
 ````
 
+### `.github/workflows/plate-review.yml`
+
+CI 에이전트의 워크플로다. `${{ … }}`는 GitHub Actions의 식이라 채울 칸이 아니다. `review` 잡은 읽기 권한만으로 공개 마켓플레이스에서 plate를 받아 review의 PR 모드를 부르고 등급 묶음을 구조화 출력으로 낸다. `verdict` 잡은 쓰기 권한으로 등급 묶음을 판정 스크립트(`plugins/plate/ci/verdict.py`)에 넘겨, 평가서를 PR 댓글로 달고, 자동 머지면 merge commit으로 합치고 머리 브랜치를 지우며, 닫기면 PR을 닫는다. 머지 요청이면 댓글만 단다.
+
+````yaml
+name: plate review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: plate-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      bundle: ${{ steps.review.outputs.structured_output }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          plugin_marketplaces: "https://github.com/werwer748/harness-plate.git"
+          plugins: "plate@harness-plate"
+          prompt: "/plate:review PR 모드, 기준 브랜치: origin/${{ github.base_ref }}, 평가서 파일: ${{ runner.temp }}/plate-review.md"
+          claude_args: |
+            --add-dir ${{ runner.temp }}
+            --allowedTools "Bash,Read,Write,Glob,Grep"
+            --json-schema '{"type":"object","properties":{"build":{"type":"string","enum":["pass","fail","none","unmeasured"]},"lint":{"type":"string","enum":["pass","fail","none","unmeasured"]},"test":{"type":"string","enum":["pass","fail","none","unmeasured"]},"coverage":{"anyOf":[{"type":"number"},{"type":"string","enum":["skipped","unmeasured"]}]},"reliability":{"type":"string","enum":["A","B","C","D","E","unjudged"]},"security":{"type":"string","enum":["A","B","C","D","E","unjudged"]},"maintainability":{"type":"string","enum":["A","B","C","D","E","unjudged"]}},"required":["build","lint","test","coverage","reliability","security","maintainability"],"additionalProperties":false}'
+      - uses: actions/upload-artifact@v7
+        with:
+          name: plate-review
+          path: ${{ runner.temp }}/plate-review.md
+
+  verdict:
+    needs: review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: werwer748/harness-plate
+          path: harness-plate
+      - uses: actions/download-artifact@v8
+        with:
+          name: plate-review
+      - name: 판정대로 댓글을 달고 머지하거나 닫는다
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BUNDLE: ${{ needs.review.outputs.bundle }}
+        run: |
+          verdict=$(printf '%s' "$BUNDLE" | python3 harness-plate/plugins/plate/ci/verdict.py)
+          case "$verdict" in
+            merge) label="자동 머지" ;;
+            request) label="머지 요청" ;;
+            close) label="닫기" ;;
+          esac
+          { echo "판정: $label"; echo; cat plate-review.md; } > comment.md
+          gh pr comment "$PR" --body-file comment.md
+          case "$verdict" in
+            merge) gh pr merge "$PR" --merge --delete-branch --match-head-commit "$HEAD_SHA" ;;
+            close) gh pr close "$PR" ;;
+          esac
+````
+
 ## 출처
 
-절대 규칙을 단정문으로 적는 방식과 승인 전에는 진행하지 않는 방식은 obra/superpowers(MIT)에서 가져왔다. `docs/DESIGN.md` 양식은 google-labs-code/design.md의 규격(alpha)을 따른다.
+절대 규칙을 단정문으로 적는 방식과 승인 전에는 진행하지 않는 방식은 obra/superpowers(MIT)에서 가져왔다. `docs/DESIGN.md` 양식은 google-labs-code/design.md의 규격(alpha)을 따른다. CI 워크플로 양식은 Claude Code GitHub Actions 문서(https://code.claude.com/docs/en/github-actions)와 anthropics/claude-code-action의 입력과 `structured_output`(https://raw.githubusercontent.com/anthropics/claude-code-action/main/action.yml)을 따른다.
