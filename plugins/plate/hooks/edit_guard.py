@@ -20,6 +20,7 @@ TEST_DIRS = {"tests", "test", "__tests__"}
 TEST_NAMES = ("test_*", "*_test.*", "*.test.*", "*.spec.*")
 MARKER = re.compile(r"^\*\*테스트 먼저\*\*:\s*(.*)$")
 PHASE_FILE = re.compile(r"^phase-(\d+)\.md$")
+CI_WORKFLOW = ".github/workflows/plate-review.yml"  # setup이 쓰는 CI 워크플로
 COUNT_FILE = "plate-test-first.json"  # git 폴더 안에 둔다. 작업 트리에 변경을 만들지 않는다
 
 PLAN_FIRST = (
@@ -208,6 +209,8 @@ def check(data):
         return None
     if not is_code_file(rel) or not is_setup(root):
         return None
+    if rel == CI_WORKFLOW and not os.path.exists(os.path.join(root, rel)):
+        return None  # 셋업된 프로젝트에서 setup을 다시 불러 처음 쓰는 것. 이미 있으면 고치지 못하게 둔다
 
     tasks = unfinished_tasks(root)
     if not tasks:

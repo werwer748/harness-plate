@@ -81,7 +81,7 @@ description: 프로젝트에 하네스를 설치한다. `docs/`에 문서 양식
 - `docs/DESIGN.md`: UI 프로젝트일 때만, 위와 같은 조건으로 만든다.
 - `docs/tasks/`: 폴더가 없으면 만들고 내용이 없는(0바이트) 파일 `.gitkeep`을 둔다.
 
-**CI 워크플로**: CI 에이전트를 승인받았으면 이 문서 끝의 "양식" 절에서 `.github/workflows/plate-review.yml`을 가져와 그 경로에 쓴다. `AGENTS.md`를 고치기 전에 쓴다. 이유: plate의 편집 훅은 `AGENTS.md`에 문서 지도 구간이 있는 프로젝트에서 남은 phase가 없으면 `.md`가 아닌 파일의 편집을 막는다. 거절했으면 쓰지 않는다.
+**CI 워크플로**: CI 에이전트를 승인받았으면 이 문서 끝의 "양식" 절에서 `.github/workflows/plate-review.yml`을 가져와 그 경로에 쓴다. 거절했으면 쓰지 않는다.
 
 **`AGENTS.md`**: 순서대로 한다.
 1. `CLAUDE.md` 내용을 옮기기로 했으면, `CLAUDE.md`에서 `@AGENTS.md` 줄을 뺀 나머지를 한 글자도 바꾸지 않고 `AGENTS.md` 끝에 붙인다. `AGENTS.md`에 기존 내용이 있으면 그 뒤에 빈 줄 하나를 두고 붙인다. `AGENTS.md`가 없거나 비어 있으면 빈 줄 없이 첫 줄부터 적는다. `AGENTS.md`의 기존 내용은 바꾸지 않는다.
