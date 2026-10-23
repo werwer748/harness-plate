@@ -46,3 +46,27 @@
 
 ## 하네스에서 걸린 것
 - task 머리의 결정 3은 "PR 코드에 숨은 지시가 있어도 에이전트에게는 머지 권한이 없다"를 이유로 들지만, 등급 묶음이 자동 머지를 정하므로 PR이 바꾼 코드나 `AGENTS.md`의 지시가 등급을 올리게 할 길은 남는다(절대 규칙의 "프로젝트의 규칙을 따른다"도 PR이 바꾼 `AGENTS.md`를 읽는다). 이 phase의 TODO 밖이라 PR 모드에 막는 글은 넣지 않았다. 회고나 002에서 볼 거리다.
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 2가 참이다.
+  - `plugins/plate/skills/review/SKILL.md`의 "PR 모드" 절(150~190줄)을 읽음 → 받는 것(`PR 모드`, 기준 브랜치, 평가서 파일)과 갈라진 곳 `git merge-base <기준 브랜치> HEAD`부터 바뀐 코드 파일과 새 줄을 센다, 0번의 조건을 보지 않고 tasks 머리와 task 머리를 읽지 않는다, 재기 전에 설치 명령을 돌린다(168줄), 2번대로 명령 절·커버리지·중복·정적 분석·보안 검사를 잰다, 네 범주(신뢰성, 보안, 유지보수성, 테스트 적절성)를 매기고 기능 적합성은 매기지 않는다(171줄), 6번대로 게이트를 본다, 평가서를 받은 경로에 파일로 쓴다, 커밋하지 않고 묻지 않는다(177줄), 등급 묶음 JSON을 구조화 출력으로 돌려주고 키(`build`, `lint`, `test`, `coverage`, `reliability`, `security`, `maintainability`)와 값의 표가 있다(180~190줄). 통과
+  - `git diff "$(git log --format=%h -1 --grep='^001-ci-review: phase 1$')^" -- plugins/plate/skills/review/SKILL.md`(기준 `f7dbd2a^`) → 바뀐 곳은 description, 머리말 한 줄(12줄), 절대 규칙 1과 5의 PR 모드 덧붙임, 낱말의 명령 절 정의, 9번 뒤에 더한 "PR 모드" 절이다. `## 0.`~`## 9.` 절 안에는 변경이 없다. 통과
+- 완료 조건 1이 그대로 참이다. 이 phase도 `review/SKILL.md`를 고친다.
+  - `grep -n "설치" plugins/plate/skills/plan/SKILL.md plugins/plate/skills/check/SKILL.md plugins/plate/skills/retro/SKILL.md plugins/plate/skills/review/SKILL.md` → plan:29, check:29, retro:29, review:34에 명령 절 정의의 `- 설치: {명령}` 줄이 나온다. 통과
+  - `grep -c "^- 설치: 없음$" docs/ARCHITECTURE.md` → `1`. 통과
+  - `plugins/plate/skills/plan/SKILL.md`의 3번(62줄: 설치, 빌드, 린트, 테스트 가운데 적히지 않은 것을 매니페스트와 코드에서 찾고 못 찾으면 5번에서 묻는다)과 5번(76줄: 찾지 못한 명령(설치, 빌드, 린트, 테스트)도 묻는다)을 읽음. check 3번(48줄)과 retro 3번(60줄)은 "설치는 돌리지 않는다", review는 명령 절 정의(34줄)에 "tasks 끝의 코드 평가는 설치를 돌리지 않는다"이고 2번의 1(64줄)은 빌드·린트·테스트만 돌린다. 설치는 PR 모드(168줄)에서만 돈다. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 39 tests in 14.343s`, `OK`. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 이 확인을 부른 세션에 올라온 check 스킬의 글은 phase 1 이전의 것이었다(명령 절이 세 줄, 3번에 "설치는 돌리지 않는다"가 없음). 저장소의 `plugins/plate/skills/check/SKILL.md`는 네 줄로 바뀌어 있다. 이 저장소의 설치가 "없음"이라 이번 판정에는 영향이 없었다.
+
+**판정**: 통과
