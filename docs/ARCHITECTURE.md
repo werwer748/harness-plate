@@ -63,6 +63,7 @@ docs/                              # 이 레포의 하네스 기록. 위치는 A
 어느 실행 방식이든 막힘, 훅의 세 번째 막음, 계획이 틀림, 같은 phase의 확인이나 같은 task의 회고의 세 번 실패에서는 멈추고 원인과 해결책을 보여 논의한다. tasks의 기록은 비운 커밋의 부모에 남고, `docs/BACKLOG.md`는 `docs/tasks/` 밖에 있어 비워도 남는다.
 
 ## 명령
+- 설치: 없음
 - 빌드: 없음
 - 린트: 없음
 - 테스트: `python3 -m unittest discover -s tests`
