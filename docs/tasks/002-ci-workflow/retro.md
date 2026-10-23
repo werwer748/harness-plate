@@ -1,0 +1,21 @@
+# 회고
+
+## 회고 1
+
+**확인**
+- setup의 승인 표에 "GitHub 원격이 있고 plate 워크플로가 없다 → CI 에이전트를 둘지"가 있다. 승인하면 setup 본문의 양식대로 워크플로 파일을 쓰고, 보고에 `CLAUDE_CODE_OAUTH_TOKEN` 시크릿 등록 방법이 있다. 거절하거나 GitHub 원격이 없으면 워크플로를 쓰지 않는다.
+  - `plugins/plate/skills/setup/SKILL.md`의 1번, 2번, 3번, 4번, 양식 절을 읽음 → 1번은 여섯 가지를 판정하고(24줄) "GitHub 원격"(48줄, `git remote -v`에 URL이 `github.com`인 원격)과 "plate 워크플로"(50줄, `.github/workflows/` 아래에 `plate@harness-plate`가 적힌 파일)의 기준이 있다. 2번 승인 표 63줄에 `| GitHub 원격이 있고 plate 워크플로가 없다 | CI 에이전트를 둘지. … |`가 있다. 3번 84줄 "CI 워크플로"는 승인받았으면 양식 절의 `.github/workflows/plate-review.yml`을 그 경로에 쓰고 거절했으면 쓰지 않는다. 4번 109줄에 `claude setup-token`으로 토큰을 만들어 `gh secret set CLAUDE_CODE_OAUTH_TOKEN`이나 Settings → Secrets and variables → Actions로 넣는 방법이 있다. 양식 절 294줄에 `.github/workflows/plate-review.yml`이 있다. GitHub 원격이 없으면 표의 조건이 맞지 않아 묻지 않고, 3번은 승인받았을 때만 쓴다. 통과
+- 워크플로 양식은 PR이 열리거나 갱신될 때 돈다. `https://github.com/werwer748/harness-plate.git` 마켓플레이스에서 토큰 없이 `plate@harness-plate`를 받아 review의 PR 모드를 부르고, 등급 묶음을 구조화 출력으로 받는다. 다음 단계가 판정 스크립트를 돌려 평가서를 PR 댓글로 달고, 자동 머지면 merge commit으로 합치고 머리 브랜치를 지우며, 닫기면 PR을 닫는다. review 단계에는 저장소와 PR의 쓰기 권한을 주지 않는다.
+  - 양식 절의 YAML 블록(73줄)을 파이썬으로 뽑아 `ruby -ryaml`로 파싱함 → 트리거 `{"pull_request":{"types":["opened","synchronize","reopened"]}}`, `plugin_marketplaces: https://github.com/werwer748/harness-plate.git`(토큰 입력 없음), `plugins: plate@harness-plate`, prompt `/plate:review PR 모드, 기준 브랜치: origin/${{ github.base_ref }}, 평가서 파일: ${{ runner.temp }}/plate-review.md`, `review` 잡 출력 `bundle: ${{ steps.review.outputs.structured_output }}`. `claude_args`를 `shlex`로 나눠 `--json-schema`의 JSON을 파싱함 → 일곱 키가 모두 required이고 `additionalProperties: false`. `review` 잡 권한 `{"contents":"read","pull-requests":"read"}`, `github_token: ${{ github.token }}`. `verdict` 잡은 `needs: review`, 권한 `{"contents":"write","pull-requests":"write"}`이고 run에 `gh pr comment`, merge면 `gh pr merge "$PR" --merge --delete-branch --match-head-commit "$HEAD_SHA"`, close면 `gh pr close "$PR"`가 있다. `gh api`로 `actions/checkout@v7`, `actions/upload-artifact@v7`, `actions/download-artifact@v8`, `anthropics/claude-code-action@v1`의 태그가 있고, v1의 `action.yml`에 `prompt`, `claude_code_oauth_token`, `github_token`, `claude_args`, `plugins`, `plugin_marketplaces` 입력과 `structured_output` 출력이 있다. 통과
+  - `docs/ARCHITECTURE.md` 디렉터리 구조 16~17줄의 `plugins/plate/ci/verdict.py`와 양식의 `python3 harness-plate/plugins/plate/ci/verdict.py`(`werwer748/harness-plate`를 `path: harness-plate`로 받은 자리)를 견줌 → 같은 파일이고 입력은 둘 다 stdin의 등급 묶음 JSON 하나. `--json-schema`의 키와 값을 `verdict.py` 4~9줄 docstring과 `COMMANDS`, `GRADES`에 대어 파이썬 assert로 견줌 → 같다. `verdict` 잡의 run을 가짜 `gh`와 실제 `verdict.py`로 `bash --noprofile --norc -eo pipefail`에서 돌림 → 전부 A·커버리지 85.5는 `gh pr comment 7 --body-file comment.md` 뒤 `gh pr merge 7 --merge --delete-branch --match-head-commit abc`와 댓글 첫 줄 "판정: 자동 머지", 커버리지 `unmeasured`는 댓글만과 "판정: 머지 요청", 보안 C와 빌드 fail은 댓글 뒤 `gh pr close 7`과 "판정: 닫기", 모두 종료 코드 0. 빈 묶음은 `JSONDecodeError`로 종료 코드 1이고 댓글을 달지 않는다. 통과
+- `docs/ARCHITECTURE.md`가 setup이 CI 워크플로를 쓰는 것과 PR의 CI 흐름을 적고, `docs/ADR.md`에 ADR-021이 있다.
+  - `docs/ARCHITECTURE.md`와 `docs/ADR.md`를 읽음 → 디렉터리 구조 22줄 setup이 CI 워크플로(`.github/workflows/plate-review.yml`) 양식을 담는다, 패턴과 규칙 48줄 PR의 CI 항목(두 잡의 권한, 판정 스크립트, merge commit, `AGENTS.md`보다 먼저 쓰는 까닭, ADR-021), 데이터 흐름 52줄 셋업이 승인하면 `.github/workflows/plate-review.yml`을 쓴다, 67~71줄 PR → review 잡 → verdict 잡의 흐름. `docs/ADR.md` 33줄부터 ADR-021(결정, 이유, 트레이드오프)이 있다. 통과
+- 명령 절
+  - 빌드: 없음
+  - 린트: 없음
+  - 테스트: `python3 -m unittest discover -s tests` → `Ran 53 tests in 15.911s` / `OK`. 통과
+
+**문제**
+- 이미 셋업된 프로젝트(`AGENTS.md`에 문서 지도 구간이 있다)에서 setup을 다시 불러 CI 에이전트를 승인하면 워크플로를 쓰지 못한다. setup 3번의 "CI 워크플로"는 편집 훅을 피하려고 워크플로를 `AGENTS.md`보다 먼저 쓰게 하지만, 그 순서는 처음 셋업하는 프로젝트만 풀고, 문서 지도 구간이 이미 있으면 남은 phase가 없는 한 `edit_guard.py`의 `check`(209~214줄)가 `.github/workflows/plate-review.yml`의 Write를 막는다. 문서 지도 구간이 있는 git 레포를 만들고 그 Write의 훅 입력을 넣어 보니 "plate: 남은 phase가 있는 task가 없어서 코드 파일을 고치지 않는다: `.github/workflows/plate-review.yml`"과 종료 코드 2가 나왔다(문서 지도 구간이 없으면 0). setup 2번은 문서 지도 구간이 있는 프로젝트를 다시 부르는 경우를 다루므로, task 머리의 목표("승인하면 워크플로 파일을 쓰고")가 그 경우에 맞지 않고, setup 본문에 막혔을 때의 길이 없다 (`plugins/plate/skills/setup/SKILL.md`, `plugins/plate/hooks/edit_guard.py`). 기준: 결함
+
+**판정**: 문제 있음
