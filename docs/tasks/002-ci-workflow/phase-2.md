@@ -46,3 +46,30 @@
 
 ## 하네스에서 걸린 것
 없음
+
+## 확인 1
+
+**통과 조건**
+- 회고 1의 문제가 모두 고쳐졌다.
+  - 스크래치 폴더에 문서 지도 구간(`<!-- plate:docs-map:start -->`)이 있는 `AGENTS.md`, `CLAUDE.md`, `docs/tasks/.gitkeep`만 커밋한 git 레포를 만들고, `{"cwd": …, "hook_event_name": "PreToolUse", "tool_name": "Write", "tool_input": {"file_path": "<레포>/.github/workflows/plate-review.yml"}}`를 `python3 plugins/plate/hooks/edit_guard.py`에 넣음 → 출력 없이 종료 코드 0. 같은 입력을 고치기 전의 훅(`git show d850595^:plugins/plate/hooks/edit_guard.py`)에 넣음 → "plate: 남은 phase가 있는 task가 없어서 코드 파일을 고치지 않는다: `.github/workflows/plate-review.yml`"과 종료 코드 2. 고친 훅에서 `.github/workflows/other.yml`의 Write는 종료 코드 2, `plate-review.yml`을 만든 뒤의 Edit와 Write는 둘 다 종료 코드 2. `plugins/plate/skills/setup/SKILL.md` 84줄 "CI 워크플로"를 읽음 → 승인받았으면 양식의 `.github/workflows/plate-review.yml`을 그 경로에 쓰고 거절했으면 쓰지 않는다. 훅을 피하는 순서("`AGENTS.md`를 고치기 전에 쓴다")는 본문에 남아 있지 않다(`grep -n "먼저 쓴\|고치기 전\|편집 훅"` → 없음). 처음 셋업이든 다시 부른 셋업이든 승인하면 쓰므로 task 머리의 목표와 맞다. 통과
+- task 머리의 완료 조건이 모두 참이다.
+  - 완료 조건 1: `plugins/plate/skills/setup/SKILL.md` 19~111줄과 294줄을 읽음 → 1번 24줄 여섯 가지 판정, 48줄 "GitHub 원격"(`git remote -v`에 `github.com` 원격), 50줄 "plate 워크플로"(`.github/workflows/` 아래에 `plate@harness-plate`가 적힌 파일). 2번 승인 표 63줄 `| GitHub 원격이 있고 plate 워크플로가 없다 | CI 에이전트를 둘지. … |`. 3번 84줄 승인받았으면 양식대로 쓰고 거절했으면 쓰지 않는다. 4번 109줄 `CLAUDE_CODE_OAUTH_TOKEN`, `claude setup-token`, `gh secret set` 또는 Settings → Secrets and variables → Actions. 양식 절 294줄 `.github/workflows/plate-review.yml`. GitHub 원격이 없으면 표의 조건이 맞지 않아 묻지 않고 3번은 승인받았을 때만 쓴다. 통과
+  - 완료 조건 2(양식): 양식 절의 YAML 블록(73줄)을 `awk`로 스크래치 파일에 뽑아 `ruby -ryaml`로 파싱함 → 트리거 `{"pull_request":{"types":["opened","synchronize","reopened"]}}`, `plugin_marketplaces: https://github.com/werwer748/harness-plate.git`(마켓플레이스에 토큰 입력 없음), `plugins: plate@harness-plate`, prompt `/plate:review PR 모드, 기준 브랜치: origin/${{ github.base_ref }}, 평가서 파일: ${{ runner.temp }}/plate-review.md`, `review` 잡 출력 `bundle: ${{ steps.review.outputs.structured_output }}`, `review` 잡 권한 `{"contents":"read","pull-requests":"read"}`. `claude_args`를 `shlex`로 나눠 `--json-schema`를 파싱함 → 일곱 키 모두 required, `additionalProperties: false`. `verdict` 잡은 `needs: review`, 권한 `{"contents":"write","pull-requests":"write"}`, `werwer748/harness-plate`를 `path: harness-plate`로 checkout. 통과
+  - 완료 조건 2(판정 스크립트): `docs/ARCHITECTURE.md` 17줄 `plugins/plate/ci/verdict.py`와 양식의 `python3 harness-plate/plugins/plate/ci/verdict.py`를 견줌 → 같은 파일이고 입력은 둘 다 stdin의 등급 묶음 JSON 하나. `--json-schema`의 키와 enum을 `verdict.py` docstring(4~9줄)과 `COMMANDS`, `GRADES`에 대어 봄 → 같다. `verdict` 잡의 run을 가짜 `gh`와 실제 `verdict.py`로 `bash --noprofile --norc -eo pipefail`에서 돌림 → 전부 A·커버리지 85.5는 `gh pr comment 7 --body-file comment.md` 뒤 `gh pr merge 7 --merge --delete-branch --match-head-commit abc`와 댓글 첫 줄 "판정: 자동 머지", 커버리지 `unmeasured`는 댓글만과 "판정: 머지 요청", 빌드 fail·보안 C는 댓글 뒤 `gh pr close 7`과 "판정: 닫기", 모두 종료 코드 0. 통과
+  - 완료 조건 3: `docs/ARCHITECTURE.md`를 읽음 → 디렉터리 구조 22줄 setup이 CI 워크플로(`.github/workflows/plate-review.yml`) 양식을 담는다, 패턴과 규칙 48줄 PR의 CI 항목(setup이 승인하면 쓴다, 두 잡의 권한, 판정 스크립트, merge commit, ADR-021), 데이터 흐름 52줄 셋업이 승인하면 `.github/workflows/plate-review.yml`, 그 아래 PR → review 잡 → verdict 잡의 흐름. `docs/ADR.md` 33~36줄 ADR-021(결정, 이유, 트레이드오프). 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 54 tests in 15.553s` / `OK`. 통과
+
+**테스트 먼저 기록**
+- "한 일"의 "테스트 먼저" → 실패 출력(`AssertionError: 2 != 0 : 통과해야 하는데 막았다: …` / `FAILED (failures=1)`)이 먼저, 통과 출력(`Ran 1 test in 0.601s` / `OK`)이 그다음에 있다. 고치기 전의 훅을 넣은 스크래치 복사본에서 `python3 -m unittest tests.test_edit_guard.PlanFirstTest.test_setup_writes_new_ci_workflow`를 돌림 → `FAILED (failures=1)`로 기록의 실패 출력과 맞다. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
