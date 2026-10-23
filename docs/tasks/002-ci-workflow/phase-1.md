@@ -51,3 +51,25 @@
 ## 하네스에서 걸린 것
 - 편집 훅(`plugins/plate/hooks/edit_guard.py`)과 setup이 부딪힌다. 처음 셋업하는 프로젝트는 워크플로를 `AGENTS.md`보다 먼저 써서 피했다. 그러나 `AGENTS.md`에 문서 지도 구간이 이미 있는 프로젝트에서 setup을 다시 불러 CI 에이전트를 승인하면, 남은 phase가 없는 한 훅이 `.github/workflows/plate-review.yml`의 편집을 막고 "계획부터 세운다"고 알린다. 이 phase의 TODO는 setup 본문과 문서만 고치므로 훅은 손대지 않았다. 원하는 해결책: 훅이 setup이 쓰는 이 한 경로를 통과시키거나, 다시 부르는 setup의 길을 따로 정한다. 회고에서 논의할 거리다.
 - 수행 스킬의 "다른 phase의 파일은 읽지 않는다"를 한 번 어겼다. ADR-021의 앞선 언급을 찾으려고 저장소 전체를 `grep`했더니 `005-publish-verify/phase-2.md`, `phase-3.md`, `001-ci-review/done-phase-2.md`의 줄이 결과에 섞여 나왔다. 그 내용은 이 phase의 일에 쓰지 않았다.
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 1, 2, 3이 참이다.
+  - 완료 조건 1: `plugins/plate/skills/setup/SKILL.md`의 1번, 2번, 3번, 4번, 양식 절을 읽었다 → 1번 24줄 "여섯 가지를 판정", 48줄 "GitHub 원격"(`git remote -v`에 `github.com` 원격), 50줄 "plate 워크플로"(`.github/workflows/` 아래에 `plate@harness-plate`가 적힌 파일). 2번 63줄 승인 표의 행 `| GitHub 원격이 있고 plate 워크플로가 없다 | CI 에이전트를 둘지. … |`. 3번 84줄 "CI 에이전트를 승인받았으면 … `.github/workflows/plate-review.yml`을 가져와 그 경로에 쓴다. … 거절했으면 쓰지 않는다". 4번 109줄 `CLAUDE_CODE_OAUTH_TOKEN`, `claude setup-token`, `gh secret set` 또는 Settings → Secrets and variables → Actions. 양식 절 294~372줄 `.github/workflows/plate-review.yml`. GitHub 원격이 없으면 표의 조건이 맞지 않아 묻지 않고 3번은 승인받았을 때만 쓴다. 통과
+  - 완료 조건 2의 첫 확인: 양식 절의 YAML 블록을 파이썬으로 뽑아 `ruby -ryaml`로 파싱했다 → 트리거 `{"pull_request":{"types":["opened","synchronize","reopened"]}}`, `plugin_marketplaces: https://github.com/werwer748/harness-plate.git`(토큰 입력 없음), `plugins: plate@harness-plate`, prompt `/plate:review PR 모드, 기준 브랜치: origin/${{ github.base_ref }}, 평가서 파일: ${{ runner.temp }}/plate-review.md`(review 스킬 156줄의 부르는 꼴과 같다), 잡 출력 `bundle: ${{ steps.review.outputs.structured_output }}`. `claude_args`를 `shlex`로 나눠 `--json-schema`의 JSON을 파싱했다 → 일곱 키 모두 required, `additionalProperties: false`. `review` 권한 `{"contents":"read","pull-requests":"read"}`, `github_token: ${{ github.token }}`. `verdict` 잡은 `needs: review`, 권한 `{"contents":"write","pull-requests":"write"}`이고 run에 `gh pr comment "$PR" --body-file comment.md`, merge면 `gh pr merge "$PR" --merge --delete-branch --match-head-commit "$HEAD_SHA"`, close면 `gh pr close "$PR"`. 통과
+  - 완료 조건 2의 둘째 확인: `docs/ARCHITECTURE.md` 디렉터리 구조 16~17줄의 `plugins/plate/ci/verdict.py`와 양식의 `harness-plate/plugins/plate/ci/verdict.py`(`werwer748/harness-plate`를 `path: harness-plate`로 받은 자리)를 견줬다 → 같은 파일. 입력은 둘 다 stdin의 등급 묶음 JSON 하나. 스키마의 키와 값을 `verdict.py` 4~9줄 docstring과 `COMMANDS`, `GRADES`에 대어 파이썬 assert로 견줬다 → "schema matches verdict.py docstring and keys". `verdict` 잡의 run을 가짜 `gh`와 실제 `verdict.py`로 돌렸다 → 전부 A·커버리지 85.5는 `gh pr comment 7 …` 뒤 `gh pr merge 7 --merge --delete-branch --match-head-commit abc`와 "판정: 자동 머지", 커버리지 `unmeasured`는 댓글만과 "판정: 머지 요청", 빌드 fail과 보안 C는 댓글 뒤 `gh pr close 7`과 "판정: 닫기". 모두 종료 코드 0. 통과
+  - 완료 조건 3: `docs/ARCHITECTURE.md`를 읽었다 → 디렉터리 구조 22줄 setup이 CI 워크플로(`.github/workflows/plate-review.yml`) 양식을 담는다, 패턴과 규칙 48줄 PR의 CI 항목(두 잡의 권한, 판정 스크립트, merge commit, ADR-021), 데이터 흐름 52줄 셋업이 승인하면 `.github/workflows/plate-review.yml`, 67~71줄 PR → review 잡 → verdict 잡의 흐름. `docs/ADR.md` 33~36줄 ADR-021(결정, 이유, 트레이드오프). 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → Ran 53 tests, OK. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
