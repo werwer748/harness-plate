@@ -42,3 +42,24 @@
 
 ## 하네스에서 걸린 것
 - task 머리의 완료 조건 1의 확인은 "review의 명령을 돌리는 절을 읽어" 설치를 돌리지 않는지 보고, 완료 조건 2의 확인은 review의 0~9번이 "명령 절 정의 말고는" 바뀌지 않았는지 본다. 둘을 함께 맞추려면 review의 설치 문장을 2번이 아닌 정의에 둘 수밖에 없어, review만 check, retro와 적은 자리가 다르다
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 1이 참이다.
+  - `grep -n "설치" plugins/plate/skills/plan/SKILL.md plugins/plate/skills/check/SKILL.md plugins/plate/skills/retro/SKILL.md plugins/plate/skills/review/SKILL.md` → 네 파일 모두 명령 절 정의에 `` `- 설치: {명령}` ``으로 시작하는 네 줄 정의가 나온다(plan:29, check:29, retro:29, review:32). 그 밖에 plan:62, 76, 260, check:48, retro:60, review:60이 나온다. 통과
+  - `grep -c "^- 설치: 없음$" docs/ARCHITECTURE.md` → `1`. 통과
+  - `plugins/plate/skills/plan/SKILL.md`의 3번과 5번, check 3번, retro 3번, review 낱말과 2번을 읽음 → plan 3번(62줄)은 "설치, 빌드, 린트, 테스트 가운데 적히지 않은 것"을 빌드 매니페스트와 코드에서 찾고 찾지 못한 명령은 5번에서 묻는다. plan 5번(76줄)은 "3번에서 찾지 못한 명령(설치, 빌드, 린트, 테스트)도 여기서 묻는다". check 3번(48줄)과 retro 3번(60줄)에 "설치는 돌리지 않는다"가 있다. review 2번의 1은 빌드, 린트, 테스트만 돌리고, 명령 절 정의(32줄)에 "tasks 끝의 코드 평가는 설치를 돌리지 않는다"가 있다. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 39 tests in 15.006s`, `OK`(exit 0). 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
