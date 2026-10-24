@@ -46,3 +46,24 @@
 
 ## 하네스에서 걸린 것
 - TODO가 `docs/ARCHITECTURE.md`에서 run 규칙과 데이터 흐름만 가리켜, 같은 문서 패턴과 규칙의 푸시 훅 문단에 있는 "에이전트의 푸시를 막는 기본은 스킬마다의 '푸시하지 않는다' 규칙이고"는 고치지 않았다. run의 절대 규칙 5는 이제 PR을 열 때 `tasks/<이름>`의 푸시를 허락한다.
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 1, 2, 3이 참이다.
+  - 완료 조건 1: `plugins/plate/skills/run/SKILL.md`의 tasks 끝(244~), "비운다"(408~), "PR을 연다"(418~), "합친다"(457~)를 읽었다 → "비운다"가 지우기 전에 PR에 쓸 것(tasks 머리의 제목, 요청, 목표, `review.md`의 마지막 평가 절, `eval.md`의 마지막 eval 절, 고침 task 머리의 완료 조건)을 읽어 두고, 끝에서 origin이 GitHub 원격이면 "PR을 연다"로, 그 밖이면 "합친다"로 간다. "PR을 연다" 1번이 푸시할 브랜치, PR이 가는 곳(기본 브랜치), 제목과 본문을 보여 주고 묻고, 거절하면 "푸시하지 않고 합치지도 않고 브랜치를 그대로 둔 채" 10번으로 간다. 2번 `git push origin tasks/<이름>`, 3번 `gh pr create --base {기본 브랜치} --head tasks/<이름>`, 4번 plate 워크플로가 없으면 `gh pr comment`로 `review.md`의 마지막 평가 절을 단다. "PR 본문의 꼴"에 요청, 목표, 코드 평가의 등급과 Sonar way 게이트, 하네스 eval의 등급, 고친 것, 올린 이슈가 있다. "합친다"의 첫 글은 "'비운다'에서 origin이 GitHub 원격이 아닐 때 온다"이고 단계는 지금의 것이다. 통과
+  - 완료 조건 2: `plugins/plate/skills/run/SKILL.md`의 절대 규칙 5(20행), 10번(209~), `RUNLOG.md` 절(468~)과 `plugins/plate/skills/eval/SKILL.md`의 "정해 둔 물음"(40행)을 읽었다 → 절대 규칙 5는 "푸시는 'PR을 연다'에서 승인받아 `tasks/<이름>`을 origin에 올릴 때만 한다", "GitHub 이슈, PR, 댓글은 승인받은 것만 올린다"다. 10번에 "PR을 열지 물었으면 연 PR의 주소와 단 댓글의 주소. 열지 않았으면 그 까닭(거절, 실패한 명령과 오류), 댓글을 달지 않았으면 그 까닭" 줄이 있다. `RUNLOG.md` 절은 비운 뒤에 물은 것(PR을 열지, 합칠지)을 적지 않는다고 해 PR 물음과 맞는다. eval의 정해 둔 물음은 "tasks 끝의 고칠지, PR을 열지, 합칠지다". 통과
+  - 완료 조건 3: `grep -n "합칠\|합친\|PR\|푸시" docs/ARCHITECTURE.md docs/PRD.md`와 ARCHITECTURE 데이터 흐름(53~70행)을 읽었다 → ARCHITECTURE 49행 run 규칙은 "`origin`이 GitHub이면 … PR을 열지 묻고, `origin`이 없거나 GitHub의 것이 아니면 기본 브랜치로 합칠지 묻는다", 데이터 흐름 67~69행은 "docs/tasks/를 비운다" → "origin이 GitHub이면 … PR을 열지 묻는다" → "origin이 없거나 GitHub의 것이 아니면 기본 브랜치로 합칠지 묻는다", PRD 18행은 "origin이 GitHub이면 run이 tasks 브랜치를 푸시해 기본 브랜치로 가는 PR을 열지 묻고 … origin이 GitHub이 아니거나 없으면 기본 브랜치로 합칠지 묻는다"다. GitHub 원격이 있어도 합칠지 묻는다는 뜻의 옛 글은 없다. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 89 tests in 34.781s` / `OK`. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
