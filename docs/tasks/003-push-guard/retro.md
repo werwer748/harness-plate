@@ -184,3 +184,36 @@
 - 기본 브랜치에 있는 채 `--repo`로 origin 밖 원격을 적은 push를 막는다. `git push --repo=<원격>`은 위치 인자의 `<repository>`와 같은데, `push_args`(168~196줄)는 `--repo=…`를 다른 `--` 옵션처럼 넘기고(184~185줄) `--repo <원격>`은 값을 건너뛰기만 해서(28줄, 182~183줄), `blocked_branch`가 원격을 설정의 `origin`으로 보고(259줄) 대상이 없으니 기본 브랜치에 있다는 까닭으로 막는다(265줄). 같은 스크래치에 bare 원격 `fork`를 더하고 `main`에서 `git push --repo=fork`와 `git push --repo fork`를 훅에 넣으니 둘 다 "plate: 기본 브랜치(`main`)로 푸시하지 않는다"와 종료 코드 2였고, bash의 `--dry-run --porcelain`은 둘 다 `fork.git`으로만 `refs/heads/main:refs/heads/main [new branch]`를 냈다. 같은 자리의 `git push fork`는 0이다(`test_push_to_remote_other_than_origin`도 같다). phase 1(`f8f219b`)의 훅도 2다. 완료 조건 1의 "origin 밖 원격으로의 푸시는 막지 않는다"에 들고 셸 구문이 아니다 (`plugins/plate/hooks/push_guard.py`). 기준: 결함
 
 **판정**: 문제 있음
+
+## 회고 7
+
+**확인**
+- 셋업된 프로젝트에서 에이전트의 Bash 호출이 기본 브랜치로 푸시하면, 훅이 종료 코드 2로 막고 까닭을 stderr로 알린다. 막는 경우는 기본 브랜치에 있는 채 대상 없이 하는 push, 기본 브랜치를 가리키는 push, 기본 브랜치를 지우는 push(`--delete`, `:main` 꼴), `&&`나 `;`로 이어진 명령 안의 push, `git -C <폴더>` 안의 push(그 폴더의 기본 브랜치를 본다)다. 다른 브랜치로의 푸시, origin 밖 원격으로의 푸시, 셋업 안 된 프로젝트(`AGENTS.md`에 문서 지도 구간이 없다)의 푸시는 막지 않는다.
+  - `python3 -m unittest discover -s tests` → `Ran 89 tests in 34.251s` / `OK`. 통과
+  - `tests/test_push_guard.py`를 읽음 → 기본 브랜치에 있는 채 대상 없이 하는 push(`test_push_without_target_on_default_branch` 90줄, `test_push_head_while_on_default_branch` 118줄), 기본 브랜치를 가리키는 push(`test_push_to_default_branch` 102줄), 지우는 push(`test_delete_default_branch` 123줄의 `--delete` 두 자리, `-d`, `:main`, `:refs/heads/main`), 이어진 명령 안의 push(`test_push_inside_chained_command` 198줄의 `&&`, `;`, 붙인 `;`, `||`, 줄바꿈), `git -C` 안의 push와 그 폴더의 기본 브랜치(`test_push_inside_git_c_uses_that_folder` 228줄, `test_git_c_folder_has_its_own_default_branch` 236줄), 다른 브랜치(`test_push_to_other_branch` 269줄), origin 밖 원격(`test_push_to_remote_other_than_origin` 300줄), 셋업 안 된 프로젝트(`test_project_not_set_up` 345줄)가 있다. 막는 시험은 `assertBlocked`(81줄)로 종료 코드 2와 stderr의 "기본 브랜치"를 본다. `python3 -m unittest discover -s tests -p 'test_push_guard.py' -v` → `Ran 33 tests in 18.280s` / `OK`, 33개 모두 `ok`. task 머리 여섯째 결정대로 이 경우들을 시험의 꼴로 읽고, 스크래치에 로컬 bare `origin.git`(HEAD가 `main`), `fork.git`과 문서 지도 구간이 있는 레포(`main`이 origin보다 한 커밋 앞서고 `origin/main`을 추적, `tasks/x`, 태그 `v1.0`)를 만들어, 시험의 막는 명령 57개와 통과 명령 42개마다 훅의 종료 코드와 같은 명령의 `git push`를 `git push --dry-run --porcelain`으로 바꿔 bash에 돌린 결과(origin의 `refs/heads/main`을 바꾸거나 지우는가)를 견줬다. 98개가 같았고, `git fetch || git push origin main`만 fetch가 성공해 push가 돌지 않았는데 훅이 막았다(`||`로 이어진 push를 막는 시험의 꼴이다). 통과
+- `plugins/plate/hooks/hooks.json`이 Bash의 PreToolUse에 푸시 훅을 건다. 스크립트 파일이 없으면 `python3`를 부르지 않고 0으로 끝나는 꼴은 `edit_guard.py`를 거는 것과 같다.
+  - `python3 -c "import json; h=json.load(open('plugins/plate/hooks/hooks.json')); print([m['matcher'] for m in h['hooks']['PreToolUse']])"` → `['Edit|Write|MultiEdit|NotebookEdit', 'Bash']`. 통과
+  - `plugins/plate/hooks/hooks.json`을 읽음 → 18줄의 Bash 항목은 `f="${CLAUDE_PLUGIN_ROOT}/hooks/push_guard.py"; [ -f "$f" ] || exit 0; exec python3 "$f"`로 9줄의 편집 훅과 스크립트 이름만 다르다. 그 명령을 `CLAUDE_PLUGIN_ROOT=/nonexistent`로 `sh -c`에 돌림 → `exit=0`. 통과
+- `docs/PRD.md`의 목표와 `docs/ARCHITECTURE.md`의 기술 스택, 디렉터리 구조, 막는 장치가 푸시 훅을 적는다.
+  - `docs/PRD.md`의 목표(4줄)와 `docs/ARCHITECTURE.md`의 기술 스택(5줄), 디렉터리 구조(19, 21, 34줄), 패턴과 규칙의 막는 장치(48줄)를 읽음 → PRD 목표에 "에이전트가 기본 브랜치에 하는 푸시", 기술 스택에 푸시 훅 `push_guard.py`, 디렉터리 구조에 hooks.json의 Bash 항목과 `push_guard.py`, `test_push_guard.py`, 막는 장치에 푸시 훅이 막는 것, 막지 않는 것, 사람의 푸시는 다루지 않는다는 것, heredoc·주석·줄 잇기와 명령 치환의 읽기, 나누지 못한 명령의 막음, 약속하는 꼴은 `tests/test_push_guard.py`의 시험이 다루는 꼴뿐이고 그 밖의 셸 구문과 git의 표기(`heads/<이름>`, `--repo` 같은)는 결함으로 보지 않는다는 것이 적혀 있다. 통과
+- tasks 완료 조건 1의 단위 테스트가 그대로 통과한다. 이 task도 `tests/`를 고친다.
+  - `python3 -m unittest discover -s tests` → `OK`(위와 같다). `git diff --stat f8f219b^ HEAD -- tests/test_verdict.py plugins/plate/ci/`와 `git diff --stat -- tests/test_verdict.py plugins/plate/ci/` → 둘 다 출력 없음. `python3 -m unittest discover -s tests -p 'test_verdict.py'` → `Ran 14 tests in 0.739s` / `OK`. 통과
+- 명령 절
+  - 빌드: 없음
+  - 린트: 없음
+  - 테스트: `python3 -m unittest discover -s tests` → `Ran 89 tests in 34.251s` / `OK`. 통과
+- 테스트 먼저 기록: phase 1
+  - `done-phase-1.md`의 "한 일"의 테스트 먼저 → 실패 출력(`push_guard.py`가 없어 푸시 훅의 시험이 실패, `Ran 76 tests in 21.721s` / `FAILED (failures=50)`)이 먼저, 통과 출력(`Ran 76 tests in 29.178s` / `OK`)이 뒤에 있다. 통과
+- 테스트 먼저 기록: phase 2
+  - `done-phase-2.md`의 "한 일"의 테스트 먼저 → 실패 출력(`FAIL: test_push_after_heredoc …` 등, `Ran 80 tests in 30.776s` / `FAILED (failures=22)`)이 먼저, 통과 출력(`Ran 80 tests in 32.095s` / `OK`)이 뒤에 있다. 통과
+- 테스트 먼저 기록: phase 3
+  - `done-phase-3.md`의 "한 일"의 테스트 먼저 → 실패 출력(`FAIL: test_push_across_line_continuation …` 등, `Ran 84 tests in 33.904s` / `FAILED (failures=8)`)이 먼저, 통과 출력(`Ran 84 tests in 32.088s` / `OK`)이 뒤에 있다. 통과
+- 테스트 먼저 기록: phase 4
+  - `done-phase-4.md`의 "한 일"의 테스트 먼저 → 실패 출력(`FAIL: test_unsplit_command_with_push …`, `Ran 87 tests in 32.380s` / `FAILED (failures=2)`)이 먼저, 통과 출력(`Ran 87 tests in 33.222s` / `OK`)이 뒤에 있다. 통과
+- 테스트 먼저 기록: phase 5
+  - `done-phase-5.md`의 "한 일"의 테스트 먼저 → 실패 출력(`FAIL: test_push_after_substitution_with_quotes …` 등, `Ran 89 tests in 33.345s` / `FAILED (failures=8)`)이 먼저, 통과 출력(`Ran 89 tests in 33.743s` / `OK`)이 뒤에 있다. 통과
+
+**문제**
+- 없음
+
+**판정**: 통과
