@@ -47,3 +47,29 @@
 
 ## 하네스에서 걸린 것
 - TODO 두 항목 끝의 파일 목록에 `plugins/plate/hooks/push_guard.py`가 있지만, 같은 항목의 "훅을 고치지 않고"와 테스트 먼저 줄의 "`docs/ARCHITECTURE.md`만 고친다"를 따라 훅은 고치지 않았다. 목록은 회고 5의 문제 글에서 옮겨 온 것으로 보았다.
+
+## 확인 1
+
+**통과 조건**
+- 회고 5의 문제가 모두 고쳐졌다. 두 문제는 `docs/ARCHITECTURE.md`의 막는 장치에 약속 밖의 꼴로 적힌 것이 고친 것이다.
+  - `docs/ARCHITECTURE.md` 48줄을 읽음 → "푸시 훅이 막는다고 약속하는 꼴은 여기까지 적은 것뿐이고, 그 밖의 셸 구문은 약속하지 않는다"와 "매개변수 확장(`${ … }`), 산술 명령(`(( … ))`) 같은 구문에서 놓치거나 잘못 막는 것은 결함으로 보지 않는다"가 있다. `git diff --stat HEAD^ HEAD -- plugins/plate/hooks/push_guard.py`와 `git diff --stat -- plugins/plate/hooks/push_guard.py` → 둘 다 출력 없음(훅은 그대로). 스크래치에 로컬 bare origin과 문서 지도 구간이 있는 레포(`main`이 origin보다 한 커밋 앞서고 지금 브랜치는 `tasks/x`)를 만들고 지금의 훅에 넣음 → `echo "${X:-"fix #1"}" && git push origin main` 0, `git commit --allow-empty -m "${MSG:-"fix #1"}" && git push origin main` 0, `(( x = 1 << 2 ))`(줄바꿈)`git push origin main` 0으로 회고 5에 적힌 대로이고, 첫 둘은 매개변수 확장, 셋째는 산술 명령으로 적은 약속 밖의 꼴에 든다. bash에서 첫째와 셋째의 push를 `--dry-run --porcelain`으로 돌림 → 둘 다 `refs/heads/main:refs/heads/main`, 셋째는 `x=4`. 견줌으로 `echo "${X:-"a"}" && git push origin main` 2, `echo $((1<<2))`(줄바꿈)`git push origin main` 2, `git push origin main` 2, `git push origin tasks/x` 0. 통과
+- `docs/ARCHITECTURE.md`의 막는 장치가 task 머리의 결정에 적은 약속하는 꼴을 적고, 그 밖의 셸 구문은 약속하지 않는다고 적는다. 약속 밖의 꼴은 이 phase의 통과를 가르지 않는다.
+  - `docs/ARCHITECTURE.md` 48줄을 task 머리의 다섯째 결정과 견줌 → 완료 조건 1의 꼴(`&&`, `||`, `;`, `|`, 줄바꿈으로 나눈 명령 안의 `git push`, `git -C <폴더>`면 그 폴더의 것, origin의 기본 브랜치를 바꾸거나 지우는 push, 기본 브랜치에 있는 채 대상 없이 하는 push, 다른 브랜치·origin 밖 원격·셋업 안 된 프로젝트는 막지 않음), heredoc 본문과 `#` 주석을 명령으로 보지 않고 줄 잇기(`\`+줄바꿈)를 경계로 보지 않는 것, `$( … )`·백틱 치환의 읽기, 나누지 못한 명령의 막음이 적혀 있고, 그 뒤에 "그 밖의 셸 구문은 약속하지 않는다"와 매개변수 확장·산술 명령을 결함으로 보지 않는다는 글이 있다. 셋째 결정의 한계(`cd`·`pushd` 뒤, 명령 치환이나 변수로 적은 대상, `sh -c`·`eval`)와 첫째 결정의 사람의 푸시를 다루지 않는다는 것도 있다. 통과
+- task 머리의 완료 조건이 모두 참이다.
+  - 완료 조건 1: `python3 -m unittest discover -s tests` → `Ran 89 tests in 34.781s` / `OK`. `tests/test_push_guard.py`를 읽음 → 대상 없이 하는 push(`test_push_without_target_on_default_branch` 90줄, `test_push_head_while_on_default_branch` 118줄), 기본 브랜치를 가리키는 push(`test_push_to_default_branch` 102줄), 지우는 push(`test_delete_default_branch` 123줄의 `--delete`, `-d`, `:main`, `:refs/heads/main`), 이어진 명령 안의 push(`test_push_inside_chained_command` 198줄의 `&&`, `;`, `||`, 줄바꿈), `git -C` 안의 push와 그 폴더의 기본 브랜치(228줄, 236줄), 다른 브랜치(`test_push_to_other_branch` 269줄), origin 밖 원격(`test_push_to_remote_other_than_origin` 300줄), 셋업 안 된 프로젝트(`test_project_not_set_up` 345줄)가 있고, 막는 시험은 `assertBlocked`(81줄)로 종료 코드 2와 stderr의 "기본 브랜치"를 본다. 통과
+  - 완료 조건 2: `python3 -c "import json; h=json.load(open('plugins/plate/hooks/hooks.json')); print([m['matcher'] for m in h['hooks']['PreToolUse']])"` → `['Edit|Write|MultiEdit|NotebookEdit', 'Bash']`. `plugins/plate/hooks/hooks.json` 9줄과 18줄을 읽음 → 18줄은 `f="${CLAUDE_PLUGIN_ROOT}/hooks/push_guard.py"; [ -f "$f" ] || exit 0; exec python3 "$f"`로 9줄과 스크립트 이름만 다르다. 18줄의 명령을 `CLAUDE_PLUGIN_ROOT=/nonexistent`로 `sh -c`에 돌림 → `exit=0`. 통과
+  - 완료 조건 3: `docs/PRD.md` 목표(4줄)에 "에이전트가 기본 브랜치에 하는 푸시", `docs/ARCHITECTURE.md` 기술 스택(5줄)에 푸시 훅 `push_guard.py`, 디렉터리 구조(19, 21, 34줄)에 hooks.json의 Bash 항목, `push_guard.py`, `test_push_guard.py`, 막는 장치(48줄)에 푸시 훅이 있다. 통과
+  - 완료 조건 4: 위의 `python3 -m unittest discover -s tests` → `OK`. `git diff --stat f8f219b^ HEAD -- tests/test_verdict.py plugins/plate/ci/`와 `git diff --stat -- tests/test_verdict.py plugins/plate/ci/` → 둘 다 출력 없음. `python3 -m unittest discover -s tests -p 'test_verdict.py'` → `Ran 14 tests in 0.738s` / `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 89 tests in 34.781s` / `OK`. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
