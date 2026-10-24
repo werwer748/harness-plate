@@ -55,3 +55,34 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 회고 3의 문제가 모두 고쳐졌다. 첫째와 둘째 문제는 `docs/ARCHITECTURE.md`의 막는 장치에 한계로 적힌 것이 고친 것이다.
+  - 첫째(`cd`·`pushd` 뒤의 push): `docs/ARCHITECTURE.md` 48줄(막는 장치)을 읽음 → "푸시 훅은 셸 구문을 모두 읽지 않는다. 같은 호출에서 `cd`·`pushd` 뒤에 하는 push는 호출한 폴더에서 보고"가 있다. 통과
+  - 둘째(명령 치환·변수·감싼 push): 같은 줄 → "명령 치환이나 변수로 적은 대상과 `sh -c`·`eval`처럼 다른 명령이 감싼 push는 읽지 않는다"가 있다. 통과
+  - 셋째(나누지 못한 명령): 스크래치에 로컬 bare origin과 문서 지도 구간이 있는 레포 `proj`(`main`이 origin보다 하나 앞서고 지금 브랜치는 `tasks/x`), 셋업 안 된 레포 `other`(같은 꼴)를 만들고, 명령마다 훅의 종료 코드와 `git push`를 `git push --dry-run --porcelain`으로 바꿔 bash에 돌린 결과를 견줌(커밋에는 `--allow-empty`를 붙임) → `proj`에서 `don't` 쪽과 `issue #12` 쪽은 훅 2, stderr "plate: 따옴표의 짝을 맞추지 못해 명령을 나누지 못했고, …" / "push를 다른 명령과 잇지 말고 따로 부른다."이고, bash는 둘 다 `refs/heads/main:refs/heads/main`을 냈다. 같은 자리의 `Fix #12`(heredoc 안), `Rename "foo" to "bar"`(heredoc 안과 `-m "Rename \"foo\" to \"bar\""` 둘 다)는 훅 2(stderr "plate: 기본 브랜치(`main`)로 푸시하지 않는다: `git push origin main`"). `other`에서 두 명령은 훅 0, `proj`에서 push가 없는 `don't` 쪽 커밋 명령은 훅 0. `docs/ARCHITECTURE.md` 48줄에 "따옴표가 어긋나 명령을 나누지 못하면(…) 호출한 폴더가 셋업된 프로젝트이고 명령의 글에 `push`가 있을 때 막고, push를 다른 명령과 잇지 말고 따로 하라고 알린다"가 있다. 통과
+- 나누지 못한 명령은 셋업된 프로젝트에서 글에 `push`가 있으면 막히고, 셋업 안 된 프로젝트에서는 막히지 않는다.
+  - `tests/test_push_guard.py`를 읽음 → 회고 3의 셋째 문제의 두 명령(`UNSPLIT_PUSHES` 25~28줄)이 셋업된 프로젝트의 `tasks/x`에서 막히고 stderr에 "따로"가 있는 `test_unsplit_command_with_push`(201줄), 셋업 안 된 프로젝트에서 막히지 않는 `test_unsplit_command_in_project_not_set_up`(332줄)이 있다. `python3 -m unittest discover -s tests` → `Ran 87 tests in 32.210s` / `OK`. 통과
+- task 머리의 완료 조건이 모두 참이다.
+  - 완료 조건 1: `python3 -m unittest discover -s tests` → `Ran 87 tests in 32.210s` / `OK`. `tests/test_push_guard.py`를 읽음 → 기본 브랜치에 있는 채 대상 없이 하는 push(`test_push_without_target_on_default_branch` 80줄, `test_push_head_while_on_default_branch` 108줄), 기본 브랜치를 가리키는 push(`test_push_to_default_branch` 92줄), 지우는 push(`test_delete_default_branch` 113줄의 `--delete` 두 자리, `-d`, `:main`, `:refs/heads/main`), `&&`·`;`로 이어진 명령 안의 push(`test_push_inside_chained_command` 188줄), `git -C` 안의 push와 그 폴더의 기본 브랜치(`test_push_inside_git_c_uses_that_folder` 209줄, `test_git_c_folder_has_its_own_default_branch` 217줄), 다른 브랜치(`test_push_to_other_branch` 250줄), origin 밖 원격(`test_push_to_remote_other_than_origin` 281줄), 셋업 안 된 프로젝트(`test_project_not_set_up` 326줄)가 있다. `python3 -m unittest discover -s tests -p 'test_push_guard.py' -v` → `Ran 31 tests in 16.626s` / `OK`. 통과
+  - 완료 조건 2: `python3 -c "import json; h=json.load(open('plugins/plate/hooks/hooks.json')); print([m['matcher'] for m in h['hooks']['PreToolUse']])"` → `['Edit|Write|MultiEdit|NotebookEdit', 'Bash']`. `plugins/plate/hooks/hooks.json` 9줄과 18줄을 읽음 → Bash 항목은 `f="${CLAUDE_PLUGIN_ROOT}/hooks/push_guard.py"; [ -f "$f" ] || exit 0; exec python3 "$f"`로 편집 훅의 명령과 스크립트 이름만 다르다. 그 명령을 `CLAUDE_PLUGIN_ROOT=/nonexistent`로 `sh -c`에 돌림 → 종료 코드 0. 통과
+  - 완료 조건 3: `docs/PRD.md` 4줄(목표)과 `docs/ARCHITECTURE.md`의 기술 스택(5줄), 디렉터리 구조(19, 21, 34줄), 막는 장치(48줄)를 읽음 → PRD 목표에 "에이전트가 기본 브랜치에 하는 푸시", 기술 스택에 푸시 훅 `push_guard.py`, 디렉터리 구조에 hooks.json의 Bash 항목과 `push_guard.py`, `test_push_guard.py`, 막는 장치에 푸시 훅이 막는 것, 막지 않는 것, 한계, 나누지 못한 명령의 막음이 적혀 있다. 통과
+  - 완료 조건 4: `python3 -m unittest discover -s tests` → `OK`(위와 같다). `git diff --stat f8f219b^ HEAD -- tests/test_verdict.py plugins/plate/ci/`(`f8f219b^`는 `5a7c002`) → 출력 없음. `python3 -m unittest discover -s tests -p 'test_verdict.py'` → `Ran 14 tests in 0.732s` / `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 87 tests in 32.210s` / `OK`. 통과
+
+**테스트 먼저 기록**
+- `phase-4.md`의 "한 일"의 테스트 먼저 → 실패 출력(`FAIL: test_unsplit_command_with_push …` 두 subTest, `Ran 87 tests in 32.380s` / `FAILED (failures=2)`)이 먼저, 통과 출력(`Ran 87 tests in 33.222s` / `OK`)이 뒤에 있다. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
