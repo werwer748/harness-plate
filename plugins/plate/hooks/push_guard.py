@@ -5,6 +5,7 @@
 Bash 명령을 `&&`, `||`, `;`, `|`, 줄바꿈으로 나눠 그 안의 `git push`가 origin의 기본 브랜치를
 바꾸거나 지우면 종료 코드 2로 끝나고 stderr의 글이 에이전트에게 간다. heredoc의 본문과 `#` 주석은 명령으로 보지 않고,
 줄 잇기(`\\`+줄바꿈)는 명령의 경계로 보지 않는다.
+명령 치환(`$( … )`, 백틱)은 그 안의 따옴표, 주석, heredoc을 따로 세고, 치환 안의 push는 읽지 않는다.
 따옴표가 어긋나 명령을 나누지 못하면, 셋업된 프로젝트에서 명령의 글에 `push`가 있을 때 막는다.
 사람의 푸시는 보지 않는다.
 """
@@ -22,6 +23,7 @@ REMOTE = "origin"
 PUNCTUATION = "();<>|&\n"
 SEPARATORS = set("();|&\n")
 ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+SUBSTITUTION = "$_"  # 명령 치환이 있던 자리. 치환 안의 글은 명령으로 읽지 않는다
 GIT_ARG_OPTIONS = {"-c", "--git-dir", "--work-tree", "--namespace", "--config-env"}
 PUSH_ARG_OPTIONS = {"-o", "--push-option", "--repo", "--receive-pack", "--exec"}
 REFSPEC_OPTIONS = {  # refspec을 적은 것과 같은 옵션
@@ -52,8 +54,15 @@ def lexer(text):
 
 def without_non_commands(command):
     """셸이 명령으로 읽지 않는 글을 뺀 명령 글. heredoc의 본문은 그 명령의 입력이고,
-    `#` 주석은 그 줄 끝까지 버려지고, 줄 잇기(`\\`+줄바꿈)는 지워져 앞뒤가 한 명령이 된다."""
-    out, pending, quote, i = [], [], None, 0
+    `#` 주석은 그 줄 끝까지 버려지고, 줄 잇기(`\\`+줄바꿈)는 지워져 앞뒤가 한 명령이 된다.
+    명령 치환(`$( … )`, 백틱)은 SUBSTITUTION으로 바꾼다."""
+    return scan(command, 0, None)[0]
+
+
+def scan(command, i, closer):
+    """command를 i부터 읽어 (명령이 아닌 글을 뺀 글, 다음에 읽을 자리)를 돌려준다.
+    closer가 `)`나 백틱이면 명령 치환 안이다. 따옴표, 주석, heredoc을 바깥과 따로 세다가 닫는 글자에서 끝난다."""
+    out, pending, quote, depth = [], [], None, 0
     word_start = True  # 따옴표 밖에서 다음 글자가 낱말의 첫 글자인가. 그 자리의 `#`만 주석이다
     while i < len(command):
         c = command[i]
@@ -63,9 +72,20 @@ def without_non_commands(command):
                 word_start = False
             i += 2
             continue
+        if quote != "'" and (c == "`" or command.startswith("$(", i)):
+            if c == closer:  # 셸처럼 백틱 치환은 그 안의 따옴표와 상관없이 다음 백틱에서 닫는다
+                return "".join(out), i + 1
+            _, i = scan(command, i + 1, "`") if c == "`" else scan(command, i + 2, ")")
+            out.append(SUBSTITUTION)  # 바깥 큰따옴표 안이었으면 quote가 그대로라 그 안으로 돌아온다
+            word_start = False
+            continue
         if quote:
             if c == quote:
                 quote = None
+        elif closer == ")" and c in "()":  # `$((1+2))`나 서브셸의 괄호는 짝을 세고, 남는 `)`가 치환을 닫는다
+            depth += 1 if c == "(" else -1
+            if depth < 0:
+                return "".join(out), i + 1
         elif c == "#" and word_start:  # 줄바꿈은 남겨 명령의 경계와 heredoc의 시작으로 읽는다
             end = command.find("\n", i)
             i = len(command) if end < 0 else end
@@ -96,7 +116,7 @@ def without_non_commands(command):
         out.append(c)
         i += 1
         word_start = not quote and c in " \t\n;&|()<>"
-    return "".join(out)
+    return "".join(out), i
 
 
 def segments(command):
@@ -104,7 +124,7 @@ def segments(command):
     따옴표가 어긋나 나누지 못하면 None을 돌려준다."""
     try:
         tokens = list(lexer(without_non_commands(command)))
-    except ValueError:  # 닫히지 않은 따옴표. `"$( … )"` 안의 따옴표처럼 셸은 짝을 맞추는데 여기서 못 맞추는 꼴도 든다
+    except ValueError:  # 닫히지 않은 따옴표. `$'…'` 안의 `\'`처럼 셸은 짝을 맞추는데 여기서 못 맞추는 꼴도 든다
         return None
     parts, words, skip = [], [], False
     for token in tokens:

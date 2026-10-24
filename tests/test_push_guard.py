@@ -21,10 +21,20 @@ HOOKS_JSON = PLUGIN_ROOT / "hooks" / "hooks.json"
 
 BLOCKED = "기본 브랜치"
 
-# `"$( … )"` 안의 큰따옴표 때문에 따옴표의 짝을 맞추지 못해 명령을 나누지 못하는 꼴
-UNSPLIT_PUSHES = (
+# 따옴표가 든 명령 치환 뒤에 이은 push. 치환 안의 따옴표, 주석, heredoc을 따로 세어야 뒤의 push를 읽는다
+SUBSTITUTION_PUSHES = (
     "git commit -m \"$(cat <<'EOF'\nKeep \"don't\" wording\nEOF\n)\" && git push origin main",
     "git commit -m \"$(cat <<'EOF'\nClose \"issue #12\" properly\nEOF\n)\" && git push origin main",
+    "git commit -m \"$(echo \"fix #1\")\" && git push origin main",
+    "echo \"$(echo \"fix #1\")\" && git push origin main",
+    "echo \"$(git log -1 --format=\"%h #%s\")\"; git push origin main",
+    "echo \"`echo \"it's\"`\" && git push origin main",
+)
+
+# 따옴표의 짝을 맞추지 못해 명령을 나누지 못하는 꼴. 셸은 `$'…'` 안의 `\'`를 따옴표로 읽지 않는다
+UNSPLIT_PUSHES = (
+    "echo $'it\\'s' && git push origin main",
+    "git commit -m \"don't && git push origin main",
 )
 
 
@@ -198,6 +208,15 @@ class BlockTest(PushGuardTestCase):
             with self.subTest(command=command):
                 self.assertBlocked(bash(command, p.root), "`main`")
 
+    def test_push_after_substitution_with_quotes(self):
+        """명령 치환 안의 따옴표, 주석, heredoc은 따로 세므로 치환 뒤에 이은 push를 나눠 읽고 그 까닭으로 막는다."""
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        for command in SUBSTITUTION_PUSHES:
+            with self.subTest(command=command):
+                err = self.assertBlocked(bash(command, p.root), "`main`", "git push origin main")
+                self.assertNotIn("나누지 못했", err)
+
     def test_unsplit_command_with_push(self):
         """따옴표가 어긋나 명령을 나누지 못하면, 글에 push가 있을 때 막고 따로 하라고 알린다."""
         p = self.project()
@@ -339,7 +358,20 @@ class PassTest(PushGuardTestCase):
     def test_unsplit_command_without_push(self):
         p = self.project()
         p.git("switch", "-q", "-c", "tasks/x")
-        self.assertPassed(bash("git commit -m \"$(cat <<'EOF'\nKeep \"don't\" wording\nEOF\n)\"", p.root))
+        self.assertPassed(bash("echo $'it\\'s' && git status", p.root))
+
+    def test_substitution_with_quotes_without_push(self):
+        """명령 치환 안의 따옴표를 따로 세므로, push 없는 명령은 글에 push가 있어도 막지 않는다."""
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        for command in (
+            "git commit -m \"$(cat <<'EOF'\nKeep \"don't\" wording\nEOF\n)\"",
+            "git commit -m \"$(cat <<'EOF'\nKeep \"don't\" push wording\nEOF\n)\"",
+            "git commit -m \"$(echo \"fix #1\")\" && git push origin tasks/x",
+            "echo \"`echo \"it's\"`\" && git push origin tasks/x",
+        ):
+            with self.subTest(command=command):
+                self.assertPassed(bash(command, p.root))
 
     def test_commands_that_are_not_push(self):
         p = self.project()
