@@ -49,3 +49,4 @@ GitHub 원격이 있는 프로젝트에서는 tasks 끝이 로컬 병합 대신 
 - `003-push-guard`: 에이전트가 기본 브랜치로 푸시하면 plate의 훅이 막는다
 - `004-run-pr`: run이 tasks 끝에 묻고 tasks 브랜치를 푸시해 PR을 열며, CI 워크플로가 없으면 로컬 평가서를 PR 댓글로 단다
 - `005-publish-verify`: harness-plate가 공개되고 0.11.0이 되며, 시험 저장소와 시험 폴더에서 PR, CI, 푸시 훅, setup의 물음이 확인된다
+- `006-fixes`: tasks 끝에서 고치기로 한 것이 고쳐진다
