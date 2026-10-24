@@ -44,3 +44,28 @@
 ## 하네스에서 걸린 것
 - 원격 없는 run의 둘째 턴(합칠지 물은 턴)의 답글이 영어였다. 첫 턴과 셋째 턴의 답글, 프로젝트의 문서는 한국어다. 물음의 뜻은 분명해 판정에는 걸리지 않았다
 - 원격 없는 run의 마지막 보고는 `review.md`의 소스 문제에 든 U+2028 문자를 BACKLOG에 ` `로 적었다고 했지만, `docs/BACKLOG.md`에는 그 문자가 그대로 들어 있다(`ci-local`의 `efbc90d`). 보고가 한 일과 다르다
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 5가 참이다.
+  - 이 파일(`phase-4.md`)의 "한 일"에 원격 없는 장면의 시험 폴더 `~/plate-rail-test/ci-local`과 실행 기록 `~/plate-rail-test/logs/ci-local-2.jsonl`(합칠지 물은 턴)이 적혀 있음. 그 기록에서 "Should I merge `tasks/line-count` into `main`?"를 `grep -c`로 셈 → 2. `result` 줄이 "This repo has no origin remote, so there's no PR step; the next step is merging into `main`." 뒤에 그 물음으로 끝난다. 통과
+  - `test ~/plate-rail-test/logs/ci-local-2.jsonl -nt plugins/plate/skills/run/SKILL.md` → 참(`ci-local-setup`, `ci-local-1`, `ci-local-3`도 참. run 본문 2026-10-24 18:24:36, 기록 21:00:41~21:24:16). 통과
+  - `git -C ~/plate-rail-test/ci-local log --format=%s main` → 첫 줄이 `line-count: 비움`(`c3f87c1`). `git remote`는 아무것도 내지 않고 브랜치는 `main` 하나다. 통과
+  - 이 파일의 "한 일"에 푸시 훅 장면의 시험 폴더 `~/plate-rail-test/ci-push`와 실행 기록 `~/plate-rail-test/logs/ci-push.jsonl`이 적혀 있음. 그 기록의 `git push origin main` 호출의 `tool_result`가 `is_error` `true`이고 내용이 `PreToolUse:Bash hook error: [f="…/plugins/plate/hooks/push_guard.py"; …]: ` 뒤에 `push_guard.py`의 `BLOCK` 글(`plate: 기본 브랜치(`main`)로 푸시하지 않는다: `git push origin main``과 둘째 줄) 그대로다. `tool_result_meta`의 `permission_decision`은 `{"decision": "reject", "source": "hook", "reason_type": "hook"}`. origin(`ci-push-origin.git`)의 `main`은 `f0fa749`로 로컬 `main`(`64f5581 셋업`)보다 하나 뒤다. 통과
+  - `test ~/plate-rail-test/logs/ci-push.jsonl -nt plugins/plate/hooks/push_guard.py` → 참(`hooks.json`에도 참. 푸시 훅 17:15:54, 기록 21:01:28). 통과
+- 이 phase에서 확인한 도구의 사실이 `docs/TOOLS.md`에 적혀 있다.
+  - `docs/TOOLS.md`의 Claude Code 절(15~139줄)을 읽음 → 122~129줄 "원격 없는 합치기와 푸시 훅에서 본 것"에 원격 없는 run이 합칠지 묻고 fast-forward로 합친 것, Bash 호출을 막은 훅이 기록에 남는 꼴(`tool_result`, `tool_result_meta`, `permission_denials`), 훅이 허용 목록보다 앞서는 것이 시험 폴더(`ci-local`, `ci-push`, `ci-push-origin.git`), 스크립트(`bin/localmake.sh`, `bin/cilocal-plan.sh`, `bin/tturn.sh`, `bin/pushprobe.sh`. 넷 다 있다), 기록(`logs/ci-local-setup.jsonl`, `logs/ci-local-1.jsonl`~`logs/ci-local-3.jsonl`, `logs/ci-push-setup.jsonl`, `logs/ci-push.jsonl`)의 위치와 함께 있다. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 89 tests`, `OK`. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
