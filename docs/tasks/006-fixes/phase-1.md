@@ -11,6 +11,7 @@
 - `plugins/plate/.claude-plugin/plugin.json`
 - `plugins/plate/.codex-plugin/plugin.json`
 - `~/plate-rail-test/bin/run.sh`
+- `~/plate-rail-test/bin/pushprobe.sh`
 - `docs/PRD.md`
 - `docs/ARCHITECTURE.md`
 - `docs/ADR.md`
@@ -25,6 +26,7 @@
 - [ ] 띄운 에이전트에 실린 plate 스킬 본문이 tasks가 고친 저장소의 본문을 따라오지 않는다. 세션에 실린 plate 스킬 본문은 세션을 띄울 때의 것이라 같은 세션에서 띄운 에이전트에는 tasks가 고치기 전의 본문이 실린다는 사실을 적고, 스킬의 절차를 바꾸는 tasks는 그 절차에 기대는 다음 단계를 새 세션에서 이어 간다고 적는다 (`docs/TOOLS.md`)
 - [ ] 복사본과 견주는 `diff -r`가 git이 무시하는 `__pycache__`를 다른 것으로 낸다. 테스트와 `--plugin-dir` 세션의 훅이 `plugins/plate/hooks/__pycache__`를 만든다는 것을 적고, `plugins/plate`를 복사본과 견주는 확인은 `diff -r -x __pycache__`로 쓴다 (`docs/ARCHITECTURE.md`)
 - [ ] 시험 폴더의 run 허용 목록에 푸시가 없다. run의 허용 목록에 `Bash(git push:*)`를 넣어 장면마다 `RUN_ALLOW`로 더하지 않게 한다 (`~/plate-rail-test/bin/run.sh`)
+- [ ] 푸시 훅을 고친 뒤 `~/plate-rail-test/bin/pushprobe.sh ci-push ci-push`로 푸시 훅 장면을 다시 돌려, 기본 브랜치로의 `git push`가 훅에 막힌 실행 기록이 푸시 훅 스크립트보다 새롭게 한다(task 머리의 결정) (`~/plate-rail-test/logs/ci-push.jsonl`)
 
 **통과 조건**
 - task 머리의 완료 조건이 모두 참이다.

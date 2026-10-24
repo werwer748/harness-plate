@@ -15,7 +15,7 @@ tasks 끝의 코드 평가와 하네스 eval에서 고치기로 한 것을 모�
 3. 푸시 훅의 옵션과 설정을 읽는 가지 일곱 곳(따옴표 밖 이스케이프, 환경 변수 앞붙임, `git -c` 같은 git 옵션, `--`, `-o`·`--repo` 같은 push 옵션, 짧은 옵션 묶음의 `-o`, 설정의 원격)에 시험이 없어 깨져도 알 수 없다 (`plugins/plate/hooks/push_guard.py:71`)
    - 확인: `tests/test_push_guard.py`를 읽어 일곱 가지마다 그 가지를 지나는 시험이 있고, `python3 -m unittest discover -s tests`가 통과한다
 4. 완료 조건 1의 셋째 확인 `diff -r <복사본> plugins/plate`가 `.gitignore`에 걸린 `__pycache__`를 다른 것으로 내어 실패한다. 추적되는 파일은 같다 (`plugins/plate/hooks/__pycache__`)
-   - 확인: `python3 -m unittest discover -s tests`를 돌린 뒤 시험 저장소의 기본 브랜치를 새로 받아 그 안의 plate 복사본을 `diff -r <복사본> plugins/plate`로 견주면 아무것도 나오지 않는다
+   - 확인: `python3 -m unittest discover -s tests`를 돌린 뒤 시험 저장소의 기본 브랜치를 새로 받아, 그 안의 plate 복사본을 `git archive 72dcfcf plugins/plate | tar -x -C <임시 폴더>`로 꺼낸 tasks 끝의 plate와 `diff -r -x __pycache__ <복사본> <임시 폴더>/plugins/plate`로 견주면 아무것도 나오지 않는다
 5. 두 매니페스트의 `description`이 0.11.0의 푸시 훅과 CI(review의 PR 모드, 판정 스크립트)를 적지 않는다 (`plugins/plate/.claude-plugin/plugin.json:4`, `plugins/plate/.codex-plugin/plugin.json:4`)
    - 확인: 두 파일의 `description`을 읽어 푸시 훅과 CI(review의 PR 모드, 판정 스크립트)가 적혀 있다
 6. 띄운 에이전트에 실린 plate 스킬 본문이 tasks가 고친 저장소의 본문을 따라오지 않는다. 세션에 실린 plate 스킬 본문은 세션을 띄울 때의 것이라 같은 세션에서 띄운 에이전트에는 tasks가 고치기 전의 본문이 실린다는 사실을 적고, 스킬의 절차를 바꾸는 tasks는 그 절차에 기대는 다음 단계를 새 세션에서 이어 간다고 적는다 (`docs/TOOLS.md`)
@@ -27,7 +27,7 @@ tasks 끝의 코드 평가와 하네스 eval에서 고치기로 한 것을 모�
 9. tasks 완료 조건 1, 2, 3, 4, 5, 6이 참이다.
    - 확인: `python3 -m unittest discover -s tests`가 통과하고, 그 가운데 판정 스크립트의 테스트가 세 규칙의 경계를 본다
    - 확인: `docs/tasks/005-publish-verify/done-phase-3.md`의 기록에 적힌 세 장면의 PR마다 `gh pr view <번호> -R werwer748/plate-ci-test --json state,comments`가 자동 머지 장면은 `MERGED`, 머지 요청 장면은 `OPEN`, 닫기 장면은 `CLOSED`를 내고, 셋 모두 평가서 댓글이 있다
-   - 확인: 시험 저장소의 기본 브랜치를 새로 받아 그 안의 plate 복사본을 `diff -r <복사본> plugins/plate`로 견주면 아무것도 나오지 않는다
+   - 확인: 시험 저장소의 기본 브랜치를 새로 받아 그 안의 plate 복사본을 `git archive 72dcfcf plugins/plate | tar -x -C <임시 폴더>`로 꺼낸 tasks 끝의 plate와 `diff -r -x __pycache__ <복사본> <임시 폴더>/plugins/plate`로 견주면 아무것도 나오지 않는다
    - 확인: `docs/tasks/005-publish-verify/`의 `done-phase-2.md`, `done-phase-3.md`, `done-phase-4.md`에 적힌 run 장면의 실행 기록마다 PR을 열지(원격 없는 장면은 합칠지) 묻는 글이 있고, 기록마다 `test <기록> -nt plugins/plate/skills/run/SKILL.md`가 참이다
    - 확인: 그 기록에 적힌 run 장면의 PR마다 `gh pr view <번호> -R werwer748/plate-ci-test --json headRefName,baseRefName,comments`의 머리 브랜치가 `tasks/`로 시작하고 기준 브랜치가 `main`이며, CI 워크플로가 없던 장면의 PR에는 평가서 댓글이 있다
    - 확인: 원격 없는 장면의 시험 폴더에서 `git log --format=%s main`에 그 tasks의 `<이름>: 비움` 커밋이 있다
@@ -41,4 +41,4 @@ tasks 끝의 코드 평가와 하네스 eval에서 고치기로 한 것을 모�
    - 확인: `docs/PRD.md`, `docs/ARCHITECTURE.md`, `docs/ADR.md`, `README.md`를 읽어 PR, CI 판정, 푸시 훅, 명령 절의 설치 줄, 공개 저장소가 적혀 있고, 옛 동작(GitHub 원격이 있어도 로컬로 합친다, 비공개 저장소)이 남지 않았다
 
 ## 결정
-- 없음
+- 시험 저장소의 plate 복사본은 tasks 끝 커밋 `72dcfcf`의 `plugins/plate`와 `diff -r -x __pycache__`로 견주고, 소스 문제 4는 코드가 아니라 이 견주는 법과 완료 조건 7의 문서로 고친다. 푸시 훅을 고치면 푸시 훅 장면을 다시 돌린다. 이유: 이 task가 `plugins/plate`를 고치면 시험 저장소의 복사본과 달라지는데, 복사본은 CI 장면이 그때의 plate로 돌았는지를 보는 것이라 새로 올릴 까닭이 없고 phase는 푸시하지 않는다. 완료 조건 4와 7이 같은 문제를 코드와 문서의 다른 길로 고치라고 해 맞물리지 않았다.
