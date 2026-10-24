@@ -9,6 +9,15 @@
             "command": "f=\"${CLAUDE_PLUGIN_ROOT}/hooks/edit_guard.py\"; [ -f \"$f\" ] || exit 0; exec python3 \"$f\""
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"${CLAUDE_PLUGIN_ROOT}/hooks/push_guard.py\"; [ -f \"$f\" ] || exit 0; exec python3 \"$f\""
+          }
+        ]
       }
     ]
   }
