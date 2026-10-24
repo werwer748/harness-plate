@@ -119,6 +119,15 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
 - 시험 폴더에서 `--plugin-dir`로 이 레포의 `plugins/plate`를 실은 세션이 Bash를 부르면 푸시 훅이 `edit_guard`를 불러와 `plugins/plate/hooks/__pycache__/`가 생긴다. git은 무시하지만 `diff -r <복사본> plugins/plate`는 `Only in plugins/plate/hooks: __pycache__`를 낸다.
 - 실행 시간. setup이 257초, run은 tasks 일괄로 task 하나(phase 하나)를 코드 평가와 하네스 eval까지 간 턴이 1671초(에이전트 5. 코드 평가 621초, 하네스 eval 499초), 고칠지 답해 PR 물음까지 간 턴이 137초, PR을 승인한 턴이 47초였다. CI는 PR이 열리고 약 75초 뒤에 판정까지 끝났다.
 
+**원격 없는 합치기와 푸시 훅에서 본 것** (2.1.310, 2026-10-24. 시험 폴더는 `~/plate-rail-test/bin/localmake.sh`가 `ci-src`의 `ae98f75`(plate 복사본과 워크플로가 들어가기 전) 파일로 만드는 `ci-local`(원격 없음, 기본 브랜치 `main`)과 `ci-push`(origin이 로컬 bare 저장소 `ci-push-origin.git`)다. `ci-local`의 셋업 커밋과 계획 파일은 `bin/cilocal-plan.sh`가 넣는다. run은 `bin/tturn.sh`로, 푸시 훅 장면은 스킬 없이 `bin/pushprobe.sh`로 돌렸다. 기록은 `logs/ci-local-setup.jsonl`, `logs/ci-local-1.jsonl`~`logs/ci-local-3.jsonl`, `logs/ci-push-setup.jsonl`, `logs/ci-push.jsonl`이다)
+
+- 원격이 없는 폴더와 origin이 GitHub이 아닌 폴더에서 setup은 CI 에이전트를 묻지 않고 워크플로를 쓰지 않았다.
+- 원격 없는 run은 비움 커밋 뒤 PR 단계 없이 `tasks/line-count`를 `main`에 합칠지 물었고, 승인하자 `git switch main`, `git merge tasks/line-count`, `git branch -d tasks/line-count`를 `&&`로 이은 한 호출로 돌렸다. `main`에 새 커밋이 없어 fast-forward로 끝났다. 그 물음을 쓴 둘째 턴의 답글만 영어였고(첫 턴과 셋째 턴은 한국어), 까닭은 확인하지 않았다.
+- Bash 호출을 막은 훅도 기록에 Edit 때와 같은 꼴로 남는다(위 "훅"). `tool_result`의 `is_error`가 `true`이고 내용이 `PreToolUse:Bash hook error: [<훅 명령>]: <stderr>` 뒤에 빈 줄과 `This hook comes from the plate@inline plugin.`이다. `tool_result_meta`에는 `"non_execution_kind": "permission-rule"`과 `permission_decision` `{"decision": "reject", "source": "hook", "reason_type": "hook"}`가 있다.
+- 훅이 막은 호출은 `result` 줄의 `permission_denials`에도 `tool_name`, `tool_use_id`, `tool_input`으로 들어간다. 권한에 막힌 호출과 같은 목록이라, 훅인지는 `tool_result_meta`로 가른다. `result`는 `"subtype": "success"`, `"is_error": false`였다.
+- 훅이 허용 목록보다 앞선다. `--allowedTools "Bash(git push:*)"`를 준 세션에서도 `git push origin main`은 푸시 훅에 막혔고 origin의 `main`은 그대로였다.
+- 실행 시간. setup이 258초와 273초, 원격 없는 run은 tasks 일괄로 task 하나(phase 하나)를 코드 평가와 하네스 eval까지 간 턴이 1184초(에이전트 5. 코드 평가 464초, 하네스 eval 231초), 고칠지 답해 합칠지 물음까지 간 턴이 123초, 합치기를 승인한 턴이 36초, 푸시 훅 장면이 10초였다. 폴더가 다른 실행 둘을 한꺼번에 돌렸다.
+
 **플러그인 폴더의 편집과 권한 모드** (2026-10-13. 이 레포에서 `/plate:run 004`를 돌린 자기 적용에서 봤다)
 
 - `--plugin-dir`로 실은 폴더는 보호 경로다. 그 안의 쓰기는 설정의 `permissions.allow`로 미리 허락할 수 없고, 묻지 않고 지나가는 모드는 bypassPermissions뿐이다. 수동 모드와 acceptEdits에서는 묻고, 띄운 에이전트의 물음도 주 세션에 뜬다(문서 code.claude.com/docs/en/permission-modes의 "Protected paths"로 확인했다).
