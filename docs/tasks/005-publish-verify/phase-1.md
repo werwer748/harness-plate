@@ -51,3 +51,29 @@
 
 ## 하네스에서 걸린 것
 - 이 phase의 TODO "ADR-022가 더해진다"와 task 머리는 ADR-022가 무엇을 정하는지 적지 않았다. 읽을 것이 ADR-005(배포)를 가리키고 ADR-021의 트레이드오프가 "harness-plate가 공개여야 워크플로가 돈다(`005-publish-verify`에서 공개로 돌린다)"라고 적은 것으로 공개 저장소로 배포하는 결정이라고 보고 적었다. tasks 머리는 읽지 않았다. ADR-022의 "시크릿을 넣지 않는다"와 "작성자 메일은 그대로 두기로 했다"는 task 머리나 이 phase에 없고, 이 세션에 실린 사용자 메모리(011을 계획할 때 정한 것)에서 가져왔다.
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 1, 2가 참이다.
+  - `gh repo view werwer748/harness-plate --json visibility -q .visibility` → `PUBLIC`. 통과
+  - `GIT_TERMINAL_PROMPT=0 git -c credential.helper= ls-remote https://github.com/werwer748/harness-plate.git HEAD` → `d29c0144082039adc42cc5e07f65bbb499cd71be	HEAD` 한 줄, 종료 코드 0. 통과
+  - `claude plugin validate .` → 마지막 줄 `✔ Validation passed`. 통과
+  - `grep -h '"version"' plugins/plate/.claude-plugin/plugin.json plugins/plate/.codex-plugin/plugin.json` → `"version": "0.11.0",` 두 줄. 통과
+  - `grep -c "^### ADR-022: " docs/ADR.md` → `1`. 통과
+  - `docs/PRD.md`, `docs/ARCHITECTURE.md`, `docs/ADR.md`, `README.md`를 읽음 → PR은 PRD 핵심 기능 8, ARCHITECTURE의 run 항목과 데이터 흐름, ADR-021, README의 "tasks 끝의 PR"에, CI 판정(자동 머지, 머지 요청, 닫기)은 PRD 핵심 기능 8, ARCHITECTURE의 "PR의 CI" 항목, ADR-021, README의 판정 표에, 푸시 훅은 PRD 목표, ARCHITECTURE의 기술 스택·디렉터리 구조·막는 장치 항목, README의 "훅"에, 명령 절의 설치 줄은 ARCHITECTURE 명령 절의 `- 설치: 없음`과 "PR의 CI" 항목의 "PR 모드는 명령 절의 설치를 먼저 돌린 뒤"에, 공개 저장소는 ARCHITECTURE의 배포 줄, ADR-021, ADR-022, README의 설치 절에 있다. `grep -n -E "비공개|private|로컬로 합|로컬에서 합|PR과 CI는 011에서 만든다"`를 네 문서에 돌리면 ADR-022의 "2026-10-24에 비공개에서 공개로 바꿨다" 한 줄만 나오고, GitHub 원격이 있어도 로컬로 합친다는 글이나 비공개 저장소로 배포한다는 글은 없다. 통과
+- 바꾼 뒤에도 기존 테스트가 모두 통과한다.
+  - `python3 -m unittest discover -s tests` → `Ran 89 tests in 35.185s`, `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 89 tests in 35.185s`, `OK`. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 완료 조건 2의 "네 문서가 PR, CI 판정, 푸시 훅, 명령 절의 설치 줄, 공개 저장소를 적고"는 네 문서가 함께 적는지, 문서마다 다섯을 모두 적는지 정하지 않았다. 이 phase의 TODO가 문서마다 고칠 것을 따로 정한 것을 따라 네 문서를 합쳐 보았다. 문서마다로 읽으면 PRD에는 명령 절의 설치 줄과 공개 저장소가, ADR에는 푸시 훅과 명령 절의 설치 줄이, README에는 명령 절의 설치 줄이 없다.
+
+**판정**: 통과
