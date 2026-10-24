@@ -5,6 +5,7 @@ JSON을 훅에 주어 돌린다. 종료 코드 2가 막음, 0이 통과다. 막�
 원격은 설정과 원격 추적 브랜치만 두고 실제로 푸시하지 않는다.
 """
 
+import ast
 import json
 import shutil
 import subprocess
@@ -64,6 +65,38 @@ def bash(command, cwd):
         capture_output=True, text=True,
     )
     return done.returncode, done.stderr
+
+
+def cognitive_complexity(function):
+    """함수 하나의 인지 복잡도를 Sonar의 셈법(python:S3776)으로 센다. if, for, while, except, 조건식은
+    1에 겹친 깊이를 더하고 그 안을 한 단 깊게 센다. elif, else, for·while의 else는 1을 더하고,
+    and·or 묶음마다 1을 더한다. 훅이 쓰지 않는 꼴(try의 else, match, 안에 둔 함수, 람다)은 세지 않는다."""
+    return complexity(function.body, 0)
+
+
+def complexity(nodes, nesting):
+    return sum(node_complexity(node, nesting) for node in nodes)
+
+
+def node_complexity(node, nesting):
+    if isinstance(node, ast.If):
+        return 1 + nesting + if_complexity(node, nesting)
+    if isinstance(node, (ast.For, ast.While)):
+        head = [node.test] if isinstance(node, ast.While) else [node.target, node.iter]
+        score = 1 + nesting + complexity(head, nesting) + complexity(node.body, nesting + 1)
+        return score + (1 + complexity(node.orelse, nesting + 1) if node.orelse else 0)
+    if isinstance(node, (ast.ExceptHandler, ast.IfExp)):
+        return 1 + nesting + complexity(ast.iter_child_nodes(node), nesting + 1)
+    return int(isinstance(node, ast.BoolOp)) + complexity(ast.iter_child_nodes(node), nesting)
+
+
+def if_complexity(node, nesting):
+    """if의 조건과 몸, 뒤에 이은 elif와 else. if 자체의 1과 깊이는 부른 쪽이 더한다."""
+    score = complexity([node.test], nesting) + complexity(node.body, nesting + 1)
+    rest = node.orelse
+    if len(rest) == 1 and isinstance(rest[0], ast.If) and rest[0].col_offset == node.col_offset:  # elif
+        return score + 1 + if_complexity(rest[0], nesting)
+    return score + (1 + complexity(rest, nesting + 1) if rest else 0)
 
 
 class PushGuardTestCase(unittest.TestCase):
@@ -225,6 +258,85 @@ class BlockTest(PushGuardTestCase):
             with self.subTest(command=command):
                 self.assertBlocked(bash(command, p.root), "따로")
 
+    def test_escaped_character(self):
+        """작은따옴표 밖의 `\\`+글자는 그 글자를 남기고, 그 뒤의 `#`은 낱말의 첫 글자가 아니다."""
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        for command in (
+            "git push origin \\main",
+            "echo \\a#b; git push origin main",
+            "git commit -m \"a \\\" b\" && git push origin main",
+        ):
+            with self.subTest(command=command):
+                self.assertBlocked(bash(command, p.root), "`main`")
+
+    def test_assignment_before_git(self):
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        for command in (
+            "GIT_TRACE=1 git push origin main",
+            "A=1 B=2 git push origin main",
+        ):
+            with self.subTest(command=command):
+                self.assertBlocked(bash(command, p.root), "`main`")
+
+    def test_git_option_value_is_not_subcommand(self):
+        """`-c <설정>`처럼 값을 받는 git 옵션의 값은 하위 명령으로 읽지 않는다."""
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        for command in (
+            "git -c push.default=current push origin main",
+            "git --git-dir .git push origin main",
+            "git -c core.quotepath=off -C . push origin main",
+        ):
+            with self.subTest(command=command):
+                self.assertBlocked(bash(command, p.root), "`main`")
+
+    def test_positional_after_double_dash(self):
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        for command in (
+            "git push -- origin main",
+            "git push origin -- main",
+            "git push -u -- origin main",
+        ):
+            with self.subTest(command=command):
+                self.assertBlocked(bash(command, p.root), "`main`")
+
+    def test_push_option_value_is_not_positional(self):
+        """`-o`, `--push-option`, `--repo`처럼 값을 받는 push 옵션의 값은 원격이나 refspec으로 읽지 않는다."""
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        for command in (
+            "git push -o ci.skip origin main",
+            "git push --push-option ci.skip origin main",
+            "git push --receive-pack git-receive-pack origin main",
+        ):
+            with self.subTest(command=command):
+                self.assertBlocked(bash(command, p.root), "`main`")
+        p.git("switch", "-q", "main")
+        self.assertBlocked(bash("git push --repo origin", p.root), "`main`")
+
+    def test_o_in_short_option_bundle(self):
+        """짧은 옵션 묶음에서 `o` 뒤의 글자는 -o의 값이고, 붙어 있지 않으면 다음 낱말이 값이다."""
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        for command in (
+            "git push -uo ci.skip origin main",
+            "git push -uoci.skip origin main",
+            "git push -do ci.skip origin main",
+        ):
+            with self.subTest(command=command):
+                self.assertBlocked(bash(command, p.root), "`main`")
+
+    def test_configured_push_remote_is_origin(self):
+        """대상 없는 push는 설정의 원격으로 간다. `branch.<이름>.pushRemote`가 `remote.pushDefault`보다 앞선다."""
+        p = self.project()
+        p.git("remote", "add", "fork", "https://example.invalid/fork.git")
+        p.git("config", "remote.pushDefault", "fork")
+        p.git("config", "branch.main.pushRemote", "origin")
+        self.assertBlocked(bash("git push", p.root), "`main`")
+
     def test_push_inside_git_c_uses_that_folder(self):
         p = self.project()
         p.git("switch", "-q", "-c", "tasks/x")
@@ -305,6 +417,21 @@ class PassTest(PushGuardTestCase):
         self.assertPassed(bash("git push fork --delete main", p.root))
         self.assertPassed(bash("git push --all fork", p.root))
         self.assertPassed(bash("git push --mirror fork", p.root))
+
+    def test_configured_remote_other_than_origin(self):
+        """기본 브랜치에서 대상 없이 하는 push도 설정의 원격이 origin 밖이면 막지 않는다."""
+        for key in ("branch.main.pushRemote", "remote.pushDefault", "branch.main.remote"):
+            with self.subTest(key=key):
+                p = self.project()
+                p.git("remote", "add", "fork", "https://example.invalid/fork.git")
+                p.git("config", key, "fork")
+                self.assertPassed(bash("git push", p.root))
+
+    def test_escaped_quote_does_not_open_quote(self):
+        """작은따옴표 밖의 `\\\"`는 따옴표를 열지 않으므로 그 뒤의 `#`부터 줄 끝까지가 주석이다."""
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        self.assertPassed(bash("echo \\\" # x\"; git push origin main", p.root))
 
     def test_heredoc_body_is_not_a_command(self):
         p = self.project()
@@ -428,6 +555,24 @@ class HooksJsonTest(PushGuardTestCase):
         p = self.project()
         self.assertBlocked(self.run_command(PLUGIN_ROOT, payload("git push origin main", p.root)))
         self.assertPassed(self.run_command(PLUGIN_ROOT, payload("git status", p.root)))
+
+
+class ComplexityTest(unittest.TestCase):
+    """코드 평가가 인지 복잡도를 문제로 적은 `scan`, `push_args`와 거기서 나눈 함수가 Sonar의 기준 15 안이다."""
+
+    LIMIT = 15
+    NAMES = ("scan", "Scanner", "push_args", "short_options")  # 클래스는 메서드마다 센다
+
+    def test_split_functions_within_limit(self):
+        tree = ast.parse(HOOK.read_text(encoding="utf-8"))
+        defined = {node.name: node for node in tree.body if isinstance(node, (ast.FunctionDef, ast.ClassDef))}
+        for name in self.NAMES:
+            with self.subTest(name=name):
+                self.assertIn(name, sorted(defined))
+                node = defined[name]
+                functions = node.body if isinstance(node, ast.ClassDef) else [node]
+                counts = {f.name: cognitive_complexity(f) for f in functions if isinstance(f, ast.FunctionDef)}
+                self.assertLessEqual(max(counts.values()), self.LIMIT, counts)
 
 
 if __name__ == "__main__":

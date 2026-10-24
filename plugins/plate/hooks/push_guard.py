@@ -62,61 +62,121 @@ def without_non_commands(command):
 def scan(command, i, closer):
     """command를 i부터 읽어 (명령이 아닌 글을 뺀 글, 다음에 읽을 자리)를 돌려준다.
     closer가 `)`나 백틱이면 명령 치환 안이다. 따옴표, 주석, heredoc을 바깥과 따로 세다가 닫는 글자에서 끝난다."""
-    out, pending, quote, depth = [], [], None, 0
-    word_start = True  # 따옴표 밖에서 다음 글자가 낱말의 첫 글자인가. 그 자리의 `#`만 주석이다
-    while i < len(command):
-        c = command[i]
-        if c == "\\" and quote != "'":  # 뒤의 글자는 따옴표나 `<<`로 읽지 않는다
-            if command[i + 1:i + 2] != "\n":
-                out.append(command[i:i + 2])
-                word_start = False
-            i += 2
-            continue
-        if quote != "'" and (c == "`" or command.startswith("$(", i)):
-            if c == closer:  # 셸처럼 백틱 치환은 그 안의 따옴표와 상관없이 다음 백틱에서 닫는다
-                return "".join(out), i + 1
-            _, i = scan(command, i + 1, "`") if c == "`" else scan(command, i + 2, ")")
-            out.append(SUBSTITUTION)  # 바깥 큰따옴표 안이었으면 quote가 그대로라 그 안으로 돌아온다
-            word_start = False
-            continue
-        if quote:
-            if c == quote:
-                quote = None
-        elif closer == ")" and c in "()":  # `$((1+2))`나 서브셸의 괄호는 짝을 세고, 남는 `)`가 치환을 닫는다
-            depth += 1 if c == "(" else -1
-            if depth < 0:
-                return "".join(out), i + 1
-        elif c == "#" and word_start:  # 줄바꿈은 남겨 명령의 경계와 heredoc의 시작으로 읽는다
-            end = command.find("\n", i)
-            i = len(command) if end < 0 else end
-            continue
+    scanner = Scanner(command, i, closer)
+    while scanner.i < len(command) and not scanner.closed:
+        scanner.step()
+    return "".join(scanner.out), scanner.i
+
+
+class Scanner:
+    """scan이 읽는 자리와 상태. 메서드마다 셸의 꼴 하나를 읽고 자리를 옮긴다."""
+
+    def __init__(self, command, i, closer):
+        self.command, self.i, self.closer = command, i, closer
+        self.out, self.pending, self.quote, self.depth = [], [], None, 0
+        self.word_start = True  # 따옴표 밖에서 다음 글자가 낱말의 첫 글자인가. 그 자리의 `#`만 주석이다
+        self.closed = False  # 명령 치환을 닫는 글자를 읽었다
+
+    def step(self):
+        c = self.command[self.i]
+        if c == "\\" and self.quote != "'":
+            self.escape()
+        elif self.quote != "'" and (c == "`" or self.command.startswith("$(", self.i)):
+            self.substitution(c)
+        elif self.quote:
+            if c == self.quote:
+                self.quote = None
+            self.take(c)
+        else:
+            self.unquoted(c)
+
+    def take(self, c):
+        """글자 하나를 명령의 글로 옮긴다."""
+        self.out.append(c)
+        self.i += 1
+        self.word_start = not self.quote and c in " \t\n;&|()<>"
+
+    def close(self):
+        """명령 치환을 닫는 글자를 읽었다. 그 뒤가 바깥에서 읽을 자리다."""
+        self.i += 1
+        self.closed = True
+
+    def escape(self):
+        """`\\` 뒤의 글자는 따옴표나 `<<`로 읽지 않는다. 줄 잇기(`\\`+줄바꿈)는 지운다."""
+        if self.command[self.i + 1:self.i + 2] != "\n":
+            self.out.append(self.command[self.i:self.i + 2])
+            self.word_start = False
+        self.i += 2
+
+    def substitution(self, c):
+        """명령 치환(`$( … )`, 백틱)은 그 안을 따로 읽고 SUBSTITUTION으로 바꾼다."""
+        if c == self.closer:  # 셸처럼 백틱 치환은 그 안의 따옴표와 상관없이 다음 백틱에서 닫는다
+            self.close()
+            return
+        command = self.command
+        _, self.i = scan(command, self.i + 1, "`") if c == "`" else scan(command, self.i + 2, ")")
+        self.out.append(SUBSTITUTION)  # 바깥 큰따옴표 안이었으면 quote가 그대로라 그 안으로 돌아온다
+        self.word_start = False
+
+    def unquoted(self, c):
+        """따옴표 밖의 글자. 치환 안의 괄호, 주석, 따옴표의 시작, heredoc을 읽는다."""
+        if self.closer == ")" and c in "()":
+            self.paren(c)
+        elif c == "#" and self.word_start:
+            self.comment()
         elif c in "'\"":
-            quote = c
-        elif command.startswith("<<", i) and not command.startswith("<<<", i) and command[i - 1:i] != "<":
-            strip = command.startswith("<<-", i)  # `<<-`는 본문과 끝 줄 앞의 탭을 뺀다
-            j = i + (3 if strip else 2)
-            pending.append((lexer(command[j:]).get_token(), strip))
-            out.append(command[i:j])
-            i = j
-            word_start = True
-            continue
-        elif c == "\n" and pending:
-            out.append(c)
-            i += 1
-            word_start = True
-            for delimiter, strip in pending:  # 본문은 `<<`가 있는 줄의 다음 줄부터 끝 줄까지다
-                while i < len(command):
-                    end = command.find("\n", i)
-                    end = len(command) if end < 0 else end
-                    line, i = command[i:end], end + 1
-                    if (line.lstrip("\t") if strip else line) == delimiter:
-                        break
-            pending = []
-            continue
-        out.append(c)
-        i += 1
-        word_start = not quote and c in " \t\n;&|()<>"
-    return "".join(out), i
+            self.quote = c
+            self.take(c)
+        elif self.at_heredoc():
+            self.heredoc_start()
+        elif c == "\n" and self.pending:
+            self.heredoc_bodies()
+        else:
+            self.take(c)
+
+    def paren(self, c):
+        """`$((1+2))`나 서브셸의 괄호는 짝을 세고, 남는 `)`가 치환을 닫는다."""
+        self.depth += 1 if c == "(" else -1
+        if self.depth < 0:
+            self.close()
+        else:
+            self.take(c)
+
+    def comment(self):
+        """`#` 주석은 그 줄 끝까지 버린다. 줄바꿈은 남겨 명령의 경계와 heredoc의 시작으로 읽는다."""
+        end = self.command.find("\n", self.i)
+        self.i = len(self.command) if end < 0 else end
+
+    def at_heredoc(self):
+        """`<<`나 `<<-`가 heredoc을 여는 자리인가. `<<<`는 heredoc이 아니다."""
+        command, i = self.command, self.i
+        return command.startswith("<<", i) and not command.startswith("<<<", i) and command[i - 1:i] != "<"
+
+    def heredoc_start(self):
+        """끝 낱말을 적어 두고 `<<` 뒤부터 읽는다. 본문은 그 줄이 끝날 때 건너뛴다."""
+        strip = self.command.startswith("<<-", self.i)  # `<<-`는 본문과 끝 줄 앞의 탭을 뺀다
+        j = self.i + (3 if strip else 2)
+        self.pending.append((lexer(self.command[j:]).get_token(), strip))
+        self.out.append(self.command[self.i:j])
+        self.i = j
+        self.word_start = True
+
+    def heredoc_bodies(self):
+        """`<<`가 있는 줄의 줄바꿈. 본문은 그 다음 줄부터 heredoc마다 끝 줄까지다."""
+        self.take("\n")
+        for delimiter, strip in self.pending:
+            self.heredoc_body(delimiter, strip)
+        self.pending = []
+
+    def heredoc_body(self, delimiter, strip):
+        """본문을 끝 줄까지 건너뛴다. 끝 줄이 없으면 글의 끝까지다."""
+        command = self.command
+        while self.i < len(command):
+            end = command.find("\n", self.i)
+            end = len(command) if end < 0 else end
+            line, self.i = command[self.i:end], end + 1
+            if (line.lstrip("\t") if strip else line) == delimiter:
+                return
 
 
 def segments(command):
@@ -184,16 +244,21 @@ def push_args(args):
         elif arg.startswith("--"):
             pass
         elif arg.startswith("-") and len(arg) > 1:
-            for k, letter in enumerate(arg[1:]):
-                if letter == "d":
-                    delete = True
-                elif letter == "o":  # 뒤는 -o의 값이다. 붙어 있지 않으면 다음 낱말이 값이다
-                    if not arg[k + 2:]:
-                        i += 1
-                    break
+            deletes, values = short_options(arg)
+            delete = delete or deletes
+            i += values
         else:
             positional.append(arg)
     return delete, positional, implied
+
+
+def short_options(arg):
+    """짧은 옵션 묶음(`-u`, `-df`, `-uo`)에서 (지우는가, 그 뒤에서 -o의 값으로 건너뛸 낱말 수)를 돌려준다.
+    `o` 뒤의 글자는 -o의 값이고, 붙어 있지 않으면 다음 낱말이 값이다."""
+    for k, letter in enumerate(arg[1:]):
+        if letter == "o":
+            return "d" in arg[1:k + 1], 0 if arg[k + 2:] else 1
+    return "d" in arg[1:], 0
 
 
 def current_branch(root):
