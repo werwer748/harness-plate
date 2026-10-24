@@ -65,3 +65,27 @@
 - claude-code-action은 PR의 `CLAUDE.md`, `.claude` 등을 기준 브랜치의 것으로 되돌린다. 셋업 커밋이 든 PR(#6)에서는 기준 브랜치에 `CLAUDE.md`가 없어 PR 모드 review가 `CLAUDE.md`가 지워진 작업 트리를 보고 "하네스에서 걸린 것"에 적었다. `AGENTS.md`는 남아 평가에는 영향이 없었다
 - run이 연 PR #6의 본문 끝에 run의 "PR 본문의 꼴"에 없는 `🤖 Generated with [Claude Code](https://claude.com/claude-code)` 줄이 붙었다. 실행 환경의 기본 안내가 스킬의 꼴보다 앞섰다
 - 시험 폴더의 셋업 커밋과 계획 커밋이 로컬 `main`에만 있어서 run의 PR에 그 두 커밋이 들어갔고, `ci-run`의 하네스 eval이 tasks 모드 review의 갈라진 곳(로컬 `main`과 `origin/main` 가운데 어느 쪽인지)을 plate 자체의 고칠 거리로 적었다(`ci-run`의 커밋 `bb5dada`의 `docs/tasks/eval.md`). 시험에서는 이슈로 올리지 않았다
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 4가 참이다.
+  - `gh pr view <번호> -R werwer748/plate-ci-test --json state,comments`(#2, #3, #4. 머리 브랜치는 차례로 `is-blank`, `avg-word-length`, `sentence-count`) → #2 `MERGED`, #3 `OPEN`, #4 `CLOSED`. 셋 모두 댓글 하나, 작성자 `github-actions`, 첫 줄이 차례로 `판정: 자동 머지`, `판정: 머지 요청`, `판정: 닫기`이고 셋째 줄이 `# 코드 평가`인 평가서다. 통과
+  - 시험 저장소를 scratchpad의 `ci-check`에 새로 복제(`main` `91b8060`)해 `diff -r <ci-check>/.plate plugins/plate` → 출력 없음, 종료 코드 0(견주기 전 `plugins/plate` 안에 `__pycache__`가 없었다). `git log -1 --format=%cI -- .plate` → `2026-10-24T19:51:08+09:00`(10:51:08Z). `gh run list -R werwer748/plate-ci-test --json headBranch,createdAt` → `is-blank` 10:52:06Z, `avg-word-length` 10:52:11Z, `sentence-count` 10:52:18Z로 셋 모두 그 뒤다. 통과
+  - `~/plate-rail-test/logs/ci-run-2.jsonl`의 `result` 줄(`is_error` false)에 "## PR을 열까요?"와 "이대로 푸시하고 PR을 열까요?"가 있고, 평가 댓글은 `.github/workflows/plate-review.yml`이 있어 따로 달지 않는다고 적혀 있다. `test ~/plate-rail-test/logs/ci-run-2.jsonl -nt plugins/plate/skills/run/SKILL.md` → 참(run 본문 18:24:36, 기록 20:46:22. `ci-run-1.jsonl` 20:43:28, `ci-run-3.jsonl` 20:47:16도 참). 통과
+  - `gh pr view 6 -R werwer748/plate-ci-test --json headRefName,baseRefName,comments` → 머리 브랜치 `tasks/unique-words`, 기준 브랜치 `main`, 댓글 1개(작성자 `github-actions`, 첫 줄 `판정: 자동 머지`, 셋째 줄 `# 코드 평가`), 작성자가 `werwer748`인 댓글 0개. 통과
+- 이 phase에서 확인한 도구의 사실이 `docs/TOOLS.md`에 적혀 있다.
+  - `docs/TOOLS.md`의 Claude Code 절(15~130줄)을 읽음 → 106줄 "CI의 세 판정과 CI 있는 PR에서 본 것"(커밋 `07e28e9`에 들어 있다)에 시험 저장소 `werwer748/plate-ci-test`, 스크립트(`bin/cimain.sh`, `bin/civerdict.sh`, `bin/cimake.sh`, `bin/cirun-plan.sh`, `bin/tturn.sh`), 실행 기록(`logs/ci-run-setup.jsonl`, `logs/ci-run-1.jsonl`~`logs/ci-run-3.jsonl`), CI 로그(`logs/ci-runs/<실행 id>.log`)의 위치와 함께 시험 워크플로가 양식과 다른 곳, `--plugin-dir`의 전달, 설정 경로 되돌리기, `show_full_output`과 인증 실패, `gh run rerun`, 잡 시간과 비용, 세 판정의 댓글·머지·닫기의 꼴, 커버리지 게이트의 갈림, CI 있는 run이 댓글을 달지 않은 것이 있다. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 89 tests in 34.281s`, `OK`, 종료 코드 0. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 완료 조건 4의 `diff -r <복사본> plugins/plate`는 테스트 명령이 `plugins/plate/hooks/__pycache__`를 만들기 때문에 명령 절의 테스트보다 먼저 돌렸다. 테스트 뒤에 생긴 `plugins/plate/hooks/__pycache__`(git이 무시한다)는 확인 전의 상태로 되돌리려고 지웠다
+
+**판정**: 통과
