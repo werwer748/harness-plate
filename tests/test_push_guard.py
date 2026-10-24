@@ -21,6 +21,12 @@ HOOKS_JSON = PLUGIN_ROOT / "hooks" / "hooks.json"
 
 BLOCKED = "기본 브랜치"
 
+# `"$( … )"` 안의 큰따옴표 때문에 따옴표의 짝을 맞추지 못해 명령을 나누지 못하는 꼴
+UNSPLIT_PUSHES = (
+    "git commit -m \"$(cat <<'EOF'\nKeep \"don't\" wording\nEOF\n)\" && git push origin main",
+    "git commit -m \"$(cat <<'EOF'\nClose \"issue #12\" properly\nEOF\n)\" && git push origin main",
+)
+
 
 def with_origin(p, head="main"):
     """origin 원격을 더하고, 원격의 HEAD가 `head` 브랜치를 가리키게 한다."""
@@ -192,6 +198,14 @@ class BlockTest(PushGuardTestCase):
             with self.subTest(command=command):
                 self.assertBlocked(bash(command, p.root), "`main`")
 
+    def test_unsplit_command_with_push(self):
+        """따옴표가 어긋나 명령을 나누지 못하면, 글에 push가 있을 때 막고 따로 하라고 알린다."""
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        for command in UNSPLIT_PUSHES:
+            with self.subTest(command=command):
+                self.assertBlocked(bash(command, p.root), "따로")
+
     def test_push_inside_git_c_uses_that_folder(self):
         p = self.project()
         p.git("switch", "-q", "-c", "tasks/x")
@@ -314,6 +328,18 @@ class PassTest(PushGuardTestCase):
         self.assertPassed(bash("git push", p.root))
         self.assertPassed(bash("git push origin main", p.root))
         self.assertPassed(bash("git push origin :main", p.root))
+
+    def test_unsplit_command_in_project_not_set_up(self):
+        p = self.project(setup=False)
+        p.git("switch", "-q", "-c", "tasks/x")
+        for command in UNSPLIT_PUSHES:
+            with self.subTest(command=command):
+                self.assertPassed(bash(command, p.root))
+
+    def test_unsplit_command_without_push(self):
+        p = self.project()
+        p.git("switch", "-q", "-c", "tasks/x")
+        self.assertPassed(bash("git commit -m \"$(cat <<'EOF'\nKeep \"don't\" wording\nEOF\n)\"", p.root))
 
     def test_commands_that_are_not_push(self):
         p = self.project()

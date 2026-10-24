@@ -5,6 +5,7 @@
 Bash 명령을 `&&`, `||`, `;`, `|`, 줄바꿈으로 나눠 그 안의 `git push`가 origin의 기본 브랜치를
 바꾸거나 지우면 종료 코드 2로 끝나고 stderr의 글이 에이전트에게 간다. heredoc의 본문과 `#` 주석은 명령으로 보지 않고,
 줄 잇기(`\\`+줄바꿈)는 명령의 경계로 보지 않는다.
+따옴표가 어긋나 명령을 나누지 못하면, 셋업된 프로젝트에서 명령의 글에 `push`가 있을 때 막는다.
 사람의 푸시는 보지 않는다.
 """
 
@@ -34,6 +35,10 @@ BLOCK = (
     "plate: 기본 브랜치(`{branch}`)로 푸시하지 않는다: `{command}`\n"
     "끝의 평가와 보고까지 가지 않은 변경이 기본 브랜치에 들어가지 않게 한다. "
     "다른 브랜치로 푸시하고, 기본 브랜치로 합치는 것은 사용자에게 맡긴다.\n"
+)
+UNSPLIT = (
+    "plate: 따옴표의 짝을 맞추지 못해 명령을 나누지 못했고, 그 안의 push가 기본 브랜치로 가는지 볼 수 없다.\n"
+    "push를 다른 명령과 잇지 말고 따로 부른다.\n"
 )
 
 
@@ -95,11 +100,12 @@ def without_non_commands(command):
 
 
 def segments(command):
-    """명령 글을 단순 명령마다의 낱말 목록으로 나눈다. heredoc의 본문, `#` 주석, 리다이렉션과 그 대상은 뺀다."""
+    """명령 글을 단순 명령마다의 낱말 목록으로 나눈다. heredoc의 본문, `#` 주석, 리다이렉션과 그 대상은 뺀다.
+    따옴표가 어긋나 나누지 못하면 None을 돌려준다."""
     try:
         tokens = list(lexer(without_non_commands(command)))
-    except ValueError:  # 닫히지 않은 따옴표: 셸도 돌리지 않는다
-        return []
+    except ValueError:  # 닫히지 않은 따옴표. `"$( … )"` 안의 따옴표처럼 셸은 짝을 맞추는데 여기서 못 맞추는 꼴도 든다
+        return None
     parts, words, skip = [], [], False
     for token in tokens:
         if skip:
@@ -211,16 +217,23 @@ def target_refs(refspecs, delete, branch):
             yield dst if dst.startswith("refs/") or "*" in dst else "refs/heads/" + dst
 
 
+def setup_root(folder):
+    """폴더가 셋업된 프로젝트 안이면 그 레포의 최상위 폴더를, 아니면 None을 돌려준다."""
+    top = git(folder, "rev-parse", "--show-toplevel") if os.path.isdir(folder) else None
+    if not top or not is_setup(top.strip()):
+        return None
+    return top.strip()
+
+
 def blocked_branch(words, cwd):
     """이 단순 명령이 기본 브랜치로 가는 push면 그 브랜치 이름을, 아니면 None을 돌려준다."""
     call = push_call(words, cwd)
     if not call:
         return None
     folder, args = call
-    top = git(folder, "rev-parse", "--show-toplevel") if os.path.isdir(folder) else None
-    if not top or not is_setup(top.strip()):
+    root = setup_root(folder)
+    if not root:
         return None
-    root = top.strip()
     delete, positional, implied = push_args(args)
     branch = current_branch(root)
     remote = positional[0] if positional else configured_remote(root, branch)
@@ -242,7 +255,10 @@ def check(data):
     if not isinstance(command, str):
         return None
     cwd = data.get("cwd") or os.getcwd()
-    for words in segments(command):
+    parts = segments(command)
+    if parts is None:
+        return UNSPLIT if "push" in command and setup_root(cwd) else None
+    for words in parts:
         branch = blocked_branch(words, cwd)
         if branch:
             return BLOCK.format(branch=branch, command=" ".join(words))
