@@ -40,3 +40,26 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 회고 1의 문제가 모두 고쳐졌다.
+  - `retro.md`의 `## 회고 1` 문제(ARCHITECTURE 48줄의 "스킬마다의 '푸시하지 않는다' 규칙"이 run 절대 규칙 5와 어긋남)를 `sed -n '48,49p' docs/ARCHITECTURE.md`, `sed -n '20p' plugins/plate/skills/run/SKILL.md`, `grep -ln '푸시하지 않는다' plugins/plate/skills/*/SKILL.md`, `git diff HEAD~1 HEAD --word-diff=porcelain -- docs/ARCHITECTURE.md`로 다시 봤다 → 48줄은 "에이전트의 푸시를 막는 기본은 스킬마다의 푸시 규칙(phase, check, retro, review, eval은 "푸시하지 않는다", run은 "PR을 연다"에서 승인받아 `tasks/<이름>`을 origin에 올릴 때만 푸시한다)이고, 푸시 훅은 흔한 꼴을 한 번 더 막는다."다. run 20줄 "푸시는 "PR을 연다"에서 승인받아 `tasks/<이름>`을 origin에 올릴 때만 한다."와 49줄 "푸시는 이 PR을 열 때만 한다"와 맞는다. `푸시하지 않는다`가 든 스킬은 eval, phase, check, retro, review로 괄호 안의 다섯과 같다. 바뀐 낱말은 이 문장의 것뿐이고, ARCHITECTURE에 "푸시하지 않는다"가 조건 없이 run까지 덮는 글은 남지 않았다. 통과
+- task 머리의 완료 조건이 모두 참이다.
+  - 완료 조건 1: `plugins/plate/skills/run/SKILL.md`의 tasks 끝(244~255), "비운다"(408~416), "PR을 연다"(418~455), "합친다"(457~466)를 `sed -n`으로 읽었다 → 410줄 origin이 GitHub 원격이면 "PR을 연다"에 쓸 것(제목, 요청, 목표, `review.md`의 마지막 평가 절, `eval.md`의 마지막 eval 절, 고침 task의 완료 조건)을 지우기 전에 읽어 둔다. 416줄 GitHub 원격이면 "PR을 연다", 그 밖(origin 없음, GitHub 아님, git 레포 아님)이면 "합친다"로 간다. "PR을 연다" 1번은 푸시할 브랜치, 가는 곳, 제목과 본문을 보여 주고 묻고 plate 워크플로가 없으면 댓글을 단다는 것도 적으며, 거절하면 "푸시하지 않고 합치지도 않고 브랜치를 그대로 둔 채" 10번으로 간다. 2번 `git push origin tasks/<이름>`, 3번 `gh pr create --base {기본 브랜치} --head tasks/<이름>`, 4번 plate 워크플로가 없으면 `gh pr comment`로 `review.md`의 마지막 평가 절. "PR 본문의 꼴"에 요청, 목표, 코드 평가(다섯 등급, Sonar way 게이트), 하네스 eval(여섯 등급), 고친 것, 올린 이슈가 있다. 459줄 "합친다"는 "'비운다'에서 origin이 GitHub 원격이 아닐 때 온다". 통과
+  - 완료 조건 2: run 20줄(절대 규칙 5), 209~223줄(10번), 468~486줄(`RUNLOG.md` 절)과 `grep -n '정해 둔 물음' plugins/plate/skills/eval/SKILL.md` → 20줄 "푸시는 "PR을 연다"에서 승인받아 `tasks/<이름>`을 origin에 올릴 때만 한다. GitHub 이슈, PR, 댓글은 승인받은 것만 올린다." 218줄 "PR을 열지 물었으면 연 PR의 주소와 단 댓글의 주소. 열지 않았으면 그 까닭(거절, 실패한 명령과 오류), 댓글을 달지 않았으면 그 까닭(plate 워크플로가 있다, 실패한 명령과 오류)". 485줄 비운 뒤에 물은 것(PR을 열지, 합칠지, 그 자리의 커밋하지 않은 변경)은 적지 않는다. eval 40줄 "tasks 끝의 고칠지, PR을 열지, 합칠지다". 통과
+  - 완료 조건 3: `grep -n "합칠\|합친\|PR을 열" docs/ARCHITECTURE.md docs/PRD.md`와 ARCHITECTURE 60~78줄(데이터 흐름), PRD 18줄 → ARCHITECTURE 49줄 "`origin`이 GitHub이면 `tasks/<이름>`을 origin에 푸시해 기본 브랜치로 가는 PR을 열지 묻고, `origin`이 없거나 GitHub의 것이 아니면 기본 브랜치로 합칠지 묻는다", 68~69줄 "origin이 GitHub이면 … PR을 열지 묻는다" → "origin이 없거나 GitHub의 것이 아니면 기본 브랜치로 합칠지 묻는다", PRD 18줄 "origin이 GitHub이면 run이 tasks 브랜치를 푸시해 기본 브랜치로 가는 PR을 열지 묻고 … origin이 GitHub이 아니거나 없으면 기본 브랜치로 합칠지 묻는다". 합칠지 묻는 글은 모두 GitHub 원격이 아닐 때로 묶여 있고, 조건 없이 합칠지 묻는 옛 글은 없다. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 89 tests in 34.518s` / `OK`. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
