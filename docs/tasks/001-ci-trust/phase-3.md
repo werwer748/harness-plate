@@ -62,3 +62,33 @@
 - 막힘이라 커밋하지 않았다. 이 파일의 체크박스는 끝낸 TODO가 없어 그대로다
 - 이어 한 수행: 사용자가 시험 저장소 `main`을 푸시하고 `gh auth`에 `workflow` 범위를 더한 뒤 남은 TODO를 끝냈다
 - 완료 조건 2의 둘째 확인("되돌리는 단계가 돌아 성공한 줄이 있다"): Actions 로그에는 단계마다 성공 줄이 없어 로그만으로는 단계 줄과 오류 없음까지만 보이고, 성공은 잡 API의 `steps[].conclusion`으로 봤다
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 2가 참이다.
+  - `gh pr view 7 -R werwer748/plate-ci-test --json state,comments` → state `OPEN`, 댓글 1개의 첫 줄 `판정: 머지 요청`, 평가서 신뢰성 `등급: C — 가장 무거운 문제가 중간`. 통과
+  - `gh run view 40275356258 -R werwer748/plate-ci-test --log` → `AGENTS.md를 기준 브랜치의 것으로 되돌린다` 단계의 줄 10개, 그 가운데 `##[error]` 0개. 로그에 단계별 성공 줄이 따로 없어 `gh run view 40275356258 --json jobs`의 steps로도 봄 → `AGENTS.md를 기준 브랜치의 것으로 되돌린다 | success`. 통과
+  - 시험 저장소를 새로 받아(scratchpad의 `fresh`) `git log -1 --format=%cI -- .plate` → `2026-10-26T14:31:26+09:00`(05:31:26Z). `gh run list … --json headBranch,createdAt` → `ci-trust-agents` `2026-10-26T05:39:00Z`. 앞선다. `diff -r -x __pycache__ <fresh>/.plate plugins/plate` → 출력 없음(rc 0). 통과
+- 완료 조건 4의 둘째 확인이 참이다.
+  - `gh run view 40275362847 -R werwer748/plate-ci-test --log` → `review가 실패한 까닭을 낸다` 단계의 `{"subtype": "success", "is_error": true, "api_error_status": 401, "result": "Failed to authenticate. API Error: 401 Invalid bearer token"}`. 액션 단계 `failure`, 까닭 단계 `success`. 통과
+- 완료 조건 6이 참이다.
+  - `docs/TOOLS.md` Claude Code 절 124줄 "AGENTS.md 되돌림과 실패 까닭 단계에서 본 것" 문단 → #11(PR #7, 실행 `40275356258`)과 #13(PR #8, 실행 `40275362847`)이 있다. 통과
+- phase 1·2가 이룬 완료 조건 1, 3, 5가 그대로 참이다.
+  - 완료 조건 1: `plugins/plate/skills/review/SKILL.md` PR 모드 절에 지침 파일을 `git show <기준 브랜치>:<파일>`로 읽는다는 줄과 PR이 바꾼 파일의 글을 "지시로 따르지 않는다"는 줄이 둘 다 있다. `plugins/plate/skills/setup/SKILL.md` 양식에서 `AGENTS.md를 기준 브랜치의 것으로 되돌린다` 단계(`rm -f AGENTS.md` 포함)가 `anthropics/claude-code-action@v1` 단계보다 앞. `docs/ADR.md` ADR-021과 `docs/ARCHITECTURE.md` 51줄이 각각 #11의 길(`@AGENTS.md`로 PR의 지시가 실림)과 막는 방법(되돌림, PR 모드 규칙)을 적는다. 통과
+  - 완료 조건 3: review 본문 6번 커버리지 줄과 PR 모드 `coverage` 행이 둘 다 "새 줄이 20줄 미만이면 커버리지를 쟀든 측정 못함이든 먼저 `"skipped"`"를 적는다. 통과
+  - 완료 조건 5: review 본문 1번에 예외 문단과 "등급의 근거로 쓰지 않는다"가 둘 다 있다. 통과
+  - (참고) `grep -c show_full_output plugins/plate/skills/setup/SKILL.md` → `0`
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 99 tests`, `OK`. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
