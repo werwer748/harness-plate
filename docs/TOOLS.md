@@ -81,7 +81,7 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
 - 본문을 고친 뒤 띄운 에이전트 2는 고치기 전의 본문(`표식: 자두-7391`)을 받았다. 같은 세션에서 `/reload-plugins`가 `Reloaded: 6 plugins · 172 skills · 6 agents · 24 hooks · 0 plugin LSP servers`를 낸 뒤 띄운 에이전트 3은 고친 본문(`표식: 앵두-2604`)을 받았다. 받은 본문은 기록에서 `parent_tool_use_id`가 그 에이전트인 `Base directory for this skill:` 줄로 봤고, 에이전트가 쓴 `out-N.txt`의 표식도 같았다.
 - 그래서 스킬 본문을 고치는 작업을 그 플러그인을 실은 세션에서 실행하면 그 뒤에 띄운 에이전트는 고치기 전의 본문을 받는다. 고친 본문을 받게 하려면 띄우기 전에 `/reload-plugins`를 돌리거나 세션을 새로 연다. 문서도 세션 도중에 플러그인의 파일을 고치면 `/reload-plugins`로 싣는다고 적는다(code.claude.com/docs/en/plugins/create의 "Load a plugin for one session"). `-p` 세션에서도 `/reload-plugins`가 돈다(code.claude.com/docs/en/plugins/cli-reference의 "Sessions without an interactive terminal", v2.1.260 이상).
 - 이 레포에서 tasks `pr-ci`(0.11.0)를 run으로 돌릴 때도 그랬다(2026-10-23~24). `001-ci-review` phase 1이 check와 retro의 본문을 고친 뒤 같은 세션에서 띄운 phase 2·3의 확인 에이전트와 회고 에이전트에 고치기 전의 본문이 실렸고, `002-ci-workflow`와 `003-push-guard`의 회고 에이전트에도 다시 실렸다(커밋 `72dcfcf`의 `docs/tasks/eval.md` 실패 3, 6, 14). 세션에 실린 plate 스킬 본문은 세션을 띄울 때의 것이라, 같은 세션에서 띄운 에이전트에는 tasks가 고치기 전의 본문이 실린다.
-- 그래서 스킬의 절차를 바꾸는 tasks는 그 절차에 기대는 다음 단계(확인, 회고, tasks 끝의 평가)를 새 세션에서 이어 간다.
+- 그래서 0.13.0부터 run은 기본 브랜치에서 갈라진 곳부터의 tasks 커밋이 맡길 스킬(phase, check, retro, review, eval)의 `SKILL.md`를 바꿨으면, 맡기는 글의 끝에 `작업 트리의 {경로}를 읽어 그 절차를 따른다.`를 붙여 띄운 에이전트가 저장소 안의 고친 본문을 읽게 한다. 경로가 저장소 안이라 프로젝트 밖을 읽지 못하는 제약에 걸리지 않는다. 이 줄이 닿지 않는 곳(run 자신, plan처럼 사용자가 부르는 스킬)은 여전히 새 세션이나 `/reload-plugins`로 고친 본문을 싣는다.
 - 세 에이전트 모두 work의 커밋을 `git -C <절대 경로> add`로 하다 막혀 `out-N.txt`는 커밋되지 않았다(위의 `-C` 사실과 같다).
 - 확인하지 않은 것: 고치기 전에 그 세션에서 한 번도 부르지 않은 스킬도 고치기 전의 본문을 주는지.
 
