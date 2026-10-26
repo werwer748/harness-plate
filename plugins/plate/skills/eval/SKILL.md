@@ -28,12 +28,12 @@ description: 모든 task가 끝난 tasks에서 하네스가 어떻게 돌았는�
 - **task 머리**: task 폴더의 `plan.md`. 제목과 네 절(목표, 범위 밖, 완료 조건, 결정)이다.
 - **`done-phase-N.md`**: 통과한 phase의 파일. 위에 계획 다섯 항목(목표, 테스트 먼저, 읽을 것, TODO, 통과 조건), 그 아래에 수행한 쪽의 기록 다섯 절(한 일, 확인 결과, 계획과 달라진 점, 남은 것, 하네스에서 걸린 것), 그 뒤에 확인하는 쪽의 확인 절(`## 확인 1`처럼 번호가 붙고 "실패", "하네스에서 걸린 것", "판정"이 있는 절)이 있다.
 - **`retro.md`**: task 폴더의 회고 기록. `## 회고 1`처럼 번호가 붙은 회고 절마다 "확인", "문제", "판정"이 있다.
-- **`FRICTION.md`**: `docs/tasks/FRICTION.md`. 회고가 task마다 tasks 끝에 볼 것을 `` `{task 이름}` {문제 | 멈춤 | 스킬 후보}: … `` 꼴로, 볼 것이 없으면 `` `{task 이름}` 없음 ``으로 한 줄씩 쌓은 파일이다.
+- **`FRICTION.md`**: `docs/tasks/FRICTION.md`. 회고가 task마다 tasks 끝에 볼 것을 `` `{task 이름}` {문제 | 멈춤 | 스킬 후보 | 경계 밖}: … `` 꼴로, 볼 것이 없으면 `` `{task 이름}` 없음 ``으로 한 줄씩 쌓은 파일이다.
 - **`RUNLOG.md`**: `docs/tasks/RUNLOG.md`. 실행이 띄운 에이전트마다 한 줄(에이전트 줄: 역할, task와 phase, 토큰, 도구 호출, 시간)과 사용자에게 물은 자리마다 한 줄(물은 줄: 물은 것, 답)을 쌓은 파일이다.
 - **`review.md`**: `docs/tasks/review.md`. 코드 평가가 `## 평가 1`처럼 번호를 붙여 더한 평가 절마다 완료 조건의 결과, 다섯 범주의 등급, 소스 문제, "하네스에서 걸린 것"이 있다.
 - **계획의 커밋**: 메시지가 `plan: <tasks 이름>`인 커밋. 그 tasks의 계획을 넣은 커밋이다.
 - **tasks의 커밋**: 계획의 커밋부터 HEAD까지의 커밋. `git log --reverse --name-status --format='%h %s' <계획의 커밋>^..HEAD`로 메시지와 바꾼 파일을 함께 본다.
-- **더한 phase**: 회고에서 나온 문제를 고치려고 실행이 실행 중에 더한 phase. 제목이 `# Phase M: 회고 K의 문제를 고친다` 꼴인 `done-phase-M.md`로 가른다. 실행은 이 phase도 `plan:`으로 시작하는 메시지(`plan: NNN-slug 수정`)로 커밋하므로 커밋 메시지로는 가르지 못한다.
+- **더한 phase**: 회고에서 나온 문제를 고치려고 실행이 실행 중에 더한 phase. 제목이 `# Phase M: 회고 K의 문제를 고친다` 꼴인 `done-phase-M.md`로 가른다. 실행은 이 phase를, 멈춘 뒤 계획을 고칠 때와 같은 메시지(`plan: NNN-slug 수정`)로 커밋하므로 커밋 메시지로는 가르지 못한다. 그 커밋의 넣어도 되는 파일은 3번의 규칙 준수 표에 있다.
 - **실패**: 하네스가 돌며 틀리거나 걸린 것 하나. 2번에서 모은다.
 - **MAST**: 다중 에이전트 시스템의 실패를 세 범주(FC1 시스템 설계, FC2 에이전트 사이 어긋남, FC3 과제 검증) 14개 유형으로 나눈 분류. 유형은 2번의 표에 있다.
 - **잡힌 곳**: 실패가 처음 드러난 자리. 그 자리(수행하거나 확인하는 쪽이 스스로 적었거나 멈췄다), phase의 확인, task의 회고, tasks 끝(코드 평가) 넷이다.
@@ -71,9 +71,10 @@ description: 모든 task가 끝난 tasks에서 하네스가 어떻게 돌았는�
 | `RUNLOG.md`의 물은 줄 가운데 멈춤, `FRICTION.md`의 멈춤 줄 | 그 자리 |
 | 판정이 실패인 확인 절의 "실패" 항목 하나하나 | phase의 확인 |
 | `retro.md`의 회고 절의 "문제" 줄, `FRICTION.md`의 문제 줄 | task의 회고 |
-| `review.md`의 마지막 평가 절에서 실패한 완료 조건의 확인과 신뢰성의 문제, 그 절의 "하네스에서 걸린 것"의 줄 | tasks 끝 |
+| `review.md`의 마지막 평가 절에서 실패한 완료 조건의 확인, 신뢰성의 문제, 그 절의 "하네스에서 걸린 것" 가운데 하네스의 규칙이나 계획에서 걸린 줄 | tasks 끝 |
 
 - "프로젝트의 규칙을 따름: …" 줄과 "없음" 줄은 실패가 아니다.
+- 코드 평가의 "하네스에서 걸린 것" 가운데 측정 못함의 까닭(측정 도구가 없다, 환경이 막는다)만 적은 줄은 실패가 아니다. 그런 줄은 5번에서 이 프로젝트만의 고칠 거리를 정할 때만 본다.
 - 이 eval이 커밋을 보며 새로 찾은 규칙 위반은 규칙 준수의 근거로만 쓰고 여기에 넣지 않는다.
 - 실패마다 가장 가까운 유형 하나를 붙인다. 맞는 유형이 없으면 "유형 없음"으로 두고 까닭을 적는다.
 
@@ -128,6 +129,8 @@ description: 모든 task가 끝난 tasks에서 하네스가 어떻게 돌았는�
 | `plan: <tasks 이름>`, `plan: NNN-slug 더함` | plan | tasks 머리, task 폴더의 `plan.md`와 `phase-N.md` |
 | `NNN-slug: phase N`, `NNN-slug: phase N 고침` | phase | 그 `phase-N.md`와 그 phase에서 만들거나 고치거나 지운 파일. tasks 머리와 task 머리는 들지 않는다 |
 | `NNN-slug: phase N 확인` | check | 그 `phase-N.md`만 |
+| `NNN-slug: phase N 통과` | run | 그 `phase-N.md`를 `done-phase-N.md`로 바꾼 이름 바꾸기와 `RUNLOG.md` |
+| `plan: NNN-slug 수정` | run | 더한 `phase-M.md`, 고친 계획 파일(tasks 머리, task 머리, `phase-N.md`의 계획 다섯 항목), `RUNLOG.md` |
 | `NNN-slug: 회고` | retro | 그 task의 `retro.md`와 `FRICTION.md`만 |
 | `<tasks 이름>: 코드 평가` | review | `review.md`만 |
 | `<tasks 이름>: 하네스 eval` | eval | `eval.md`만 |

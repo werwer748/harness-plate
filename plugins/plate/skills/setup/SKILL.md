@@ -293,7 +293,7 @@ components:
 
 ### `.github/workflows/plate-review.yml`
 
-CI 에이전트의 워크플로다. `${{ … }}`는 GitHub Actions의 식이라 채울 칸이 아니다. `review` 잡은 읽기 권한만으로 공개 마켓플레이스에서 plate를 받아 review의 PR 모드를 부르고 등급 묶음을 구조화 출력으로 낸다. `verdict` 잡은 쓰기 권한으로 등급 묶음을 판정 스크립트(`plugins/plate/ci/verdict.py`)에 넘겨, 평가서를 PR 댓글로 달고, 자동 머지면 merge commit으로 합치고 머리 브랜치를 지우며, 닫기면 PR을 닫는다. 머지 요청이면 댓글만 단다.
+CI 에이전트의 워크플로다. `${{ … }}`는 GitHub Actions의 식이라 채울 칸이 아니다. `review` 잡은 읽기 권한만으로 공개 마켓플레이스에서 plate를 받아 review의 PR 모드를 부르고 등급 묶음을 구조화 출력으로 낸다. 액션을 부르기 전에 `AGENTS.md`를 기준 브랜치(`origin/${{ github.base_ref }}`)의 것으로 되돌리고, 기준 브랜치에 `AGENTS.md`가 없으면 PR의 것을 지운다. `CLAUDE.md`의 `@AGENTS.md`로 PR이 바꾼 지시가 세션에 실리지 않게 하려는 것이다. review 단계가 실패하면 다음 단계가 액션의 실행 결과 파일(`execution_file`)에서 결과 줄의 `subtype`, `is_error`, `api_error_status`, 오류 목록과, 오류일 때의 결과 글만 로그에 낸다. Claude의 메시지 전부를 로그에 내는 액션의 입력은 켜지 않는다. 로그가 공개되면 도구 결과에 든 비밀이 드러나기 때문이다. `verdict` 잡은 쓰기 권한으로 등급 묶음을 판정 스크립트(`plugins/plate/ci/verdict.py`)에 넘겨, 평가서를 PR 댓글로 달고, 자동 머지면 merge commit으로 합치고 머리 브랜치를 지우며, 닫기면 PR을 닫는다. 머지 요청이면 댓글만 단다.
 
 ````yaml
 name: plate review
@@ -318,6 +318,15 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      - name: AGENTS.md를 기준 브랜치의 것으로 되돌린다
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if git cat-file -e "origin/$BASE_REF:AGENTS.md" 2>/dev/null; then
+            git checkout "origin/$BASE_REF" -- AGENTS.md
+          else
+            rm -f AGENTS.md
+          fi
       - id: review
         uses: anthropics/claude-code-action@v1
         with:
@@ -330,6 +339,29 @@ jobs:
             --add-dir ${{ runner.temp }}
             --allowedTools "Bash,Read,Write,Glob,Grep"
             --json-schema '{"type":"object","properties":{"build":{"type":"string","enum":["pass","fail","none","unmeasured"]},"lint":{"type":"string","enum":["pass","fail","none","unmeasured"]},"test":{"type":"string","enum":["pass","fail","none","unmeasured"]},"coverage":{"anyOf":[{"type":"number"},{"type":"string","enum":["skipped","unmeasured"]}]},"reliability":{"type":"string","enum":["A","B","C","D","E","unjudged"]},"security":{"type":"string","enum":["A","B","C","D","E","unjudged"]},"maintainability":{"type":"string","enum":["A","B","C","D","E","unjudged"]}},"required":["build","lint","test","coverage","reliability","security","maintainability"],"additionalProperties":false}'
+      - name: review가 실패한 까닭을 낸다
+        if: failure()
+        env:
+          EXECUTION_FILE: ${{ steps.review.outputs.execution_file }}
+        run: |
+          file="${EXECUTION_FILE:-$RUNNER_TEMP/claude-execution-output.json}"
+          if [ ! -f "$file" ]; then
+            echo "실행 결과 파일이 없다: $file"
+            exit 0
+          fi
+          python3 - "$file" <<'PY'
+          import json, sys
+          for m in json.load(open(sys.argv[1])):
+              if isinstance(m, dict) and m.get("type") == "result":
+                  line = {"subtype": m.get("subtype"), "is_error": m.get("is_error")}
+                  if m.get("api_error_status") is not None:
+                      line["api_error_status"] = m["api_error_status"]
+                  if m.get("errors"):
+                      line["errors"] = m["errors"]
+                  if m.get("is_error"):
+                      line["result"] = m.get("result")
+                  print(json.dumps(line, ensure_ascii=False))
+          PY
       - uses: actions/upload-artifact@v7
         with:
           name: plate-review
