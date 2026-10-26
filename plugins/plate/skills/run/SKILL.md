@@ -44,7 +44,7 @@ description: 계획된 tasks를 task 목록의 차례대로, phase 하나씩 실
 - **고침 task**: tasks 끝에서 고치기로 한 것을 고치려고 같은 tasks에 더한 task. task 머리의 제목이 `# tasks 끝의 문제를 고친다`다.
 - **`docs/BACKLOG.md`**: 미룬 소스 문제를 tasks를 넘어 모으는 문서. `docs/tasks/` 밖에 있어 비워도 남는다.
 - **기본 브랜치**: 원격 `origin`의 HEAD가 가리키는 브랜치(`git symbolic-ref --short refs/remotes/origin/HEAD`에서 `origin/`을 뺀 것). 그것이 없으면 `main`, `main`도 없으면 `master`다.
-- **작업 트리의 스킬 줄**: 맡기는 글의 끝에 붙이는 한 줄 `작업 트리의 {경로}를 읽어 그 절차를 따른다.`. `{경로}`는 그 글이 부르는 plate 스킬(`plate:phase`라면 `phase`)의 저장소 안 `SKILL.md` 경로다. 기본 브랜치에서 갈라진 곳부터의 tasks 커밋이 그 파일을 바꿨을 때만 붙인다: `git diff --name-only $(git merge-base {기본 브랜치} HEAD) HEAD`가 낸 경로 가운데, 이름이 `plate`인 `.claude-plugin/plugin.json`을 둔 폴더 아래의 `skills/{스킬 이름}/SKILL.md`가 있으면 그것이 `{경로}`다. 없거나 git 레포가 아니면 붙이지 않는다. 세션에 실린 스킬 본문은 세션을 띄울 때의 것이라, tasks가 고친 스킬은 이름으로만 맡기면 고치기 전의 절차로 돈다.
+- **작업 트리의 스킬 줄**: 맡기는 글의 끝에 붙이는 한 줄 `작업 트리의 {경로}를 읽어 그 절차를 따른다. 불러 온 스킬의 본문과 다르면 이 파일을 따른다.`. `{경로}`는 그 글이 부르는 plate 스킬(`plate:phase`라면 `phase`)의 저장소 안 `SKILL.md` 경로다. 기본 브랜치에서 갈라진 곳부터의 tasks 커밋이 그 파일을 바꿨을 때만 붙인다: `git diff --name-only $(git merge-base {기본 브랜치} HEAD) HEAD`가 낸 경로 가운데, 이름이 `plate`인 `.claude-plugin/plugin.json`을 둔 폴더 아래의 `skills/{스킬 이름}/SKILL.md`가 있으면 그것이 `{경로}`다. 없거나 git 레포가 아니면 붙이지 않는다. 세션에 실린 스킬 본문은 세션을 띄울 때의 것이라, tasks가 고친 스킬은 이름으로만 맡기면 고치기 전의 절차로 돈다.
 - **GitHub 원격**: URL(`git remote get-url origin`)이 `github.com`의 것인 `origin`.
 - **plate 워크플로**: `.github/workflows/` 아래에 있는, `plate@harness-plate`가 적힌 파일. setup이 쓰는 `.github/workflows/plate-review.yml`이 그것이고, PR마다 코드를 평가해 그 평가서를 PR 댓글로 단다.
 - **맥락 문서**: `AGENTS.md`의 문서 지도에 적힌 문서 가운데 `docs/tasks/` 행을 뺀 것.
