@@ -93,3 +93,27 @@ EOF
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 시험 저장소의 `probe-setup`에 두 파일이 있고, CODEOWNERS가 task 머리의 두 줄이다
+  - `gh api 'repos/werwer748/plate-ci-test/contents/.github/CODEOWNERS?ref=probe-setup' --jq .content | base64 -d` → `/.github/workflows/ @werwer748`, `/.github/CODEOWNERS @werwer748` 두 줄. 통과
+  - `gh api 'repos/werwer748/plate-ci-test/contents/.github/workflows/merge-probe.yml?ref=probe-setup' --jq .content | base64 -d` → `workflow_dispatch.inputs.pr`(type number, required true), `permissions`의 `contents: write`와 `pull-requests: write`, 단계 `gh pr merge "$PR" --merge --repo "$GITHUB_REPOSITORY"`(`GH_TOKEN: ${{ github.token }}`)가 저마다 있다. 통과
+- 에이전트가 main을 바꾸지 않았다
+  - `gh api repos/werwer748/plate-ci-test/commits/main --jq .sha` → `31a01435bf58220a0a28d52e2608a6df5f34d75a`, 기록의 처음 main sha와 같다. 통과
+- 기록에 ruleset JSON과 사용자의 두 명령이 있다
+  - 이 파일의 "사용자가 돌릴 명령"을 읽음 → JSON에 `conditions.ref_name.include: ["~DEFAULT_BRANCH"]`, `pull_request` 규칙의 `required_approving_review_count: 0`과 `require_code_owner_review: true`, `bypass_actors`의 `RepositoryRole` `actor_id: 5`와 `bypass_mode: "pull_request"`가 있고, main을 앞당기는 `gh api -X PATCH …/git/refs/heads/main`과 ruleset을 만드는 `gh api -X POST …/rulesets` 두 명령이 있다. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 99 tests`, `OK`. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
