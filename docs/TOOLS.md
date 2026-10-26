@@ -145,6 +145,8 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
 - 세션을 연 명령의 `--permission-mode`는 지금 모드를 말해 주지 않는다. `--permission-mode acceptEdits`로 연 세션이 도중에 자동 모드로 바뀌었다가 돌아왔다(세션 기록의 `permissionMode` 필드로 2026-10-14에 확인했다).
 - 메인 세션이 직접 고칠 때도 같다. 2026-10-15에 메인 세션의 `plugins/plate/skills/` 편집 둘이 자동 모드에서 같은 문구로 막혔고, Shift+Tab으로 bypassPermissions로 바꾸자 같은 편집이 지나갔다. `claude --allow-dangerously-skip-permissions`로 시작하면 시작 모드는 설정의 `defaultMode` 그대로이고 Shift+Tab 순환에 bypassPermissions가 들어간다(2026-10-14).
 - 확인하지 않은 것: `CLAUDE_CODE_AUTO_MODE_SERVER=0`일 때 자동 모드에서 지나가는지, 플러그인을 저장소 밖의 복사본에서 실으면 그 폴더의 편집이 지나가는지.
+- 2026-10-26에도 같았다(2.1.310, tasks issue-fixes의 003-plan-rules phase 2). auto mode에서 수행 에이전트의 `plugins/plate/skills/plan/SKILL.md` Edit가 분류기의 판정 없음으로 세 번 막혀 run이 네 번 멈췄다. 사용자가 `.claude/settings.local.json`에 `Edit(plugins/plate/skills/**)` 허용 규칙을 넣은 뒤에도 풀리지 않았고, 세션을 bypass 모드(bypassPermissions)로 바꾼 뒤 띄운 수행 에이전트의 Edit가 들어갔다(커밋 `0200e13`. `docs/tasks/RUNLOG.md`의 멈춤 네 줄).
+- 그래서 이 저장소에서 스킬 본문(`plugins/plate/**`)을 고치는 tasks는 run을 시작하기 전에 권한 모드를 정해 둔다. auto mode로 두면 수행 에이전트의 편집이 막히고 허용 규칙으로는 풀 수 없으니, run 전에 Shift+Tab으로 bypassPermissions로 바꾸거나 묻는 모드로 두고 편집마다 승인한다.
 
 ## Codex
 
