@@ -1,0 +1,8 @@
+# FRICTION
+
+- `001-ci-trust` 문제: task 머리와 tasks 머리의 결정은 "시험 폴더에서 시험 저장소로 푸시하는 것은 시험 장면의 일"이라 적었지만, 시험 저장소 `main`이 셋업된 상태(PR #6 머지)라 푸시 훅(`push_guard.py`)이 `git -C ~/plate-rail-test/ci-src push origin main`을 막아 phase 3이 막혔다. 계획이 셋업된 시험 저장소의 기본 브랜치 푸시를 사용자의 단계로 두지 않았다 (`docs/tasks/001-ci-trust/done-phase-3.md` 하네스에서 걸린 것)
+- `001-ci-trust` 문제: phase 3의 읽을 것과 task 머리의 결정이 가리킨 `~/plate-rail-test`(스크립트 `bin/cimain.sh`·`bin/civerdict.sh`, 앞선 로그)가 이 Mac에 없어 수행이 스크립트를 새로 썼다. plan이 읽을 것으로 저장소 밖의 경로를 적을 때 있는지 대어 보지 않았다 (`docs/tasks/001-ci-trust/done-phase-3.md`)
+- `001-ci-trust` 문제: 계획의 결정은 run 전 사용자의 준비로 시크릿 `CLAUDE_CODE_OAUTH_TOKEN`만 적었고, 워크플로 파일을 바꾸는 #13 PR의 푸시에 필요한 `gh auth`의 `workflow` 범위를 빠뜨려 phase 3이 사용자를 기다렸다 (task 머리 결정, `docs/TOOLS.md` 129줄)
+- `001-ci-trust` 문제: task 머리 완료 조건 2의 둘째 확인 "CI 로그에 되돌리는 단계가 돌아 성공한 줄이 있다"는 Actions 로그에 단계별 성공 줄이 없어 글대로는 볼 수 없고, 수행·확인·회고가 모두 잡 API(`gh run view --json jobs`의 steps)로 성공을 봤다. plan이 확인을 도구가 실제로 내는 것에 대어 쓰지 않았다
+- `001-ci-trust` 멈춤: phase 3 막힘(푸시 훅이 시험 저장소 `main` 푸시를 막음, `workflow` 범위 없음)으로 run이 해결책을 물었다. 첫 답("토큰 바꿔 뒀다, 계속 진행")은 해결책을 하지 않은 채여서 같은 막힘을 한 번 더 물었고, 둘째 답에서 사용자가 범위를 더하고 `main`을 푸시해 phase 3을 다시 맡겼다 (`docs/tasks/RUNLOG.md`)
+- `001-ci-trust` 스킬 후보: phase 3의 수행과 확인, 그리고 회고가 같은 묶음(시험 저장소를 새로 받아 `.plate`를 `diff -r -x __pycache__`로 `plugins/plate`에 견주기, `git log -1 --format=%cI -- .plate`와 `gh run list`의 실행 시각 비교, `gh pr view --json state,comments`의 첫 줄과 등급 뽑기, `gh run view --log`에서 단계 줄 찾기와 `--json jobs`의 단계 결과)을 손으로 세 번 돌렸다. CI 장면 확인을 스크립트나 스킬로 두면 줄어든다
