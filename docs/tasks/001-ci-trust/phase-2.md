@@ -60,3 +60,31 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 1의 둘째, 셋째 확인이 참이다.
+  - `plugins/plate/skills/setup/SKILL.md` 299~403줄(양식 `yaml` 블록)을 뽑아 `ruby -ryaml`로 review 잡 단계 순서를 냄 → `actions/checkout@v7`, `AGENTS.md를 기준 브랜치의 것으로 되돌린다`, `anthropics/claude-code-action@v1`(id `review`), `review가 실패한 까닭을 낸다`(if `failure()`), `actions/upload-artifact@v7`. 되돌림 단계가 액션 앞에 있고 `git cat-file -e "origin/$BASE_REF:AGENTS.md"`가 거짓이면 `rm -f AGENTS.md`를 한다. 통과
+  - `docs/ADR.md` ADR-021의 트레이드오프를 읽음 → PR이 `AGENTS.md`에 넣은 지시가 `@AGENTS.md`로 실려 등급을 바꾸는 길(#11)과, 워크플로의 되돌림(없으면 지움)·PR 모드 규칙으로 막는 방법, 남은 길이 있다. 통과
+  - `docs/ARCHITECTURE.md` 51줄 PR CI 문단을 읽음 → 같은 길(#11)과 되돌림·PR 모드가 지침 파일을 기준 브랜치에서 읽는 것으로 막는다는 것, 문단 끝 이유가 "머지 권한이 없는 것은 등급을 막지 않으므로 … 막는다(ADR-021)"로 맞춰져 있다. 73줄 데이터 흐름 review 잡 줄에도 있다. 통과
+- 완료 조건 4의 첫 확인이 참이고 오류 줄 단계가 있다.
+  - `grep -c show_full_output plugins/plate/skills/setup/SKILL.md` → `0`. 통과
+  - 양식 블록을 읽음 → `if: failure()`인 "review가 실패한 까닭을 낸다" 단계가 `steps.review.outputs.execution_file`(비면 `$RUNNER_TEMP/claude-execution-output.json`)에서 `type: result` 메시지의 `subtype`, `is_error`, `api_error_status`, `errors`, 오류일 때 `result`만 낸다. 통과
+- 양식의 YAML이 구문으로 읽힌다.
+  - `ruby -ryaml -e 'YAML.load_file(ARGV[0])' <scratchpad>/wf.yml` → 오류 없이 끝남(`RUBY_OK`). 통과
+- 테스트가 모두 통과한다.
+  - `python3 -m unittest discover -s tests` → `Ran 99 tests in 15.286s` / `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 99 tests` / `OK`. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
