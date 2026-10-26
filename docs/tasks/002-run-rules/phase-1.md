@@ -41,3 +41,26 @@
 
 ## 하네스에서 걸린 것
 - 임시 파일 규칙 문단에 금지하는 꼴을 `"$( … )"`로 그대로 적으면 통과 조건의 `grep -n '"\$('`에 걸린다. 그래서 그 꼴을 글("따옴표 안의 명령 치환")로만 적었다
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 1이 참이다.
+  - `grep -n -- '--body ' plugins/plate/skills/run/SKILL.md` → 아무것도 내지 않음. 통과
+  - `grep -c -- '--body-file' plugins/plate/skills/run/SKILL.md` → `6`. 네 곳을 하나씩 읽음: 309줄 `gh issue comment … --body-file {댓글 파일}`, 310줄 `gh issue create … --body-file {본문 파일}`, 426줄 `gh pr create … --body-file {본문 파일}`, 427줄 `gh pr comment {PR 주소} --body-file {댓글 파일}`. 모두 `--body-file`. 통과
+  - `grep -n '"\$(' plugins/plate/skills/run/SKILL.md` → 아무것도 내지 않음. 통과
+- 테스트가 모두 통과한다.
+  - `python3 -m unittest discover -s tests` → `Ran 99 tests in 15.582s` / `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 99 tests` / `OK`. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
