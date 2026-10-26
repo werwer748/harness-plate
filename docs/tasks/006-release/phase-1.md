@@ -64,3 +64,33 @@
 ## 하네스에서 걸린 것
 - 계획의 읽을 것 `git show e521e80 -- …`는 머지 커밋이라 diff를 내지 않았다. `git diff e521e80^1 e521e80 -- …`로 봤다
 - 시험 버전을 TODO가 가리킨 001 phase 3의 기록에서 찾지 못해(기록에 Claude Code 버전이 없다) `claude --version`만 썼다
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 1이 참이다.
+  - `grep -n '"version"' plugins/plate/.claude-plugin/plugin.json plugins/plate/.codex-plugin/plugin.json` → 두 줄 모두 `"version": "0.12.0",`. 통과
+  - `claude plugin validate .` → `✔ Validation passed`. 통과
+  - `README.md` 전체를 읽음 → CI 절의 새 문단이 `AGENTS.md` 되돌림(없으면 지움), PR 모드가 지침 파일을 기준 브랜치에서 읽고 PR의 글을 데이터로만 봄, 실패 때 오류 줄만 내고 메시지 전부를 내는 입력은 켜지 않음, 새 줄 20줄 미만은 "보지 않음"을 적는다. setup 양식(`plugins/plate/skills/setup/SKILL.md` 296~361줄)과 review(`plugins/plate/skills/review/SKILL.md` 126, 197줄)에 대어 어긋남 없음. 스킬 표와 PR 절도 일곱과 어긋나지 않음. 통과
+  - `docs/ARCHITECTURE.md` 전체를 읽음 → CI 문단과 데이터 흐름이 되돌림, 기준 브랜치의 지침, 오류 줄을 적고, 자동 머지 조건에 20줄 미만이면 먼저 보지 않음을 적는다. 다른 줄은 일곱과 어긋나지 않음. 통과
+  - `docs/ADR.md` 전체를 읽음 → ADR-021 트레이드오프가 #11의 두 막음과 #13의 오류 줄을 적고, 다른 ADR은 일곱을 다루지 않음. 어긋남 없음. 통과
+  - `docs/TOOLS.md`를 읽음(1~135줄, 136~234줄은 일곱의 낱말로 grep) → `show_full_output`(113줄)·커버리지가 갈린 것(118줄)·`--body "$(…)"`는 날짜를 단 그때의 관찰이고, 2026-10-26 절(124~128줄)이 고친 뒤의 동작을 적음. 어긋남 없음. 통과
+- 완료 조건 2가 참이다.
+  - 두 `plugin.json`의 `description`을 읽음 → 두 글이 같고 CI를 "PR마다 review의 PR 모드로 평가하고 판정 스크립트로 … 고른다"로만 적어 일곱과 어긋나는 글 없음. 통과
+- 완료 조건 3이 참이다.
+  - `grep -n 'issue-fixes(0.12.0)' docs/TOOLS.md` → `17:` 한 줄, "## Claude Code" 아래 판정 버전 문단. 통과
+- 테스트가 모두 통과한다.
+  - `python3 -m unittest discover -s tests` → `Ran 99 tests in 16.082s` / `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 99 tests` / `OK`. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
