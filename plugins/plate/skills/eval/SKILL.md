@@ -33,7 +33,7 @@ description: 모든 task가 끝난 tasks에서 하네스가 어떻게 돌았는�
 - **`review.md`**: `docs/tasks/review.md`. 코드 평가가 `## 평가 1`처럼 번호를 붙여 더한 평가 절마다 완료 조건의 결과, 다섯 범주의 등급, 소스 문제, "하네스에서 걸린 것"이 있다.
 - **계획의 커밋**: 메시지가 `plan: <tasks 이름>`인 커밋. 그 tasks의 계획을 넣은 커밋이다.
 - **tasks의 커밋**: 계획의 커밋부터 HEAD까지의 커밋. `git log --reverse --name-status --format='%h %s' <계획의 커밋>^..HEAD`로 메시지와 바꾼 파일을 함께 본다.
-- **더한 phase**: 회고에서 나온 문제를 고치려고 실행이 실행 중에 더한 phase. 제목이 `# Phase M: 회고 K의 문제를 고친다` 꼴인 `done-phase-M.md`로 가른다. 실행은 이 phase도 `plan:`으로 시작하는 메시지(`plan: NNN-slug 수정`)로 커밋하므로 커밋 메시지로는 가르지 못한다.
+- **더한 phase**: 회고에서 나온 문제를 고치려고 실행이 실행 중에 더한 phase. 제목이 `# Phase M: 회고 K의 문제를 고친다` 꼴인 `done-phase-M.md`로 가른다. 실행은 이 phase를, 멈춘 뒤 계획을 고칠 때와 같은 메시지(`plan: NNN-slug 수정`)로 커밋하므로 커밋 메시지로는 가르지 못한다. 그 커밋의 넣어도 되는 파일은 3번의 규칙 준수 표에 있다.
 - **실패**: 하네스가 돌며 틀리거나 걸린 것 하나. 2번에서 모은다.
 - **MAST**: 다중 에이전트 시스템의 실패를 세 범주(FC1 시스템 설계, FC2 에이전트 사이 어긋남, FC3 과제 검증) 14개 유형으로 나눈 분류. 유형은 2번의 표에 있다.
 - **잡힌 곳**: 실패가 처음 드러난 자리. 그 자리(수행하거나 확인하는 쪽이 스스로 적었거나 멈췄다), phase의 확인, task의 회고, tasks 끝(코드 평가) 넷이다.
@@ -129,6 +129,8 @@ description: 모든 task가 끝난 tasks에서 하네스가 어떻게 돌았는�
 | `plan: <tasks 이름>`, `plan: NNN-slug 더함` | plan | tasks 머리, task 폴더의 `plan.md`와 `phase-N.md` |
 | `NNN-slug: phase N`, `NNN-slug: phase N 고침` | phase | 그 `phase-N.md`와 그 phase에서 만들거나 고치거나 지운 파일. tasks 머리와 task 머리는 들지 않는다 |
 | `NNN-slug: phase N 확인` | check | 그 `phase-N.md`만 |
+| `NNN-slug: phase N 통과` | run | 그 `phase-N.md`를 `done-phase-N.md`로 바꾼 이름 바꾸기와 `RUNLOG.md` |
+| `plan: NNN-slug 수정` | run | 더한 `phase-M.md`, 고친 계획 파일(tasks 머리, task 머리, `phase-N.md`의 계획 다섯 항목), `RUNLOG.md` |
 | `NNN-slug: 회고` | retro | 그 task의 `retro.md`와 `FRICTION.md`만 |
 | `<tasks 이름>: 코드 평가` | review | `review.md`만 |
 | `<tasks 이름>: 하네스 eval` | eval | `eval.md`만 |
