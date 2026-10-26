@@ -52,3 +52,26 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 1의 첫째 확인(retro 셋)이 참이다.
+  - `plugins/plate/skills/retro/SKILL.md`의 4번, 5번, 회고 절 양식, `FRICTION.md` 줄 양식, 적는 규칙을 읽음 → 고칠 쪽: 4번(73줄)에 고칠 쪽(문서 | 코드)과 근거, "정하지 못함" 규칙이 있고 회고 절 양식 "문제" 줄(145줄)에 `고칠 쪽:` 칸이 있음. 경계 밖: 4번(75줄), 5번의 `경계 밖` 갈래(88줄), `FRICTION.md` 줄 양식(153줄)에 있음. 남은 것: 4번(77줄)에 `done-phase-N.md`의 "남은 것"을 넷에 대어 보는 규칙이 있음. 셋 모두 있음. 통과
+- 완료 조건 2가 참이다.
+  - `grep -rn '스킬 후보' plugins/plate/skills docs/ARCHITECTURE.md` → 세 줄. retro 153줄과 eval 31줄은 넷을 늘어놓고 `경계 밖`이 있음. eval 161줄은 스킬 후보 줄 하나만 가리킴. 통과
+- 테스트가 모두 통과한다.
+  - `python3 -m unittest discover -s tests` → `Ran 99 tests in 16.172s`, `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 99 tests`, `OK`. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
