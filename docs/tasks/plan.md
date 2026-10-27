@@ -66,3 +66,4 @@ GitHub 이슈 #18 "같은 저장소 PR이 워크플로 파일을 바꿔 CI 판�
 - `001-ruleset-probe`: 시험 저장소에서 ruleset과 CODEOWNERS가 워크플로를 바꾼 PR의 자동 머지를 막는지 확인해 `docs/TOOLS.md`에 남긴다
 - `002-guard-setup`: 판정 스크립트의 워크플로 검사, 편집 훅의 CODEOWNERS 예외, setup의 CODEOWNERS와 ruleset 안내가 들어가고 맥락 문서가 맞춰진다
 - `003-release`: 버전이 0.14.0이 되고 README와 맥락 문서가 바뀐 동작과 맞는다
+- `004-fixes`: tasks 끝에서 고치기로 한 것이 고쳐진다
