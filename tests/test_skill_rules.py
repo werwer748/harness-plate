@@ -1,7 +1,7 @@
 """release-prep tasks가 고친 스킬 규칙의 글이 본문의 제자리에 남아 있는지 시험한다.
 
 이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41·#46·#52·#53, phase의 #42·#51, check의 #51,
-retro의 #49·#51, review의 #51, eval의 #36·#50·#51) 그 규칙을 이루는
+retro의 #49·#50·#51, review의 #51, eval의 #36·#50·#51) 그 규칙을 이루는
 글이 그 본문의 그 절에 있는지 본다. 글이 빠지거나 다른 절로 옮겨지면 실패한다.
 모든 스킬의 앞머리가 Agent Skills 규격의 한도(description 1024자, name 64자) 안에 있는지도 본다.
 """
@@ -293,7 +293,7 @@ class RetroRulesTest(unittest.TestCase):
         self.assertIn('확인 절 "하네스에서 걸린 것"의 `남은 것:`으로 시작하는 줄은 이번 회고 절 "남은 것"에서 "문제"로 판정한 것만 모으고', body)
         self.assertIn('"문제 아님"으로 판정한 줄은 모으지 않는다', body)
 
-    def test_49_stop_list_includes_permission(self):
+    def test_50_stop_list_includes_permission(self):
         body = section(read("retro"), "5. tasks 끝에 볼 것을 모은다")
         self.assertIn("물은 자리가 `멈춤`이 아닌 줄(권한, 실행 방식,", body)
 
