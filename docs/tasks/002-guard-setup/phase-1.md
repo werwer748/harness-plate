@@ -48,3 +48,29 @@
 
 ## 하네스에서 걸린 것
 없음
+
+## 확인 1
+
+**통과 조건**
+- (완료 조건 1) 판정 검사가 시험으로 닫힌다
+  - `python3 -m unittest discover -s tests` → `Ran 102 tests in 16.407s`, 마지막 줄 `OK`. 통과
+  - `tests/test_verdict.py`의 `ChangedFilesTest`(120~141줄)를 읽음 → `test_workflow_path_turns_merge_into_request`(워크플로 목록이면 request), `test_workflow_path_keeps_close_and_request`(close 그대로), `test_no_list_or_no_workflow_path_is_unchanged`(목록 없음·빈 목록·워크플로 경로 없는 목록이면 merge 그대로)로 세 경우가 저마다 있다. 통과
+  - 이 phase 기록의 "한 일" 테스트 먼저 항목 → 실패 출력(`FAILED (failures=1)`) 뒤에 통과 출력(`OK`)이 이 순서로 있다. 통과
+- `docs/ARCHITECTURE.md`의 두 줄이 바뀐 판정과 맞는다
+  - `sed -n '17p;51p' docs/ARCHITECTURE.md` → 17줄은 `--changed-files` 목록에 워크플로 경로가 있으면 자동 머지를 머지 요청으로 내린다고 적고, 51줄도 같은 규칙과 닫기·머지 요청은 그대로, 목록이 없으면 목록 없이 판정한다고 적는다. 어긋나지 않는다. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 102 tests`, `OK`. 통과
+
+**테스트 먼저 기록**
+- "한 일"의 테스트 먼저 항목 → `python3 -m unittest tests.test_verdict`의 실패 출력(`AssertionError: 'merge' != 'request'`, `FAILED (failures=1)`) 뒤에 통과 출력(`Ran 17 tests`, `OK`)이 이 순서로 있다. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
