@@ -12,8 +12,8 @@
 - `docs/PRD.md`, `docs/ARCHITECTURE.md`, `docs/ADR.md`, `docs/TOOLS.md`, `docs/BACKLOG.md`, `README.md` (맥락 문서와 README)
 
 **TODO**
-- [ ] eval의 "2. 실패를 모아 MAST 유형으로 나눈다"에서 표 아래의 "실패가 아닌 줄" 목록에, `남은 것:`으로 시작하는 줄은 그 task의 회고 절에서 "문제"로 판정된 것만 실패로 센다(잡힌 곳은 그 자리)는 글과, 명령 절의 사실이나 판단을 적은 메모 줄은 실패가 아니라는 글이 더해진다 (#36) (`plugins/plate/skills/eval/SKILL.md`)
-- [ ] eval 본문 앞머리의 description, `docs/PRD.md`의 핵심 기능 8, `docs/ARCHITECTURE.md`의 "데이터 흐름"의 tasks 끝 갈래, `README.md`의 `eval` 행 가운데 실패로 세는 줄과 어긋나는 줄이 그 동작을 담게 바뀐다 (`plugins/plate/skills/eval/SKILL.md`, `docs/PRD.md`, `docs/ARCHITECTURE.md`, `README.md`)
+- [x] eval의 "2. 실패를 모아 MAST 유형으로 나눈다"에서 표 아래의 "실패가 아닌 줄" 목록에, `남은 것:`으로 시작하는 줄은 그 task의 회고 절에서 "문제"로 판정된 것만 실패로 센다(잡힌 곳은 그 자리)는 글과, 명령 절의 사실이나 판단을 적은 메모 줄은 실패가 아니라는 글이 더해진다 (#36) (`plugins/plate/skills/eval/SKILL.md`)
+- [x] eval 본문 앞머리의 description, `docs/PRD.md`의 핵심 기능 8, `docs/ARCHITECTURE.md`의 "데이터 흐름"의 tasks 끝 갈래, `README.md`의 `eval` 행 가운데 실패로 세는 줄과 어긋나는 줄이 그 동작을 담게 바뀐다 (`plugins/plate/skills/eval/SKILL.md`, `docs/PRD.md`, `docs/ARCHITECTURE.md`, `README.md`)
 
 **통과 조건**
 - 완료 조건 1이 참이다.
@@ -21,3 +21,23 @@
   - 확인: `python3 -m unittest discover -s tests`의 마지막 줄이 `OK`, `claude plugin validate .`의 마지막 줄이 `✔ Validation passed`
 - 완료 조건 2가 참이다.
   - 확인: `docs/PRD.md`의 핵심 기능 8, `docs/ARCHITECTURE.md`의 "데이터 흐름"의 tasks 끝 갈래, `README.md`의 `eval` 행, eval 본문 앞머리의 description을 저마다 읽어 실패로 세는 줄과 어긋나는 줄이 없다
+
+## 한 일
+- eval의 "2. 실패를 모아 MAST 유형으로 나눈다"의 "실패가 아닌 줄" 목록에 두 줄을 더했다: 확인 절의 "하네스에서 걸린 것"에서 `남은 것:`으로 시작하는 줄은 그 task의 회고 절 "남은 것"에서 "문제"로 판정된 것만 실패로 세고(잡힌 곳은 그 자리), "문제 아님"이거나 회고가 모으지 않은 줄(계획이 `돌리지 않음`으로 정한 위험도 회고가 "문제"로 판정하지 않았으면)은 실패가 아니다. 명령 절의 사실이나 확인한 쪽의 판단만 적은 메모 줄은 실패가 아니다 (#36) (`plugins/plate/skills/eval/SKILL.md`)
+- description, PRD 핵심 기능 8, ARCHITECTURE "데이터 흐름"의 tasks 끝 갈래, README `eval` 행을 읽었다. 넷 모두 어느 줄을 실패로 세는지 적지 않아(`grep -n 'MAST\|실패로 세\|남은 것:'`이 PRD·ARCHITECTURE·ADR·README에서 아무것도 찾지 않음) 1의 동작과 어긋나는 줄이 없어 고치지 않았다 (`plugins/plate/skills/eval/SKILL.md`, `docs/PRD.md`, `docs/ARCHITECTURE.md`, `README.md`)
+
+## 확인 결과
+- 완료 조건 1이 참이다.
+  - `grep -n '남은 것:\|메모 줄' plugins/plate/skills/eval/SKILL.md` → 77행(`남은 것:` 줄은 회고 절에서 "문제"로 판정된 것만 실패로 센다, 잡힌 곳은 그 자리), 78행(메모 줄은 실패가 아니다). 둘 다 "2." 절 안에 있다. 통과
+  - `python3 -m unittest discover -s tests` → `Ran 129 tests`, 마지막 줄 `OK`. `claude plugin validate .` → 마지막 줄 `✔ Validation passed`. 통과
+- 완료 조건 2가 참이다.
+  - eval description, `docs/PRD.md` 핵심 기능 8, `docs/ARCHITECTURE.md` "데이터 흐름"의 tasks 끝 갈래, `README.md` `eval` 행을 읽음 → 실패로 세는 줄을 다루는 글이 없어 어긋나는 줄이 없다. 통과
+
+## 계획과 달라진 점
+없음
+
+## 남은 것
+- 바뀐 eval 2번을 실제로 돌려 보지 않았다. 장면 H로 phase 2가 돌린다
+
+## 하네스에서 걸린 것
+없음
