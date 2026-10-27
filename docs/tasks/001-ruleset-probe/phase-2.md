@@ -76,3 +76,30 @@
 ## 하네스에서 걸린 것
 - task 머리의 결정 "장면의 결과가 기대와 다르면 계획이 틀린 것으로 보고 멈춘다"에 따라 장면 2 뒤에서 멈췄다. 상태는 계획이 틀림
 - 계획이 고쳐진 뒤 다시 수행할 때 TODO의 체크박스가 모두 비어 있고 첫 시도의 기록 다섯 절이 남아 있었다. 다섯 절을 지금 상태로 고쳐 쓰면서 첫 시도의 결과는 "한 일"의 첫 줄로 줄여 남겼다
+
+## 확인 1
+
+**통과 조건**
+- (완료 조건 1) main에 두 파일이 있고 활성 ruleset이 하나 있다
+  - `gh api 'repos/werwer748/plate-ci-test/contents/.github/CODEOWNERS?ref=main' --jq .path` → `.github/CODEOWNERS`, `gh api 'repos/werwer748/plate-ci-test/contents/.github/workflows/merge-probe.yml?ref=main' --jq .path` → `.github/workflows/merge-probe.yml`. 통과
+  - `gh api repos/werwer748/plate-ci-test/rulesets` → `25891047 workflow-guard-probe` 하나, `gh api repos/werwer748/plate-ci-test/rulesets/25891047 --jq .enforcement` → `active`. 통과
+- (완료 조건 2) 다섯 장면의 기록이 `docs/TOOLS.md`에 있다
+  - `docs/TOOLS.md`의 "ruleset과 CODEOWNERS로 워크플로 PR의 자동 머지를 막는지 본 것" 절을 읽음 → ruleset JSON이 있고, 장면 1(#18, `gh workflow run … -f pr=18`, 실행 `40352179658`, 머지됨), 장면 2(#19, 실행 `40352503804`, 막힘, 오류 글 `…the base branch policy prohibits the merge.`), 장면 3(#20, 실행 `40352605265`, 머지됨), 장면 4(#20의 같은 실행, 막힘, GH013 오류 글), 장면 5(#19, `gh pr merge 19 --merge --admin`, 머지됨, rule suite `4728498479` bypass)가 저마다 있다. 통과
+- 장면의 PR 상태가 기록과 맞다
+  - `gh pr view <번호> --repo werwer748/plate-ci-test --json state,author,mergedBy -q …` → 18 `MERGED werwer748 app/github-actions`(장면 1), 19 `MERGED app/github-actions werwer748`(장면 2=5), 20 `MERGED werwer748 app/github-actions`(장면 3), 21 `MERGED werwer748 werwer748`. 통과
+  - `gh api repos/werwer748/plate-ci-test/actions/permissions/workflow --jq .can_approve_pull_request_reviews` → `false`. 통과
+- 테스트가 그대로 통과한다
+  - `python3 -m unittest discover -s tests` → `Ran 99 tests in 15.544s`, `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 99 tests`, `OK`. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
