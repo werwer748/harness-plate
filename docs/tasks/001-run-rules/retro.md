@@ -32,3 +32,31 @@
 - run 본문이 #35를 고치며 `docs/TOOLS.md`에 적은 까닭을 "다음 `RUNLOG.md` 커밋에 함께 넣는다"(512행)고 했는데, 그 커밋 자리는 모두 다른 파일을 막는다: 회고·코드 평가·하네스 eval 뒤는 "`RUNLOG.md`만 한 커밋"(167·292·302·501행), phase 통과는 "이 변경과 `RUNLOG.md`만"(154행), 고칠 phase는 "그 파일과 `RUNLOG.md`만"(195행)이다. 어느 쪽을 따르든 한 글을 어기고, 커밋 자리의 글을 따르면 `docs/TOOLS.md`가 커밋되지 않은 채 남아 "고칠지"에서 작업 트리가 깨끗하다는 #44의 목표와 어긋난다 (`plugins/plate/skills/run/SKILL.md`). 기준: 결함
 
 **판정**: 문제 있음
+
+## 회고 2
+
+**확인**
+- 1. `plugins/plate/skills/run/SKILL.md`에 다섯 이슈의 해결이 적혀 있다
+  - run 본문의 "1. 시작 조건을 본다", "7. task 회고를 맡긴다", "8. 고칠 phase를 더한다", "멈춘다", "코드 평가를 맡긴다", "하네스 eval을 맡긴다", "`RUNLOG.md`" 절을 `git diff dfb0852 HEAD -- plugins/plate/skills/run/SKILL.md`와 함께 읽음 → 회고 1에서 본 다섯 해결(#40 권한 물음과 확인할 수 없을 때 잇기, #44 회고 뒤 `NNN-slug: RUNLOG`·평가 뒤 `<tasks 이름>: RUNLOG` 커밋, #35 단위 없는 `모름`, #34·#38 계획의 목표나 완료 조건을 바꾸게 하면 어느 방식이든 "멈춘다"와 물은 자리 `멈춤`, #38 TODO의 맥락 문서·README 줄과 계획 커밋 해시를 적은 통과 조건)이 그대로 있고, phase 4는 커밋 자리마다 `docs/TOOLS.md`를 넣는 괄호와 10번의 보고 앞 커밋 문단만 더했다. 통과
+  - `python3 -m unittest discover -s tests` → `Ran 129 tests in 16.271s` / `OK`. `claude plugin validate .` → `✔ Validation passed`. 통과
+- 2. 맥락 문서와 README가 1의 동작과 맞는다
+  - `docs/PRD.md` 핵심 기능 7, `docs/ARCHITECTURE.md` "패턴과 규칙"의 run 문단과 "데이터 흐름"의 실행 갈래, `README.md`의 `run` 행, run 본문 description을 읽음(`git diff 77018b6 HEAD`로 phase 4의 바뀐 줄도 봄) → 시작할 때의 권한 물음, `RUNLOG.md`의 커밋 자리(사용량 까닭을 적은 `docs/TOOLS.md`를 함께 넣는 것과 보고 앞 커밋 포함), 회고가 계획을 바꾸게 할 때 멈추는 것을 담고 어긋나는 줄이 없다. 통과
+- 3. 네 장면의 결과가 `docs/TOOLS.md`에 있고 기대대로다
+  - `docs/TOOLS.md` 272~315행의 장면 A·B 절과 장면 C·D 절을 읽음 → 장면 A(18:40:01, `75d5f20c-…`), C(19:30:40, `515d9b64-…`), D(19:32:30, `6b7d5d04-…`)는 버전, 시각, 세션 id, 기대한 결과, 본 결과가 있고 기대와 같다. 장면 B의 마지막 항목(Claude Code 2.1.311, 2026-10-27T20:43:55+09:00, 세션 id `8d673fe3-99ee-4f55-8117-e254cdf261ee`)은 회고·코드 평가·하네스 eval 뒤에 `RUNLOG.md`만 바꾼 커밋(`ae7c965`, `4a25b42`, `5def566`)이 있고 "고칠 안대로 할까요?"로 묻고 멈춘 자리의 `git status --short`가 비어 기대와 같다. 통과
+  - `git hash-object plugins/plate/skills/run/SKILL.md` → `6fb11a43b9f522cbaf0686c4ccbe098bd43036e0`, `git rev-parse HEAD:plugins/plate/skills/run/SKILL.md` → `6fb11a43b9f522cbaf0686c4ccbe098bd43036e0`로 마지막 장면 B 항목의 해시와 같다. `git log -1 --format=%cI dfb0852` → `2026-10-27T18:38:03+09:00`이고 장면 A 18:40:01, C 19:30:40, D 19:32:30이 늦다. `git diff dfb0852 HEAD -- plugins/plate/skills/run/SKILL.md` → 바뀐 글은 6·7·8번, "멈춘다" 4, 코드 평가·하네스 eval 뒤, "비운다" 1의 커밋 글에 붙은 `docs/TOOLS.md` 괄호, 10번의 보고 앞 커밋 문단, "`RUNLOG.md`" 절의 커밋 자리 글과 사용량 줄의 괄호뿐이고 모두 `docs/TOOLS.md`를 커밋 자리에 넣는 글이다. 통과
+  - 돌리지 않음: #35는 task 머리의 `돌리지 않음` 줄대로 장면이 없다
+- 명령 절
+  - 빌드: 없음
+  - 린트: 없음
+  - 테스트: `python3 -m unittest discover -s tests` → `Ran 129 tests in 16.271s` / `OK`. 통과
+
+**남은 것**
+- phase 4: 사용량이 돌아오지 않아 `docs/TOOLS.md`에 까닭을 적고 `RUNLOG.md`와 함께 커밋하는 길(10번의 보고 앞 커밋도 든다)은 장면에서 돌지 않았다 → 문제 아님 (task 머리의 `돌리지 않음` 줄이 #35를 돌리지 않기로 정했고, run 본문을 읽어 커밋 없이 10번으로 오는 길(8번·"멈춘다"의 승인받지 못함, "멈춘다" 4의 멈추기로 함)이 모두 10번 첫 문단의 커밋을 지난다)
+- phase 4: 한계: `docs/TOOLS.md` 없이 "멈춘다"에서 멈추기로 하면 `RUNLOG.md`의 물음 줄이 커밋되지 않은 채 남는다 → 문제 아님 (#44의 해결로 정한 경계는 회고·코드 평가·하네스 eval 에이전트 뒤의 커밋과 "고칠지"에서 멈춘 자리이고, "멈춘다"의 물음 줄은 이 task 전부터의 동작이다. `FRICTION.md`에 경계 밖으로 적는다)
+- phase 4: 장면의 허용 목록에 `"Bash(git remote:*)" "Bash(git rm:*)"`가 없어 run의 "비운다"가 막혔다 → 문제 아님 (장면 B가 보는 커밋 자리와 "고칠지"는 "비운다" 앞이고, 장면 차림의 허용 목록에서 온 것이다)
+- phase 1~3의 줄은 회고 1에서 판정했고 그 뒤 바뀐 것이 없다
+
+**문제**
+- 없음
+
+**판정**: 통과
