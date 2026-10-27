@@ -27,3 +27,5 @@
 - 에이전트 | 수행 | `002-plan-phase-rules` phase 3 | 토큰 89052 | 도구 호출 19 | 시간 155초
 - 에이전트 | 확인 | `002-plan-phase-rules` phase 3 | 토큰 73805 | 도구 호출 13 | 시간 77초
 - 에이전트 | 회고 | `002-plan-phase-rules` | 토큰 106145 | 도구 호출 13 | 시간 95초
+- 에이전트 | 수행 | `003-eval-review-rules` phase 1 | 토큰 80467 | 도구 호출 13 | 시간 69초
+- 에이전트 | 확인 | `003-eval-review-rules` phase 1 | 토큰 57306 | 도구 호출 6 | 시간 42초
