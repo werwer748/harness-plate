@@ -64,3 +64,37 @@
 
 ## 하네스에서 걸린 것
 - 이 phase를 맡긴 글에 `부른 쪽: plate:run` 줄이 없었다(task 폴더와 phase 두 줄뿐). 고치기 전의 phase 스킬 6번은 표지로 가르지 않아 이 수행은 run이 띄운 꼴(다섯 줄만)로 돌려준다
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 1이 참이다
+  - `plugins/plate/skills/retro/SKILL.md` 5번과 `plugins/plate/skills/eval/SKILL.md` 낱말·3번을 읽음 → retro 5번 "문제" 갈래에 `확인 절 "하네스에서 걸린 것"의 \`남은 것:\`으로 시작하는 줄은 이번 회고 절 "남은 것"에서 "문제"로 판정한 것만 모으고, "문제 아님"으로 판정한 줄은 모으지 않는다`가, "멈춤" 갈래의 정해 둔 자리 목록에 `권한`이 있다. eval 3번 표에 `NNN-slug: RUNLOG`(136줄)와 `<tasks 이름>: RUNLOG`(140줄) 행이 만든 스킬 run, 넣어도 되는 파일 `RUNLOG.md`와 사용량 까닭을 적은 `docs/TOOLS.md`로 있고, 낱말 "정해 둔 물음"(40줄)의 목록에 `권한`이 있다. 통과
+- 완료 조건 2가 참이다
+  - phase 6번(100줄), check 8번(84줄), retro 9번, review 9번 "네 줄을 돌려준다"(165줄), eval 8번(197줄)을 읽음 → 다섯 모두 "맡은 글에 `부른 쪽: plate:run` 줄도 작업 트리의 스킬 줄(…)도 없을 때만 사용자가 직접 부른 것으로 보고, 그때는 …"이고, 다섯 본문에 옛 "사용자가 직접 불렀으면"이 없다. 통과
+- 완료 조건 3이 참이다
+  - `python3 -m unittest discover -s tests` → `Ran 161 tests` / 마지막 줄 `OK`. 통과
+  - `mktemp -d` 두 곳에 `git archive HEAD`(2563971)를 풀어 (a) retro 5번의 #49 해결 글("다만 확인 절 … 갈린다.")을 지우고, (b) review 9번 절에서 `` `부른 쪽: plate:run` ``을 지우고 저마다 `python3 -m unittest discover -s tests` → (a) `FAIL: test_49_friction_problem_only_for_remaining_lines_judged_problem (test_skill_rules.RetroRulesTest)` / `FAILED (failures=1)`, (b) `FAIL: test_51_direct_report_only_without_marker (test_skill_rules.CallerMarkerTest) (skill='review')` / `FAILED (failures=1)`. 통과
+- 완료 조건 5가 참이다
+  - `grep -h '"version"' plugins/plate/.claude-plugin/plugin.json plugins/plate/.codex-plugin/plugin.json` → `"version": "0.18.0",` 두 줄. 통과
+  - `claude plugin validate .` → 마지막 줄 `✔ Validation passed`. 통과
+  - `docs/ARCHITECTURE.md`(맡기는 글 문단, run 문단, 데이터 흐름 회고 줄, `test_skill_rules.py` 줄), `docs/PRD.md` 5·7, `README.md`의 run·phase·check·retro·review·eval 행을 따로 읽음 → 맡기는 글 문단이 "phase, check, retro, review, eval 다섯 스킬은 맡은 글에 표지 줄이나 작업 트리의 스킬 줄이 있으면 run이 띄운 것으로 가르고 … 둘 다 없을 때만 사용자가 직접 부른 꼴"을 적고 표지 줄 `부른 쪽: plate:run` 글이 남아 있다. `test_skill_rules.py` 줄이 001(시작 권한 물음, RUNLOG 커밋 자리, 표지 줄 등), 002(갈래마다 확인, 본문 해시, 초안 점검 등), retro #49, eval #50, 다섯 스킬 #51을 담는다. run 문단에 시각·해시 파일의 멈춤과 결정 줄 글이 그대로 있다. PRD 5, 데이터 흐름의 회고 줄, README 다섯 행에 #49·#51과 어긋나는 글(직접 부른 꼴의 기준, `FRICTION.md` 문제 줄의 판정)이 없다. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 161 tests` / `OK`. 통과
+
+**남은 것**
+- 다섯 스킬의 기준 글이 작업 트리의 스킬 줄을 앞부분으로만 가리키고, 테스트가 run 낱말의 글과 맞는지는 보지 않는다 → 통과 조건은 지금 다섯 본문의 글(완료 조건 2)과 그 글의 테스트(완료 조건 3)를 보고, 이 줄은 run이 나중에 줄을 바꿀 때의 위험이라 통과 조건이 보는 동작에 걸리지 않는다. 하네스에서 걸린 것
+- 고친 retro, eval, phase가 실제로 그렇게 도는지 돌려 보지 않았다 → 이 phase의 통과 조건은 본문의 글, 테스트, 버전, 문서만 보고 장면으로 돌린 동작은 보지 않는다(phase 2와 task 머리 완료 조건 4의 몫). 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 다섯 스킬의 기준 글이 작업 트리의 스킬 줄을 그 줄의 앞부분(`작업 트리의 {경로}를 읽어 그 절차를 따른다.`)으로만 가리켜, run이 그 줄의 글을 바꾸면 다섯 본문도 함께 고쳐야 한다. 테스트는 다섯 본문의 글만 보고 run 낱말 "작업 트리의 스킬 줄"의 글과 맞는지는 보지 않는다
+- 남은 것: 고친 retro, eval, phase가 실제로 그렇게 도는지는 이 phase에서 돌려 보지 않았다(phase 2의 장면 R, E, P1, P2의 몫)
+- 이 확인을 맡긴 글에도 `부른 쪽: plate:run` 줄이 없고 작업 트리의 스킬 줄만 있었다. 작업 트리의 check 8번에 따라 작업 트리의 스킬 줄로 run이 띄운 것으로 가르고 세 줄만 돌려준다
+
+**판정**: 통과
