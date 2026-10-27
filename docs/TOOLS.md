@@ -14,7 +14,7 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
 
 ## Claude Code
 
-1단계는 2.1.291(2026-10-06), 2단계의 2026-10-08 판정은 2.1.293, 3단계의 판정은 2.1.294(2026-10-08), 4단계의 판정은 2.1.296(2026-10-13), 작업 004-context-rules의 판정은 2.1.300(2026-10-15), 5단계의 판정은 2.1.300(2026-10-15~16)과 2.1.301(2026-10-16), 6단계의 판정은 2.1.302(2026-10-17), 010-tasks-cycle(0.10.0)의 판정은 2.1.302(2026-10-18)와 2.1.303(2026-10-19), tasks pr-ci(0.11.0)의 시험은 2.1.310(2026-10-24), tasks issue-fixes(0.12.0)의 시험은 2.1.310(2026-10-26)에서 돌렸다.
+1단계는 2.1.291(2026-10-06), 2단계의 2026-10-08 판정은 2.1.293, 3단계의 판정은 2.1.294(2026-10-08), 4단계의 판정은 2.1.296(2026-10-13), 작업 004-context-rules의 판정은 2.1.300(2026-10-15), 5단계의 판정은 2.1.300(2026-10-15~16)과 2.1.301(2026-10-16), 6단계의 판정은 2.1.302(2026-10-17), 010-tasks-cycle(0.10.0)의 판정은 2.1.302(2026-10-18)와 2.1.303(2026-10-19), tasks pr-ci(0.11.0)의 시험은 2.1.310(2026-10-24), tasks issue-fixes(0.12.0)의 시험은 2.1.310(2026-10-26), tasks cleanup의 시험은 2.1.311(2026-10-27)에서 돌렸다.
 
 - `claude --plugin-dir <플러그인 폴더>`로 시작하면 그 폴더의 플러그인을 그 세션에만 불러온다. 설치 기록과 마켓플레이스 등록을 건드리지 않는다.
 - 설치된 `plate@harness-plate`는 옛 0.3.0이고 꺼져 있다(2026-10-08). 시험은 `--plugin-dir`로 레포의 본문을 읽는다.
@@ -233,6 +233,19 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
 - 확인하지 않은 것: `CLAUDE_CODE_AUTO_MODE_SERVER=0`일 때 자동 모드에서 지나가는지, 플러그인을 저장소 밖의 복사본에서 실으면 그 폴더의 편집이 지나가는지.
 - 2026-10-26에도 같았다(2.1.310, tasks issue-fixes의 003-plan-rules phase 2). auto mode에서 수행 에이전트의 `plugins/plate/skills/plan/SKILL.md` Edit가 분류기의 판정 없음으로 세 번 막혀 run이 네 번 멈췄다. 사용자가 `.claude/settings.local.json`에 `Edit(plugins/plate/skills/**)` 허용 규칙을 넣은 뒤에도 풀리지 않았고, 세션을 bypass 모드(bypassPermissions)로 바꾼 뒤 띄운 수행 에이전트의 Edit가 들어갔다(커밋 `0200e13`. `docs/tasks/RUNLOG.md`의 멈춤 네 줄).
 - 그래서 이 저장소에서 스킬 본문(`plugins/plate/**`)을 고치는 tasks는 run을 시작하기 전에 권한 모드를 정해 둔다. auto mode로 두면 수행 에이전트의 편집이 막히고 허용 규칙으로는 풀 수 없으니, run 전에 Shift+Tab으로 bypassPermissions로 바꾸거나 묻는 모드로 두고 편집마다 승인한다.
+
+**cleanup 스킬을 두 장면으로 돌려 본 것** (2.1.311, 2026-10-27 KST. tasks cleanup의 001-cleanup-skill phase 2. 복제본은 `mktemp -d`의 `/var/folders/0j/cj37rxmj1mj73vhflqpgsxm00000gn/T/tmp.Qy3TXHzAsG/repo`에 `git clone --branch main /Users/hugo/Desktop/harness-plate`로 만들었고 main은 `a3c1158 plan: issue-sweep`(진행 중인 tasks issue-sweep의 `docs/tasks/plan.md`가 든 커밋)이다. 플러그인은 `--plugin-dir /Users/hugo/Desktop/harness-plate-cleanup/plugins/plate`, 허용 목록은 `"Bash(git add:*)" "Bash(git commit:*)" "Bash(git log:*)" "Bash(git diff:*)" "Bash(git show:*)" "Bash(git status:*)" "Bash(gh issue list:*)" "Bash(python3:*)"`, 옵션은 `--permission-mode acceptEdits --output-format stream-json --verbose`다. 기록은 `/var/folders/0j/cj37rxmj1mj73vhflqpgsxm00000gn/T/tmp.Qy3TXHzAsG/turn1.jsonl`(첫 턴), `turn2.jsonl`(장면 2), `turn3.jsonl`(장면 1)이고 임시 폴더라 지워질 수 있다)
+
+- 첫 턴: `claude -p "/plate:cleanup"`, 2026-10-27T15:39:37+09:00에 시작해 15:56:47에 끝났다(1030초). 세션 id `56d46cfa-e292-4f88-b6ed-f0d739b8951c`. 메인이 띄운 에이전트는 1라운드 6(`Cleanup R1: 보안`~`Cleanup R1: 기존 작업 정합성`), 2라운드 6(`Cleanup R2: 보안`~`Cleanup R2: 기존 작업 정합성`)으로 12였다. 보고서 `docs/cleanup/2026-10-27.md`(살필 파일 21개, 결과물인 마크다운 절 `plugins/plate/skills/*/SKILL.md`, 지난 보고서 없음)를 쓰고 커밋 `fd899a0 cleanup: 2026-10-27`을 넣은 뒤, 남은 발견 33개를 번호·기준·심각도·한 줄로 보여 주고 번호로 고르라며 멈췄다.
+  - 그 시점의 `git show --name-only HEAD`는 `AGENTS.md`, `docs/cleanup/2026-10-27.md` 둘뿐이고 `git status --short`는 비었다.
+  - 보고서의 절은 `## 보안`, `## 성능`, `## 신뢰성`, `## 유지보수성`, `## 기능 적합성`, `## 기존 작업 정합성`, `## 버린 것`, `## 미룬 것`, `## 하네스에서 걸린 것`의 차례다. 남은 발견은 보안 3, 성능 5, 신뢰성 3, 유지보수성 11, 기능 적합성 3, 기존 작업 정합성 8이고, 버린 것은 반박이 이긴 성능-3·성능-5와 중복인 신뢰성-3(→보안-2)·기존 작업 정합성-1(→신뢰성-2)이다. 처음 쓴 "처리"는 모두 `남김`이었다.
+  - 지도 행 `` | `docs/cleanup/` | 정리 점검 보고서(날짜마다 하나), 기준별 발견과 미룬 것 | 정리 tasks를 계획하거나 지난 점검과 견줄 때 | ``이 `docs/tasks/` 행 바로 앞에 들어갔다.
+  - 기존 작업 정합성의 이슈 확인은 origin이 로컬 경로라 `gh issue list --state open`이 `none of the git remotes configured for this repository point to a known GitHub host`로 실패해 측정 못함으로 적혔다. 2라운드의 한 에이전트가 이슈 목록을 가져왔다고 적은 것은 메인이 다시 돌려 보지 못해 근거로 쓰지 않았다(보고서의 "하네스에서 걸린 것").
+  - 답글은 영어였다(보고서는 한국어). 까닭은 확인하지 않았다.
+- 장면 2(만든다): `claude -p --resume 56d46cfa-… --fork-session "만든다, 보안-1"`, 15:57:12~15:57:42(30초). 세션 id `ce76bda6-d806-4368-a516-f7635a15461d`. 기록의 `plate:plan` 호출 줄은 `` {"skill": "plate:plan", "args": "정리 점검 보고서 `docs/cleanup/2026-10-27.md`의 발견 보안-1을 고친다. 발견마다의 근거, 심각도, 고치는 방향, 2라운드 판정은 보고서에 있다. 충돌이 적힌 발견은 어느 쪽으로 고칠지 정해야 한다."} ``다. 그 앞에 커밋 `52443f2 cleanup: 2026-10-27 미룸`(보고서 하나, 보안-1은 `plan으로 넘김`, 나머지 32는 `미룸`)을 넣었고, plan은 진행 중인 issue-sweep에 task로 더할지 묻고 멈췄다. `git status --short`는 비었다.
+- 장면 2의 미룸 커밋이 HEAD를 옮겨 놓아, 장면 1 전에 복제본을 `git reset --hard fd899a0`으로 첫 턴이 멈춘 상태로 돌렸다.
+- 장면 1(만들지 않음): `claude -p --resume 56d46cfa-… "만들지 않는다"`, 15:58:00~15:58:32(32초). 세션 id는 첫 턴과 같은 `56d46cfa-e292-4f88-b6ed-f0d739b8951c`. 커밋 `f390dce cleanup: 2026-10-27 미룸`이 들어갔고 `git show --name-only HEAD`는 `docs/cleanup/2026-10-27.md` 하나였다. 남은 발견 33개의 "처리"가 모두 `미룸`이고 "미룬 것"에 33개가 모였다. `plate:plan` 호출은 없었고, `docs/tasks/plan.md`의 블롭은 첫 턴 전과 같은 `63911a9`였다. 장면 1이 커밋한 파일을 모두 합치면 `AGENTS.md`, `docs/cleanup/2026-10-27.md` 둘이다.
+- 막힌 명령. 첫 턴의 메인에서는 `git ls-files | wc -l; …`, `git -C <복제본> ls-files`, `wc -l docs/*.md; git rev-parse --short HEAD; gh auth status`가 승인을 요구하며 막혔다(`git ls-files`와 `git rev-parse`가 허용 목록에 없다). 서브에이전트에서는 파이프·`;`·`for`를 이은 Bash와 `git -C <복제본> show 491a923^:…`(`git -C` 꼴은 `Bash(git show:*)`에 맞지 않는다) 20개가 "Permission to use Bash has been denied"로 막혔고, 그 에이전트들은 읽기 도구로 돌아가거나 작업 트리의 파일로만 판정했다. 장면 1과 장면 2에서는 막힌 명령이 없었다.
 
 ## Codex
 
