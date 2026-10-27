@@ -44,3 +44,4 @@ PRD 9단계: 정리·리팩터링. 코드베이스를 정기·비정기로 살�
 ## task 목록
 - `001-cleanup-skill`: cleanup 스킬 본문이 생기고, 임시 복제본에서 두 장면으로 돌린 결과가 `docs/TOOLS.md`에 남는다
 - `002-docs-release`: 버전이 0.15.0이 되고, 매니페스트·README·PRD·ARCHITECTURE가 cleanup 스킬에 맞춰진다
+- `003-fixes`: tasks 끝에서 고치기로 한 것이 고쳐진다
