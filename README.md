@@ -4,7 +4,7 @@
 
 | 스킬 | 하는 일 |
 |---|---|
-| `setup` | 프로젝트에 하네스 문서의 위치 기준을 세운다. GitHub 원격이 있고 plate 워크플로가 없으면 CI 워크플로를 둘지 묻고, 그 밖에는 묻지 않는다. 설치만 하고 끝난다 |
+| `setup` | 프로젝트에 하네스 문서의 위치 기준을 세운다. GitHub 원격이 있고 plate 워크플로가 없으면 CI 워크플로를 둘지 묻고, 그 밖에는 묻지 않는다. CI를 두면 `.github/CODEOWNERS`가 없을 때 그것을 쓰고(이미 있거나 GitHub login을 얻지 못하면 넣을 줄을 알린다), 기본 브랜치에 ruleset 거는 법을 보고에 알린다. 설치만 하고 끝난다 |
 | `context` | 셋업이 만든 문서의 남은 칸을 저장소 스캔과 질문으로 채운다 |
 | `plan` | 요청 하나를 tasks로 계획해 `docs/tasks/`에 tasks 머리 `plan.md`와, task 폴더 `NNN-slug/`마다 task 머리 `plan.md`와 phase마다의 `phase-N.md`로 쓰고 한 커밋으로 넣는다 |
 | `run` | 계획된 tasks를 phase 하나씩 실행한다. 시작할 때 실행 방식(task 하나씩, tasks 일괄)을 묻고, 수행, 확인, 회고, 평가를 저마다 새 에이전트에게 맡기고, tasks 끝에서 보고하고 고칠지 묻고, 기본 브랜치로 가는 PR을 열지(GitHub 원격이 없으면 합칠지) 묻는다 |
@@ -26,15 +26,66 @@ PR이 바꾼 지시가 등급을 바꾸지 못하게, `review` 잡은 평가를 
 
 | 판정 | 조건 | 하는 일 |
 |---|---|---|
-| 자동 머지 | 빌드·린트·테스트가 모두 통과(없음도 든다), 새 줄 커버리지 80% 이상(보지 않음도 든다), 신뢰성·보안·유지보수성 A, 모름(측정 못함, 판단 못함) 없음 | merge commit으로 합치고 머리 브랜치를 지운다 |
+| 자동 머지 | 빌드·린트·테스트가 모두 통과(없음도 든다), 새 줄 커버리지 80% 이상(보지 않음도 든다), 신뢰성·보안·유지보수성 A, 모름(측정 못함, 판단 못함) 없음, PR이 워크플로(`.github/workflows/`로 시작하는 경로)를 바꾸지 않음 | merge commit으로 합치고 머리 브랜치를 지운다 |
 | 닫기 | 빌드·린트·테스트 가운데 실패가 있거나 보안이 C 이하 | PR을 닫는다 |
 | 머지 요청 | 그 밖 | 사람이 머지하도록 둔다 |
 
+워크플로를 바꿨는지는 `verdict` 잡이 PR의 바뀐 파일 목록(`gh pr diff --name-only`)을 판정 스크립트에 `--changed-files`로 넘겨 본다. 워크플로를 바꾼 PR은 다른 조건을 다 채워도 머지 요청이 되고 사람이 머지한다.
+
 워크플로는 저장소 시크릿 `CLAUDE_CODE_OAUTH_TOKEN`이 있어야 돈다. `claude setup-token`으로 토큰을 만들어 `gh secret set CLAUDE_CODE_OAUTH_TOKEN`으로 넣는다.
+
+### ruleset과 CODEOWNERS
+
+같은 저장소의 PR은 PR 쪽의 워크플로 파일로 돌기 때문에, PR이 워크플로를 고치면 판정 스크립트의 검사도 건너뛸 수 있다. 이 길은 저장소 설정이 막는다. PR은 저장소 설정을 바꾸지 못한다. `.github/CODEOWNERS`에 워크플로와 CODEOWNERS 자신의 코드 소유자를 두고, 기본 브랜치에 코드 소유자 리뷰를 요구하는 ruleset을 건다.
+
+- 막는 것: 코드 소유자가 아닌 계정(예: github-actions)이 연 워크플로 PR을 워크플로 토큰이 머지하는 것, 워크플로 토큰이 기본 브랜치에 직접 푸시하는 것.
+- 막지 못하는 것: PR을 연 계정이 유일한 코드 소유자면 GitHub가 코드 소유자 리뷰를 채운 것으로 본다. 그래서 혼자 쓰는 저장소에서 내가 연 워크플로 PR은 그 PR 안의 워크플로가 스스로 머지할 수 있다. 이 길까지 닫으려면 코드 소유자를 PR을 여는 계정과 다른, 쓰기 권한이 있는 계정으로 둔다. 쓰기 권한이 없는 계정은 GitHub가 코드 소유자로 보지 않는다.
+- ruleset을 걸기 전에는 판정 스크립트의 검사만 남는다. 비공개 저장소는 요금제에 따라 ruleset을 걸 수 없다. 걸고 나면 워크플로를 바꾼 PR은 코드 소유자가 승인하거나 관리자가 우회(`gh pr merge --admin`)해 머지한다.
+
+ruleset은 `setup`이 보고에 적는 것과 같은 꼴로, 관리자 권한이 있는 계정이 저장소 폴더에서 건다. `{owner}`와 `{repo}`는 `gh`가 지금 저장소로 바꾼다.
+
+```sh
+gh api -X POST 'repos/{owner}/{repo}/rulesets' --input - <<'JSON'
+{
+  "name": "plate-workflow-guard",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
+  "rules": [
+    {"type": "pull_request", "parameters": {
+      "required_approving_review_count": 0,
+      "require_code_owner_review": true,
+      "dismiss_stale_reviews_on_push": false,
+      "require_last_push_approval": false,
+      "required_review_thread_resolution": false}}
+  ],
+  "bypass_actors": [{"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "pull_request"}]
+}
+JSON
+```
+
+화면에서 걸려면 Settings → Rules → Rulesets에서 기본 브랜치를 대상으로 PR 필수, 승인 수 0, 코드 소유자 리뷰 필수를 켜고, 우회 목록에 Repository admin을 PR로만(pull request) 둔다.
+
+### 이미 CI 워크플로를 둔 프로젝트
+
+0.14.0 전에 `setup`으로 `plate-review.yml`을 둔 프로젝트는 `setup`이 워크플로 파일을 다시 쓰지 않으므로 세 가지를 손으로 한다.
+
+1. CODEOWNERS 두 줄 넣기: `.github/CODEOWNERS`에 아래 두 줄을 넣는다. `<login>`은 코드 소유자로 둘 GitHub 계정이다.
+   ```
+   /.github/workflows/ @<login>
+   /.github/CODEOWNERS @<login>
+   ```
+2. ruleset 걸기: 위 "ruleset과 CODEOWNERS"의 명령이나 화면으로 기본 브랜치에 건다.
+3. verdict 단계에 `--changed-files` 넘기기: `.github/workflows/plate-review.yml`의 `verdict` 잡에서 판정 스크립트를 부르는 줄 앞에 바뀐 파일 목록을 받고, 그 파일을 `--changed-files`로 넘긴다.
+   ```sh
+   gh pr diff "$PR" --name-only > changed-files.txt
+   verdict=$(printf '%s' "$BUNDLE" | python3 harness-plate/plugins/plate/ci/verdict.py --changed-files changed-files.txt)
+   ```
+   이 변경을 PR로 올리면 그 PR은 판정 검사가 없는 옛 줄이 아니라 PR 쪽의 새 워크플로로 돌아, 워크플로를 바꾼 PR이라 머지 요청이 된다.
 
 ## 훅
 
-Claude Code에서는 훅 둘이 함께 돈다. 편집 훅(`edit_guard.py`)은 계획 없는 코드 편집과, 테스트 먼저인 phase에서 테스트보다 앞선 구현 편집을 막는다. 푸시 훅(`push_guard.py`)은 셋업된 프로젝트에서 에이전트가 Bash로 origin의 기본 브랜치에 푸시하는 것을 막는다. 다른 브랜치로의 푸시와 사람의 푸시는 막지 않는다. 다른 도구에서는 훅이 돌지 않고 `AGENTS.md`의 작업 규칙과 스킬의 규칙이 막는다.
+Claude Code에서는 훅 둘이 함께 돈다. 편집 훅(`edit_guard.py`)은 계획 없는 코드 편집과, 테스트 먼저인 phase에서 테스트보다 앞선 구현 편집을 막는다. `setup`이 아직 없는 `.github/workflows/plate-review.yml`과 `.github/CODEOWNERS`를 쓰는 것은 막지 않고, 이미 있는 두 파일의 편집은 다른 코드 파일처럼 막는다. 푸시 훅(`push_guard.py`)은 셋업된 프로젝트에서 에이전트가 Bash로 origin의 기본 브랜치에 푸시하는 것을 막는다. 다른 브랜치로의 푸시와 사람의 푸시는 막지 않는다. 다른 도구에서는 훅이 돌지 않고 `AGENTS.md`의 작업 규칙과 스킬의 규칙이 막는다.
 
 ## 설치
 
