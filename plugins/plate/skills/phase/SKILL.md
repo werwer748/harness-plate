@@ -1,6 +1,6 @@
 ---
 name: phase
-description: 계획의 phase 하나를 수행한다. task 머리(task 폴더의 `plan.md`)와 그 phase의 `phase-N.md`만 읽고 TODO를 차례로 끝내며, 통과 조건의 확인을 돌리고, 한 일의 기록을 `phase-N.md`의 계획 아래에 덧붙이고 그 phase에서 바꾼 것만 커밋한다. 고칠 문제를 넘겨받으면 TODO 대신 그 `phase-N.md`의 마지막 확인 절에 적힌 실패를 고친다. 실행 스킬(`plate:run`)이 띄운 에이전트가 부른다. 사용자가 직접 부를 일은 드물다. 계획을 세우거나 phase를 확인하는 일에는 쓰지 않는다.
+description: 계획의 phase 하나를 수행한다. task 머리(task 폴더의 `plan.md`)와 그 phase의 `phase-N.md`만 읽고(앞 phase의 결과는 계획의 읽을 것에 적힌 산출물 파일로만 보고, 앞 phase의 기록은 읽지 않는다) TODO를 차례로 끝내며, 통과 조건의 확인을 돌리고, 한 일의 기록을 `phase-N.md`의 계획 아래에 덧붙이고 그 phase에서 바꾼 것만 커밋한다. 고칠 문제를 넘겨받으면 TODO 대신 그 `phase-N.md`의 마지막 확인 절에 적힌 실패를 고친다. 실행 스킬(`plate:run`)이 띄운 에이전트가 부른다. 사용자가 직접 부를 일은 드물다. 계획을 세우거나 phase를 확인하는 일에는 쓰지 않는다.
 ---
 
 # 수행
@@ -34,6 +34,7 @@ description: 계획의 phase 하나를 수행한다. task 머리(task 폴더의 
 넘겨받은 task 폴더의 `plan.md`(task 머리)와 넘겨받은 번호의 `phase-N.md`를 읽는다. tasks 머리와 다른 phase의 파일(`phase-N.md`, `done-phase-N.md`)은 읽지 않는다.
 
 - 계획의 "읽을 것"에 적힌 파일과 문서를 읽는다.
+- 앞 phase의 결과가 필요하면 계획의 읽을 것에 적힌 산출물 파일만 읽는다. 그 밖의 앞 phase 기록(`done-phase-N.md`, 다른 `phase-N.md`의 기록 절과 확인 절)이 필요하면 읽지 않고, 무엇이 왜 필요했는지를 "하네스에서 걸린 것"에 적는다.
 - `phase-N.md`에 기록 절이 이미 있으면 이어 하는 경우다.
 - 고칠 문제를 넘겨받았으면 `phase-N.md`의 마지막 확인 절을 읽는다.
 - 사용자가 직접 불러서 task 폴더나 phase 번호를 받지 못했으면 수행하지 않는다. 둘을 주어 다시 부르라고 알리고 끝난다.
