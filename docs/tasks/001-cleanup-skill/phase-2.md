@@ -57,3 +57,27 @@
 - 계획의 결정 "plan은 승인 전에 아무것도 쓰지 않으므로 폴더가 바뀌지 않는다"가 스킬 7번의 차례(미룸 커밋 뒤 plan 호출, phase 1이 정함)와 맞지 않아 복제본을 되돌려야 했다.
 - 결정의 허용 목록에 스킬이 쓰는 `git ls-files`가 없어 첫 턴에서 막혔다.
 - phase 스킬의 1번은 다른 phase의 파일을 읽지 않는다고 하는데, 시작할 때 `done-phase-1.md`를 읽었다. 그 내용으로 바꾼 것은 없다.
+
+## 확인 1
+
+**통과 조건**
+- 두 장면의 결과가 남았다(완료 조건 2)
+  - `docs/TOOLS.md`의 "cleanup 스킬을 두 장면으로 돌려 본 것" 절(237줄~)을 읽음 → 절 머리에 버전 2.1.311. 장면 1은 시각 15:58:00~15:58:32, 세션 id `56d46cfa-e292-4f88-b6ed-f0d739b8951c`, 커밋된 파일 합계 `AGENTS.md`·`docs/cleanup/2026-10-27.md` 둘, 첫 턴 항목에 보고서의 여섯 기준 절(`## 보안`~`## 기존 작업 정합성`)이 있다. 장면 2는 시각 15:57:12~15:57:42, 세션 id `ce76bda6-d806-4368-a516-f7635a15461d`, `{"skill": "plate:plan", "args": …}` 호출 줄이 있다. 통과
+  - 첫 턴 시각 `2026-10-27T15:39:37+09:00` 대 `git log -1 --format=%cI -- plugins/plate/skills/cleanup/SKILL.md` → `2026-10-27T15:37:12+09:00`. 첫 턴이 늦다. 통과
+  - 그 절의 에이전트 수 → "1라운드 6 …, 2라운드 6 …으로 12". 통과
+- 스킬 본문이 여전히 맞다(완료 조건 1)
+  - `head -3 plugins/plate/skills/cleanup/SKILL.md` → `name: cleanup` 있음. `claude plugin validate .` → 마지막 줄 `✔ Validation passed`. 통과
+  - `python3 -m unittest discover -s tests` → 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → 마지막 줄 `OK`. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
