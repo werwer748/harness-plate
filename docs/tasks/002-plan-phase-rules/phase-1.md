@@ -44,3 +44,28 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 1의 본문이 적혀 있다.
+  - plan 본문 "6. 초안을 보여 주고 승인받는다", 적는 규칙 "조건", "TODO" 절, phase 본문 "1. 읽는다"를 읽음 → #37: "조건" 절에 갈래마다 돌리는 확인, 요약 줄 확인에 견줄 갈래, `git clone --bare`로 푸시 없이 채운다는 세 항목이 있고 6번에 같은 점검 항목이 있다. #41: "TODO" 절에 TODO 첫 항목 "앞 phase의 산출물에 대어 조건을 맞춘다" 또는 결정의 "앞 phase의 결과로 정한다" 항목이 있고 6번에 같은 점검 항목이 있다. #42: "1. 읽는다"에 읽을 것의 산출물 파일만 읽고 그 밖의 앞 phase 기록은 읽지 않고 "하네스에서 걸린 것"에 적는다는 항목이 있다. 통과
+  - `python3 -m unittest discover -s tests` → `Ran 129 tests in 16.200s` / `OK`. `claude plugin validate .` → `✔ Validation passed`. 통과
+- 완료 조건 2가 참이다.
+  - `docs/PRD.md` 핵심 기능 3·4, `docs/ARCHITECTURE.md` "데이터 흐름"의 계획·실행 갈래, `README.md`의 `plan`·`phase` 행, 두 본문의 description을 읽음 → 갈래마다의 확인, 앞 phase 산출물에 기대는 조건, phase가 앞 phase 기록을 읽지 않는 것과 어긋나는 줄이 없다(phase description은 앞 phase의 기록을 읽지 않는다고 적는다). 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 129 tests` / `OK`. 통과
+
+**남은 것**
+- 고친 동작은 아직 돌려 보지 않았다(장면 E~G는 phase 2·3의 일) → 돌려 보지 않은 위험이나, 이 phase의 통과 조건은 본문과 문서의 글만 보고 동작을 돌리지 않는다. 돌리는 확인은 task 완료 조건 3과 phase 2·3의 몫이다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 고친 plan·phase 동작은 이 phase에서 돌려 보지 않았다(장면 E~G는 phase 2·3에서 돌린다)
+
+**판정**: 통과
