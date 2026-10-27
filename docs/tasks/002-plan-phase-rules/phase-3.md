@@ -45,3 +45,33 @@
 
 ## 하네스에서 걸린 것
 - 계획(task 머리 완료 조건 3, phase-3 TODO 1)이 세션 기록 위치를 `~/.claude/projects/`로 못박아 `CLAUDE_CONFIG_DIR`을 바꾼 환경과 어긋났다
+
+## 확인 1
+
+**통과 조건**
+- task 머리의 완료 조건이 모두 참이다.
+  - 완료 조건 1, 첫 확인: `plugins/plate/skills/plan/SKILL.md`의 "6. 초안을 보여 주고 승인받는다"(100행: 갈래마다의 확인, 요약 줄의 견줄 갈래, `git clone --bare`/`git remote add`로 푸시 없이 채움 = #37, 101행: 앞 phase 산출물에 기대는 조건 = #41), 적는 규칙의 조건 줄(236~238행 #37), TODO 줄(288행 #41), `plugins/plate/skills/phase/SKILL.md`의 "1. 읽는다"(37행: 읽을 것에 적힌 산출물 파일만 읽고 그 밖의 앞 phase 기록은 읽지 않고 "하네스에서 걸린 것"에 적음 = #42)를 읽음 → 세 해결이 저마다 있다. 통과
+  - 완료 조건 1, 둘째 확인: `python3 -m unittest discover -s tests` → `Ran 129 tests`, 마지막 줄 `OK`. `claude plugin validate .` → 마지막 줄 `✔ Validation passed`. 통과
+  - 완료 조건 2: `docs/PRD.md` 핵심 기능 3·4, `docs/ARCHITECTURE.md` "데이터 흐름"의 계획·실행 갈래, `README.md`의 `plan`·`phase` 행, 두 본문의 description(phase의 description은 "앞 phase의 결과는 계획의 읽을 것에 적힌 산출물 파일로만 보고, 앞 phase의 기록은 읽지 않는다"를 적음)을 읽음 → 갈래마다의 확인, 앞 phase 산출물에 기대는 조건, phase가 앞 phase 기록을 읽지 않는 것과 어긋나는 줄이 없다. 통과
+  - 완료 조건 3, 첫 확인: `docs/TOOLS.md` "Claude Code" 절의 "고친 plan을 장면 E·F로 돌려 본 것"(317~331행)과 "고친 phase를 장면 G로 돌려 본 것"(333~338행)을 읽음 → 장면 E·F·G마다 Claude Code 버전(2.1.311), 돌린 시각, 세션 id, 기대한 결과, 본 결과가 있고 본 결과가 기대와 같다. 세션 기록을 직접 봄: E(`62e87d97-…`)에 갈래별 기대("한 줄만 있고 줄바꿈 없이 끝남 → …")와 "`git remote add origin https://github.com/werwer748/codeowners-probe.git`로 URL만 둔다. 푸시하지 않는다"가 있음, F(`0dc6d879-…`)에 TODO 첫 항목 "앞 phase의 산출물에 대어 조건을 맞춘다. hello 본문이 부르는 명령을 읽고 …"가 있음, G(`~/.claude-my/projects/…-tmp-9LxrVnuCdx-repo/937e2145-….jsonl`)의 tool_use를 id로 모아 Bash 6, Edit 2, Write 1, Read 1이고 `done-phase-1`을 인자에 가진 호출이 없음(Read는 `phase-2.md` 하나). 복제본의 `git log`에 `e861f57 001-greet: phase 2`가 `phase-2.md`와 `notes/greeting-upper.txt`(`HELLO PLATE`) 두 파일만 넣었고 TODO가 `- [x]`. 통과
+  - 완료 조건 3, 둘째 확인: `git log -1 --format=%cI -- plugins/plate/skills/plan/SKILL.md plugins/plate/skills/phase/SKILL.md` → `2026-10-27T21:16:02+09:00`. 장면 E·F 21:16:18, G 21:28:06으로 모두 늦다. 두 본문의 `git hash-object`도 TOOLS.md에 적힌 해시(`19eee06…`, `f1c9b08…`)와 같다. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → 129개, `OK`. 통과
+
+**남은 것**
+- 장면 G는 읽을 것에 산출물이 적힌 꼴로만 봤고, 앞 기록이 필요한 꼴("하네스에서 걸린 것"에 적는 갈래)은 돌려 보지 않았다 → 돌려 보지 않은 위험. 통과 조건(완료 조건 3의 장면 G)은 읽을 것에 산출물이 적힌 꼴만 기대로 정했고, 완료 조건 1은 본문의 글만 본다. 걸리지 않는다. 하네스에서 걸린 것
+- 장면 G의 수행이 사용자가 직접 부른 것으로 보고 run 안내를 붙였다 → 완료 조건 3의 장면 G 기대(기록에 `done-phase-1.md` 읽기 없음, TODO 끝나 커밋)에 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 장면 G는 읽을 것에 산출물이 없어 앞 기록이 필요한 꼴(#42의 "하네스에서 걸린 것"에 적는 갈래)을 돌려 보지 않았다. 계획의 완료 조건 3이 그 갈래를 장면으로 두지 않았다
+- 남은 것: 헤드리스로 부른 phase가 run이 띄운 꼴이 아닌 사용자가 직접 부른 꼴로 보고하고 run 안내를 붙였다
+- 계획(task 머리 완료 조건 3, phase-3 TODO 1)이 세션 기록 위치를 `~/.claude/projects/`로 못박았으나 이 기계는 `CLAUDE_CONFIG_DIR`이 `~/.claude-my`라 `~/.claude-my/projects/`에서 봤다
+- 명령 절의 빌드·린트가 "없음"이다
+
+**판정**: 통과
