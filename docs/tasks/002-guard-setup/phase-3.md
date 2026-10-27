@@ -63,3 +63,29 @@
 
 ## 하네스에서 걸린 것
 없음
+
+## 확인 1
+
+**통과 조건**
+- (완료 조건 3) setup의 네 곳이 바뀐 동작을 적는다
+  - `plugins/plate/skills/setup/SKILL.md`의 2번 표(65줄), 3번(86~92줄), 4번(117~143줄), 양식 절(330줄 설명, 404~439줄 verdict 잡)을 읽었다 → 2번 표 마지막 행이 login을 보여 주고 CODEOWNERS 두 줄을 쓴다는 것과 이미 있거나 login이 없으면 쓰지 않고 보고에 적는다는 것을, 3번이 승인·파일 없음·login 있음일 때만 두 줄을 쓰는 규칙과 절대 규칙 1·2·3과의 관계를, 4번이 쓰지 못한 CODEOWNERS의 넣을 줄과 ruleset 거는 법(`gh api` 명령, Settings → Rules → Rulesets, 비공개 저장소의 요금제 제한, 걸기 전에는 판정 검사만 막는다는 것, 유일한 코드 소유자면 막지 못하고 다른 쓰기 권한 계정을 두라는 것)을, 양식 절이 `gh pr diff --name-only`로 받은 목록을 `--changed-files`로 넘기는 것을 적는다. 통과
+  - setup 4번 JSON(124~137줄)과 `docs/TOOLS.md` 135~150줄의 JSON을 견줬다 → `target`, `conditions.ref_name`(`~DEFAULT_BRANCH`), `rules`의 `pull_request` 파라미터 다섯, `bypass_actors`가 같다. `name`만 다르다. 통과
+  - `grep -n "changed-files" plugins/plate/skills/setup/SKILL.md` → 427줄 `verdict=$(printf '%s' "$BUNDLE" | python3 harness-plate/plugins/plate/ci/verdict.py --changed-files changed-files.txt)`. 통과
+- (완료 조건 4) 맥락 문서가 맞는다
+  - 계획 커밋 `807bfc6`의 `docs/ARCHITECTURE.md` 17·20·23·49·51줄이 지금 파일의 같은 줄과 같은 항목임을 보고, 지금 파일의 17줄(verdict.py의 `--changed-files`와 워크플로 경로), 20줄(edit_guard), 23줄(setup의 CODEOWNERS·ruleset 안내), 49줄(아직 없는 `plate-review.yml`·CODEOWNERS 쓰기를 두 막음에서 뺀다), 51줄(PR의 CI), 55줄(셋업), 74줄(verdict 잡)을 읽었다 → 바뀐 동작과 어긋나지 않는다. 통과
+  - `grep -n "ADR-023" -A5 docs/ADR.md` → 43줄 `### ADR-023`, 44~46줄에 결정, 이유, 트레이드오프. 통과
+- (완료 조건 1, 2) 시험이 그대로 통과한다
+  - `python3 -m unittest discover -s tests` → `Ran 104 tests in 16.913s`, 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 104 tests`, `OK`. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
