@@ -314,6 +314,22 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
   - 읽을 것의 첫 줄이 K가 1이라 "`## 회고 1`부터 `## 회고 1`까지의 절"로 나왔다. 양식대로이고 동작에는 걸리지 않는다.
   - 막힌 명령: 메인 1(위 명령 치환), 수행 서브에이전트 1(`for`와 변수로 이은 `cat`. 한 명령으로 다시 불렀다).
 
+**고친 plan을 장면 E·F로 돌려 본 것** (2.1.311, 2026-10-27 KST. tasks release-prep의 002-plan-phase-rules phase 2. phase 1이 #37·#41을 고치고 phase 2가 #37의 원격 차림을 넓힌 plan `SKILL.md`(마지막 커밋 `584ae16` 2026-10-27T21:16:02+09:00, 본문 해시 `git hash-object plugins/plate/skills/plan/SKILL.md` → `19eee06edc1daf93b472921518396a614d9b9fd2`)로 돌렸다. 복제본은 장면마다 `mktemp -d`에 `git clone --branch main /Users/hugo/Desktop/harness-plate`로 만들고 곧바로 `git remote set-head origin main`을 했다. main은 `509b234 Merge pull request #45 from werwer748/tasks/cleanup`(진행 중인 tasks 없음)이다. 플러그인은 `--plugin-dir /Users/hugo/Desktop/harness-plate/plugins/plate`, 허용 목록은 위 "스킬을 헤드리스로 돌려 볼 때의 허용 목록"의 13, 옵션은 `--permission-mode acceptEdits --output-format stream-json --verbose`다. 첫 턴은 `claude -p "<요청>" <옵션>`, 물음에는 `claude -p "<답>" --resume <세션 id> <옵션>`으로 답했다. 기록은 장면마다 적었고 임시 폴더라 지워질 수 있다)
+
+- `--allowedTools`는 값을 여럿 받는 옵션이라 그 뒤에 둔 프롬프트를 값으로 삼켜 "Input must be provided either through stdin or as a prompt argument"로 끝난다. 프롬프트를 `-p` 바로 뒤에 둔다.
+- plan 장면은 보는 글이 든 초안이 나올 때까지 앞 초안은 승인하고, 마지막 초안은 승인하지 않았다. 그래서 두 복제본 모두 plan이 아무 파일도 쓰지 않았다(끝난 뒤 HEAD `509b234` 그대로, `git status --short` 비었음).
+- 장면 E(#37, 갈래마다의 확인과 푸시 없는 원격): 요청 `/plate:plan setup이 \`.github/CODEOWNERS\`가 없으면 만들고, 있으면 줄을 더하게 바꾼다`, 2026-10-27T21:16:18+09:00~21:20:10(턴 일곱. 턴마다 결과 줄의 `duration_ms` 합 156057). 세션 id `62e87d97-c7c3-4d0b-8e98-9740e7636234`. 복제본 `/var/folders/0j/cj37rxmj1mj73vhflqpgsxm00000gn/T/tmp.XesauNiY37/repo`, 기록 `…/tmp.XesauNiY37/turnE1.jsonl`~`turnE7.jsonl`.
+  - 턴: 1 요청 → ADR-023·ARCHITECTURE·setup 본문·README·편집 훅과 어긋난다며 1(요청을 고친다)/2(문서를 바꾸고 진행, 추천)/3을 물음. 2~7 추천안 → 편집 훅의 더하기만 하는 편집(1), 같은 줄의 판정과 더할 줄(1), 승인 자리(1, CI 물음에 함께), 버전(1, 0.17.0), 엣지케이스(2, 논의하지 않음). 7의 답글이 tasks 머리 초안(이름 `codeowners-append`)이고, 보는 글이 거기 있어 승인하지 않았다.
+  - 기대한 결과: 보여 준 초안의 완료 조건이 없을 때와 있을 때의 두 갈래마다 돌리는 확인을 두고, git 원격이 있는 장면을 푸시 없이 채우는 법(`git clone --bare`나 URL만 둔 `git remote add`)을 적는다.
+  - 본 결과: tasks 머리 완료 조건 2의 확인이 "장면마다 차려" setup을 돌려 `.github/CODEOWNERS`를 바이트까지 견주고, 갈래마다 기대를 적는다: "없음 → 두 줄로 만들어짐, 다른 줄만 있음 → 그 줄 뒤에 두 줄, 한 줄만 있고 줄바꿈 없이 끝남 → 줄바꿈 뒤에 없는 한 줄, 두 줄 다 있음 → 그대로". 요약 줄을 보는 완료 조건 4의 확인은 "그 다섯 문서에서 CODEOWNERS를 적은 줄을 저마다 읽어, 만드는 갈래와 더하는 갈래를 둘 다 적었는지 본다"로 견줄 갈래를 적는다. git 원격은 같은 확인에 "origin은 `git remote add origin https://github.com/werwer748/codeowners-probe.git`로 URL만 둔다. 푸시하지 않는다"로 적었다(setup은 원격의 URL만 본다). 기대와 같다.
+  - 막힌 명령: 없음. Agent 호출 0.
+- 장면 F(#41, 앞 phase 산출물에 기대는 조건): 요청 `/plate:plan 새 스킬 하나를 더하고, 임시 복제본에서 그 스킬을 헤드리스로 돌려 본다`, 2026-10-27T21:16:18+09:00~21:24:17(턴 열둘. 턴마다 결과 줄의 `duration_ms` 합 364942). 세션 id `0dc6d879-5d3f-48a0-845d-dd5b696d5822`. 복제본 `/var/folders/0j/cj37rxmj1mj73vhflqpgsxm00000gn/T/tmp.ICuIxE73mN/repo`, 기록 `…/tmp.ICuIxE73mN/turnF1.jsonl`~`turnF12.jsonl`.
+  - 턴: 1 요청 → 더할 스킬(이름, 하는 일, 부르는 쪽)을 물음. 추천안이 "사용자가 정한다"여서 2에 "(a) `plate:hello` (b) 사용자가 `/plate:hello`로 부르면 `docs/HELLO.md`에 오늘 날짜와 인사 한 줄을 더하고 그 파일만 커밋한다. 묻는 자리는 없다. (c) 사용자가 직접 부른다"로 답했다. 2~11 추천안 → 문서 지도 행(1), 줄의 꼴(1), 버전과 안내 문서(1), 테스트(1), 커밋 메시지(1), 셋업 안 됨(1), 절대 규칙(1), 결과를 남길 곳(1), PRD(1). 11의 답글이 tasks 머리 초안(이름 `hello-skill`), 12 "tasks 머리 초안을 승인한다" → task `001-hello-skill` 초안(task 머리와 phase 셋). 마지막 초안은 승인하지 않았다.
+  - 기대한 결과: 스킬을 돌려 보는 phase의 초안이 TODO 첫 항목이나 결정에 앞 phase의 산출물에 대어 조건을 맞춘다고 적는다.
+  - 본 결과: 스킬을 돌려 보는 `phase-3.md` 초안의 TODO 첫 항목이 "앞 phase의 산출물에 대어 조건을 맞춘다. hello 본문이 부르는 명령을 읽고, task 머리 결정의 허용 목록에 맞지 않는 것이 있으면 그 항목을 더해 돌린다. 더한 항목은 새 절에 적는다"다. 기대와 같다. task 머리 결정의 허용 목록은 13에 `"Bash(date:*)"`를 더한 것이다.
+  - 막힌 명령: 메인에서 2개. 턴 1의 `for f in …; do cat "$f"; done`(변수)과 `git log … && cat … && grep … | grep -v …`(이은 명령의 `grep -v`). 다른 꼴로 다시 읽어 초안에는 걸리지 않았다. Agent 호출 0.
+- 이 앞에 #37의 원격 차림을 `git clone --bare` 하나로 적은 plan 본문(커밋 2026-10-27T20:54:45+09:00)으로 두 장면을 돌린 적이 있다(장면 E 세션 `7592bfe8-0336-40a1-95f4-c713753edf1e`, 장면 F 세션 `730a8d3e-3b75-45b3-8b90-3e26257c7897`). 그때도 장면 E의 plan은 URL만 둔 `git remote add`를 골랐다. setup은 `git remote -v`의 URL이 `github.com`인지만 보므로 `git clone --bare`로 만든 로컬 origin으로는 CI 물음이 나지 않는다. 그래서 본문을 두 차림으로 넓히고 다시 돌린 것이 위 결과다.
+
 ## Codex
 
 0.160.0에서 확인했다(2026-10-06).
