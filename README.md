@@ -30,7 +30,7 @@ PR이 바꾼 지시가 등급을 바꾸지 못하게, `review` 잡은 평가를 
 | 닫기 | 빌드·린트·테스트 가운데 실패가 있거나 보안이 C 이하 | PR을 닫는다 |
 | 머지 요청 | 그 밖 | 사람이 머지하도록 둔다 |
 
-워크플로를 바꿨는지는 `verdict` 잡이 PR의 바뀐 파일 목록(`gh pr diff --name-only`)을 판정 스크립트에 `--changed-files`로 넘겨 본다. 워크플로를 바꾼 PR은 다른 조건을 다 채워도 머지 요청이 되고 사람이 머지한다.
+워크플로를 바꿨는지는 `verdict` 잡이 PR의 바뀐 파일 목록(파일 목록 API `gh api --paginate repos/$GH_REPO/pulls/$PR/files`. 받지 못하면 워크플로를 바꾼 것으로 본다)을 판정 스크립트에 `--changed-files`로 넘겨 본다. 워크플로를 바꾼 PR은 다른 조건을 다 채워도 머지 요청이 되고 사람이 머지한다.
 
 워크플로는 저장소 시크릿 `CLAUDE_CODE_OAUTH_TOKEN`이 있어야 돈다. `claude setup-token`으로 토큰을 만들어 `gh secret set CLAUDE_CODE_OAUTH_TOKEN`으로 넣는다.
 
@@ -78,7 +78,9 @@ JSON
 2. ruleset 걸기: 위 "ruleset과 CODEOWNERS"의 명령이나 화면으로 기본 브랜치에 건다.
 3. verdict 단계에 `--changed-files` 넘기기: `.github/workflows/plate-review.yml`의 `verdict` 잡에서 판정 스크립트를 부르는 줄 앞에 바뀐 파일 목록을 받고, 그 파일을 `--changed-files`로 넘긴다.
    ```sh
-   gh pr diff "$PR" --name-only > changed-files.txt
+   if ! gh api --paginate "repos/$GH_REPO/pulls/$PR/files" --jq '.[].filename' > changed-files.txt; then
+     echo '.github/workflows/' > changed-files.txt
+   fi
    verdict=$(printf '%s' "$BUNDLE" | python3 harness-plate/plugins/plate/ci/verdict.py --changed-files changed-files.txt)
    ```
    이 변경을 PR로 올리면 그 PR은 판정 검사가 없는 옛 줄이 아니라 PR 쪽의 새 워크플로로 돌아, 워크플로를 바꾼 PR이라 머지 요청이 된다.

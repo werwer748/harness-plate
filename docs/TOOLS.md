@@ -153,7 +153,7 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
 - 장면 1(코드 소유자 파일을 건드리지 않는 PR은 토큰으로 머지된다): `werwer748`이 README 한 줄만 바꾼 PR #18을 열고 `gh workflow run merge-probe.yml --repo werwer748/plate-ci-test -f pr=18` → 실행 `40352179658` `success`. PR #18은 `MERGED`, 머지한 계정 `app/github-actions`, 머지 커밋 `6dabb2c`. rule suite `4728423096`(`github-actions[bot]`, `82dd247->6dabb2c`)은 `pull_request` 규칙 `pass`. 막히지 않았다.
 - 장면 2(github-actions가 연 워크플로 PR은 토큰으로 머지되지 않는다): `actions/permissions/workflow`의 `can_approve_pull_request_reviews`를 잠깐 true로 켜고, `merge-probe.yml` 끝에 주석 한 줄만 더한 브랜치 `probe-v2`를 푸시한 뒤, `merge-probe.yml`의 단계만 `gh pr create --head probe-v2`로 바꾼 도구 브랜치를 `gh workflow run merge-probe.yml --ref probe-v2-tool -f pr=0`(실행 `40352422589`)으로 돌려 github-actions가 연 PR #19를 만들고 곧바로 설정을 false로 되돌렸다. `gh workflow run merge-probe.yml --repo werwer748/plate-ci-test -f pr=19` → 실행 `40352503804` `failure`, 오류 글 `X Pull request werwer748/plate-ci-test#19 is not mergeable: the base branch policy prohibits the merge.` 그때 PR은 `OPEN`, `mergeStateStatus: BLOCKED`, `reviewDecision` 빈 값이었다. `gh pr merge`가 머지 전에 거절해 push가 일어나지 않았으므로 이 장면의 rule suite는 생기지 않았다. 막았다: `pull_request` 규칙의 코드 소유자 리뷰 필수(작성자 github-actions가 코드 소유자가 아니다).
 - 장면 3(코드 소유자가 연 워크플로 PR은 그 PR 안의 워크플로가 스스로 머지한다, 막지 못하는 한계): `werwer748`이 `.github/workflows/self-merge.yml`(`pull_request`로 돌고 `if: github.head_ref == 'probe-v3'`, contents·pull-requests 쓰기, 두 단계 모두 `continue-on-error`)을 더한 PR #20을 열었다. 실행 `40352605265`의 둘째 단계 `gh pr merge "$PR" --merge` → PR #20은 `MERGED`, 머지한 계정 `app/github-actions`, 머지 커밋 `38df5d3`. rule suite `4728479977`(`6dabb2c->38df5d3`)은 `pull_request` 규칙 `pass`. 막히지 않았다. PR을 연 계정이 유일한 코드 소유자라 코드 소유자 리뷰 필수가 채워진 것으로 매겨진다.
-- 장면 4(워크플로 토큰의 main 직접 푸시는 막힌다): 같은 실행 `40352605265`의 첫 단계가 main을 체크아웃해 README를 바꾼 커밋을 `git push origin HEAD:main` → 오류 글 `remote: error: GH013: Repository rule violations found for refs/heads/main.`, `remote: - Changes must be made through a pull request.`, `! [remote rejected] HEAD -> main (push declined due to repository rule violations)`. rule suite `4728477612`(`github-actions[bot]`, `6dabb2c->d84c004`)은 `fail`, `pull_request` 규칙 `fail` "Changes must be made through a pull request." 막았다: `pull_request` 규칙(PR 필수). 두 단계는 `continue-on-error`라 잡의 단계 결과(`actions/jobs/<잡 id>`의 `conclusion`)는 둘 다 `success`로 남고 실패는 로그에만 있다.
+- 장면 4(워크플로 토큰의 main 직접 푸시는 막힌다): PR #20의 같은 실행 `40352605265`의 첫 단계가 main을 체크아웃해 README를 바꾼 커밋을 `git push origin HEAD:main` → 오류 글 `remote: error: GH013: Repository rule violations found for refs/heads/main.`, `remote: - Changes must be made through a pull request.`, `! [remote rejected] HEAD -> main (push declined due to repository rule violations)`. rule suite `4728477612`(`github-actions[bot]`, `6dabb2c->d84c004`)은 `fail`, `pull_request` 규칙 `fail` "Changes must be made through a pull request." 막았다: `pull_request` 규칙(PR 필수). 두 단계는 `continue-on-error`라 잡의 단계 결과(`actions/jobs/<잡 id>`의 `conclusion`)는 둘 다 `success`로 남고 실패는 로그에만 있다.
 - 장면 3의 뒷정리: `werwer748`이 `self-merge.yml`을 지운 PR #21을 열어 `gh pr merge probe-v3-cleanup --merge`(우회 없이) → `MERGED`, 머지한 계정 `werwer748`, 머지 커밋 `41e5d26`, rule suite `4728493711` `pass`.
 - 장면 5(관리자는 PR로 우회해 머지할 수 있다): 장면 2의 PR #19를 `gh pr merge 19 --repo werwer748/plate-ci-test --merge --admin` → 오류 없이 머지, `MERGED`, 작성자 `app/github-actions`, 머지한 계정 `werwer748`, 머지 커밋 `326e30c`. rule suite `4728498479`(`werwer748`, `41e5d26->326e30c`)은 `bypass`, `pull_request` 규칙 `active` `fail`, details `Waiting on code owner review from werwer748.`
 - PR마다 돈 `plate-review`(장면의 결과로 보지 않는다): PR #18 실행 `40352171181` `success`, 댓글 `판정: 머지 요청`. PR #19 실행 `40352450823` `failure`, 잡 0개, "This run likely failed because of a workflow file issue."(github-actions가 연 PR. 계획을 고칠 때의 PR #14 실행 `40350719345`도 같은 `failure`였다). PR #20 실행 `40352605307` `success`, `판정: 머지 요청`. PR #21 실행 `40352739286` `success`, `판정: 머지 요청`.
@@ -164,6 +164,55 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
   - branch ruleset에 `file_path_restriction`: 422 `{"message":"Validation Failed","errors":["Invalid rule 'file_path_restriction': "],…}`.
   - 쓰기 권한 없는 코드 소유자: 브랜치 `probe-base`에 같은 꼴의 ruleset `25892039`를 걸고 CODEOWNERS 소유자를 `@octocat`으로 두자 `codeowners/errors`가 `Unknown owner`를 냈고, PR #15는 `merge-probe` 실행 `40351004299`로 머지됐다. 무시된 소유자는 리뷰를 요구하지 않는다.
   - 출처를 확인하지 않은 rule suite `4728188190` `fail` "At least 1 approving review is required by reviewers with write access."가 그 조사 도중에 남았다.
+  - 그 조사에서 PR마다 본 것. 승인 수 0 + 코드 소유자 리뷰 필수는 위 시험한 JSON과 같고 `name`만 `workflow-guard-probe`, 승인 수 1은 거기서 `required_approving_review_count`만 1이다.
+
+    | PR | 작성자와 바꾼 것 | ruleset | 한 일 | 결과 |
+    |---|---|---|---|---|
+    | #11 | `werwer748`, 워크플로 주석 | 첫 시도(phase 2) | `merge-probe` | github-actions가 머지, rule suite `4728049352` `pass` |
+    | #12 | `werwer748`, README | 승인 수 1 + 코드 소유자 | main의 `merge-probe` | 실행 `40350255006` `failure`, `X Pull request werwer748/plate-ci-test#12 is not mergeable: the base branch policy prohibits the merge.`, `REVIEW_REQUIRED` |
+    | #12 | 위와 같음 | 위와 같음 + Actions 승인 허용 | `--ref probe-tool`로 github-actions가 승인한 뒤 머지 | 실행 `40350326965`, github-actions가 머지, rule suite `4728182117` `pass` |
+    | #13 | `werwer748`, 워크플로 주석 | 승인 수 1 + 코드 소유자 + Actions 승인 허용 | github-actions가 승인한 뒤 머지 | 실행 `40350414461`, github-actions가 머지, `4728194447` `pass` |
+    | #14 | github-actions(`--ref probe-tool2`로 만듦, 실행 `40350690708`), 워크플로 주석 | 승인 수 0 + 코드 소유자 | main의 `merge-probe` | 실행 `40350763659` `failure`, `X Pull request werwer748/plate-ci-test#14 is not mergeable: the base branch policy prohibits the merge.` |
+    | #14 | 위와 같음 | 위와 같음 | `werwer748`이 `gh pr merge --merge --admin` | 머지 커밋 `82dd247`, rule suite `4728318110` `bypass`, `pull_request` 규칙 `fail`, details `Waiting on code owner review from werwer748.` |
+    | #15 | `werwer748` | 브랜치 `probe-base`의 ruleset `25892039`, 소유자 `@octocat`(쓰기 권한 없음) | `merge-probe` | `codeowners/errors` `Unknown owner`, 실행 `40351004299`로 머지됨 |
+    | #16 | `werwer748`, `self-merge.yml` 더함 | 승인 수 0 + 코드 소유자 | PR 안의 워크플로가 main에 직접 푸시하고 스스로 머지 | 실행 `40351222932`. 직접 푸시는 `GH013 … Changes must be made through a pull request.`(rule suite `4728299068` `fail`), 스스로 머지는 됨(`4728300432` `pass`) |
+    | #17 | `werwer748`, `self-merge.yml` 지움 | 승인 수 0 + 코드 소유자 | `werwer748`이 머지 | `4728313205` `pass`, 우회 아님 |
+
+  - 422가 난 두 ruleset JSON과 응답. push ruleset(`gh api -X POST repos/werwer748/plate-ci-test/rulesets --input -`):
+
+    ```json
+    {"name":"probe-push-paths","target":"push","enforcement":"active",
+     "rules":[{"type":"file_path_restriction","parameters":{"restricted_file_paths":[".github/workflows/**",".github/CODEOWNERS"]}}],
+     "bypass_actors":[{"actor_id":5,"actor_type":"RepositoryRole","bypass_mode":"always"}]}
+    ```
+
+    응답: `{"message":"Validation Failed","errors":["Source only org-owned repos can have push rules"],"documentation_url":"https://docs.github.com/rest/repos/rules#create-a-repository-ruleset","status":"422"}gh: Validation Failed (HTTP 422)`
+
+    branch ruleset:
+
+    ```json
+    {"name":"probe-branch-paths","target":"branch","enforcement":"active",
+     "conditions":{"ref_name":{"include":["~DEFAULT_BRANCH"],"exclude":[]}},
+     "rules":[{"type":"file_path_restriction","parameters":{"restricted_file_paths":[".github/workflows/**"]}}],
+     "bypass_actors":[{"actor_id":5,"actor_type":"RepositoryRole","bypass_mode":"always"}]}
+    ```
+
+    응답: `{"message":"Validation Failed","errors":["Invalid rule 'file_path_restriction': "],"documentation_url":"https://docs.github.com/rest/repos/rules#create-a-repository-ruleset","status":"422"}gh: Validation Failed (HTTP 422)`
+
+  - 쓰기 권한 없는 코드 소유자 장면의 ruleset `25892039`(브랜치 `probe-base`): 위 시험한 JSON에서 `name`이 `probe-base-invalid-owner`, `conditions.ref_name.include`가 `["refs/heads/probe-base"]`이고 나머지는 같다.
+  - 조사가 끝난 상태: main `82dd247`, 활성 ruleset `25891047` 하나(승인 수 0, 코드 소유자 리뷰 필수, 관리자 우회는 PR로만), `can_approve_pull_request_reviews` `false`.
+
+**verdict 단계의 바뀐 파일 목록과 setup의 CODEOWNERS를 돌려 본 것** (gh 2.103.0, claude-code-action v1, 2026-10-27 KST. tasks workflow-guard의 004-fixes phase 1. 시험 저장소 `werwer748/plate-ci-test`의 활성 ruleset `25891047`과 CODEOWNERS(`/.github/workflows/ @werwer748`, `/.github/CODEOWNERS @werwer748`)는 위 절 그대로다. 시작할 때 main은 `326e30c`, 끝난 main은 `b416470`이다)
+
+- 고친 양식 넣기: `mktemp -d` 복제본에서 `.plate/ci/verdict.py`를 이 저장소의 `plugins/plate/ci/verdict.py`로 바꾸고, `.github/workflows/plate-review.yml`의 verdict 단계에서 판정 스크립트를 부르는 줄을 setup 양식과 같은 넷(`if ! gh api --paginate "repos/$GH_REPO/pulls/$PR/files" --jq '.[].filename' > changed-files.txt; then`, `echo '.github/workflows/' > changed-files.txt`, `fi`, `… verdict.py --changed-files changed-files.txt`)으로 바꾼 PR #22를 열어 `gh pr merge 22 --merge --delete-branch`로 머지했다(우회 없이, 머지 커밋 `2a9f0eb`. 작성자가 유일한 코드 소유자라 막히지 않았다). PR #22 자신의 `plate review` 실행 `40431381236`은 `success`, 등급 묶음 `reliability: B, security: B`로 `판정: 머지 요청`이었다(이미 머지된 뒤라 장면으로 보지 않는다).
+- 워크플로를 바꾸지 않은 PR: `textkit/core.py`에 `line_count`와 시험 셋을 더한 PR #25 → 실행 `40431626685`, review·verdict 잡 모두 `success`. verdict 단계의 등급 묶음 `{"build":"none","lint":"none","test":"pass","coverage":"skipped","reliability":"A","security":"A","maintainability":"A"}`, 판정 `자동 머지`. PR #25는 `MERGED`, 머지한 계정 `app/github-actions`, 머지 커밋 `b416470`.
+- 워크플로를 바꾼 PR: `.github/workflows/merge-probe.yml` 맨 위에 주석 한 줄만 더한 PR #24 → 실행 `40431431712`, review·verdict 잡 모두 `success`. 등급 묶음은 PR #25와 같은 모두 A(`coverage: "skipped"`)여서 목록 없이는 자동 머지였을 것을, 판정 `머지 요청`으로 댓글만 달고 PR은 `OPEN`이었다. 확인 뒤 닫았다.
+- README 한 줄만 바꾼 PR #23(실행 `40431424749`)은 바뀐 코드 파일이 없어 세 등급이 `unjudged`였고 판정 `머지 요청`이었다. 워크플로 검사의 장면으로 보지 않는다. 확인 뒤 닫았다.
+- 목록 API가 실패할 때: 이 Mac에서 같은 단계 글을 `GH_REPO=werwer748/plate-ci-test PR=999999`와 모두 A인 등급 묶음으로 `set -e` 셸에서 돌렸다 → `gh: Not Found (HTTP 404)`가 나고 단계는 멈추지 않았으며 `changed-files.txt`는 `.github/workflows/` 한 줄, 판정 스크립트(`--changed-files`)는 `request`를 냈다. 같은 묶음을 목록 없이 넘기면 `merge`다. 같은 셸에서 `PR=18`의 목록은 `README.md`였다.
+- setup의 CODEOWNERS: `mktemp -d`의 새 git 저장소 둘(origin `https://github.com/werwer748/codeowners-probe.git`, 파일 `app.py`)에서 setup 1번의 판정(GitHub 원격, plate 워크플로, `gh api user`의 login, CODEOWNERS), 2번의 CI 에이전트 승인, 3번의 CI 워크플로·CODEOWNERS, 4번의 보고 줄을 셸 스크립트로 따라 했다(Claude가 setup을 부른 것이 아니다).
+  - CODEOWNERS가 없을 때: 판정은 GitHub 원격 있음, plate 워크플로 없음, login `werwer748`, CODEOWNERS 없음. 양식에서 가져온 `.github/workflows/plate-review.yml`(108줄, `plate@harness-plate` 한 곳, verdict 단계에 `pulls/$PR/files` 줄)을 쓰고, `.github/CODEOWNERS`를 `/.github/workflows/ @werwer748`, `/.github/CODEOWNERS @werwer748` 두 줄로 썼다.
+  - CODEOWNERS가 있을 때(`* @someone-else` 한 줄): 판정은 CODEOWNERS 있음. 워크플로는 쓰고 CODEOWNERS는 쓰지 않아 내용이 `* @someone-else` 그대로였고, 보고 줄은 `CODEOWNERS를 쓰지 않은 까닭: 이미 있다. 넣을 줄: /.github/workflows/ @werwer748, /.github/CODEOWNERS @werwer748`였다.
+- 확인하지 않은 것: diff가 너무 커서 `gh pr diff`가 실패하는 PR과, 파일이 3000개를 넘어 목록 API가 잘린 목록을 내는 PR은 만들지 않았다. login을 얻지 못하는 경우(`gh`가 없거나 인증되지 않음)는 돌리지 않았다.
 
 **원격 없는 합치기와 푸시 훅에서 본 것** (2.1.310, 2026-10-24. 시험 폴더는 `~/plate-rail-test/bin/localmake.sh`가 `ci-src`의 `ae98f75`(plate 복사본과 워크플로가 들어가기 전) 파일로 만드는 `ci-local`(원격 없음, 기본 브랜치 `main`)과 `ci-push`(origin이 로컬 bare 저장소 `ci-push-origin.git`)다. `ci-local`의 셋업 커밋과 계획 파일은 `bin/cilocal-plan.sh`가 넣는다. run은 `bin/tturn.sh`로, 푸시 훅 장면은 스킬 없이 `bin/pushprobe.sh`로 돌렸다. 기록은 `logs/ci-local-setup.jsonl`, `logs/ci-local-1.jsonl`~`logs/ci-local-3.jsonl`, `logs/ci-push-setup.jsonl`, `logs/ci-push.jsonl`이다)
 

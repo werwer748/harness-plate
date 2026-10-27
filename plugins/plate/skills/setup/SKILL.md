@@ -327,7 +327,7 @@ components:
 
 ### `.github/workflows/plate-review.yml`
 
-CI 에이전트의 워크플로다. `${{ … }}`는 GitHub Actions의 식이라 채울 칸이 아니다. `review` 잡은 읽기 권한만으로 공개 마켓플레이스에서 plate를 받아 review의 PR 모드를 부르고 등급 묶음을 구조화 출력으로 낸다. 액션을 부르기 전에 `AGENTS.md`를 기준 브랜치(`origin/${{ github.base_ref }}`)의 것으로 되돌리고, 기준 브랜치에 `AGENTS.md`가 없으면 PR의 것을 지운다. `CLAUDE.md`의 `@AGENTS.md`로 PR이 바꾼 지시가 세션에 실리지 않게 하려는 것이다. review 단계가 실패하면 다음 단계가 액션의 실행 결과 파일(`execution_file`)에서 결과 줄의 `subtype`, `is_error`, `api_error_status`, 오류 목록과, 오류일 때의 결과 글만 로그에 낸다. Claude의 메시지 전부를 로그에 내는 액션의 입력은 켜지 않는다. 로그가 공개되면 도구 결과에 든 비밀이 드러나기 때문이다. `verdict` 잡은 쓰기 권한으로 PR의 바뀐 파일 목록(`gh pr diff --name-only`)을 파일로 받아, 등급 묶음과 함께 판정 스크립트(`plugins/plate/ci/verdict.py`)에 `--changed-files`로 넘긴다. 판정 스크립트는 목록에 워크플로 경로(`.github/workflows/`)가 있으면 자동 머지를 머지 요청으로 내린다. 그 판정으로 평가서를 PR 댓글로 달고, 자동 머지면 merge commit으로 합치고 머리 브랜치를 지우며, 닫기면 PR을 닫는다. 머지 요청이면 댓글만 단다.
+CI 에이전트의 워크플로다. `${{ … }}`는 GitHub Actions의 식이라 채울 칸이 아니다. `review` 잡은 읽기 권한만으로 공개 마켓플레이스에서 plate를 받아 review의 PR 모드를 부르고 등급 묶음을 구조화 출력으로 낸다. 액션을 부르기 전에 `AGENTS.md`를 기준 브랜치(`origin/${{ github.base_ref }}`)의 것으로 되돌리고, 기준 브랜치에 `AGENTS.md`가 없으면 PR의 것을 지운다. `CLAUDE.md`의 `@AGENTS.md`로 PR이 바꾼 지시가 세션에 실리지 않게 하려는 것이다. review 단계가 실패하면 다음 단계가 액션의 실행 결과 파일(`execution_file`)에서 결과 줄의 `subtype`, `is_error`, `api_error_status`, 오류 목록과, 오류일 때의 결과 글만 로그에 낸다. Claude의 메시지 전부를 로그에 내는 액션의 입력은 켜지 않는다. 로그가 공개되면 도구 결과에 든 비밀이 드러나기 때문이다. `verdict` 잡은 쓰기 권한으로 PR의 바뀐 파일 목록을 파일 목록 API(`gh api --paginate repos/$GH_REPO/pulls/$PR/files`)로 받아 파일에 적고(diff 전체를 받는 `gh pr diff`는 diff가 너무 큰 PR에서 실패한다), 그 API도 실패하면 워크플로 경로(`.github/workflows/`) 한 줄을 적어 워크플로를 바꾼 PR로 다룬다. 그 파일을 등급 묶음과 함께 판정 스크립트(`plugins/plate/ci/verdict.py`)에 `--changed-files`로 넘긴다. 판정 스크립트는 목록에 워크플로 경로(`.github/workflows/`)가 있으면 자동 머지를 머지 요청으로 내린다. 그 판정으로 평가서를 PR 댓글로 달고, 자동 머지면 merge commit으로 합치고 머리 브랜치를 지우며, 닫기면 PR을 닫는다. 머지 요청이면 댓글만 단다.
 
 ````yaml
 name: plate review
@@ -423,7 +423,9 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           BUNDLE: ${{ needs.review.outputs.bundle }}
         run: |
-          gh pr diff "$PR" --name-only > changed-files.txt
+          if ! gh api --paginate "repos/$GH_REPO/pulls/$PR/files" --jq '.[].filename' > changed-files.txt; then
+            echo '.github/workflows/' > changed-files.txt
+          fi
           verdict=$(printf '%s' "$BUNDLE" | python3 harness-plate/plugins/plate/ci/verdict.py --changed-files changed-files.txt)
           case "$verdict" in
             merge) label="자동 머지" ;;
