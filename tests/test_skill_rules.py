@@ -1,6 +1,7 @@
 """release-prep tasks가 고친 스킬 규칙의 글이 본문의 제자리에 남아 있는지 시험한다.
 
-이슈마다(run의 #34·#35·#38·#40·#44, plan의 #37·#41, phase의 #42, eval의 #36) 그 규칙을 이루는
+이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41·#46·#52·#53, phase의 #42·#51, check의 #51,
+retro의 #49·#50·#51, review의 #51, eval의 #36·#50·#51) 그 규칙을 이루는
 글이 그 본문의 그 절에 있는지 본다. 글이 빠지거나 다른 절로 옮겨지면 실패한다.
 모든 스킬의 앞머리가 Agent Skills 규격의 한도(description 1024자, name 64자) 안에 있는지도 본다.
 """
@@ -188,6 +189,38 @@ class RunRulesTest(unittest.TestCase):
         self.assertEqual(end.count("그 자리에서 `RUNLOG.md`만 한 커밋으로 넣는다"), 2)
 
 
+    def test_46_fix_file_checked_by_time_or_hash_stops(self):
+        body = section(self.text, "8. 고칠 phase를 더한다")
+        self.assertIn("고칠 파일이 task 머리나 tasks 머리의 완료 조건이 돌린 시각이나 본문 해시로 보는 파일이면", body)
+        self.assertIn("고친 뒤 그 확인을 다시 참으로 둘 길(고친 본문으로 다시 돌리는 TODO나 phase)이 계획에 있는지도 본다", body)
+        self.assertIn("이 경우도 계획을 바꾸게 하는 문제다", body)
+        stop = section(self.text, "멈춘다")
+        self.assertIn("고칠 파일이 완료 조건이 돌린 시각이나 본문 해시로 보는 파일인데 고친 뒤 그 확인을 다시 참으로 둘 길이 계획에 없을 때도 든다(8번)", stop)
+
+    def test_47_no_command_substitution_in_git_commands(self):
+        self.assertIsNone(re.search(r"git[^`\n]*\$\(", self.text))
+        body = section(self.text, "8. 고칠 phase를 더한다")
+        self.assertIn("먼저 `git log -1 --format=%h -- docs/tasks/NNN-slug/retro.md`로 마지막 회고 절을 더한 커밋의 해시를 얻고", body)
+        self.assertIn("그 해시를 넣어 `git log --format='%h %s' {해시}..HEAD -- docs/tasks/`를 따로 불러 찾는다", body)
+        terms = section(self.text, "낱말")
+        self.assertIn("먼저 `git merge-base {기본 브랜치} HEAD`로 갈라진 곳의 해시를 얻고", terms)
+        self.assertIn("그 해시를 넣어 `git diff --name-only {해시} HEAD`를 따로 부른다", terms)
+
+    def test_48_one_decision_line_per_plan_fix(self):
+        body = section(self.text, "멈춘다")
+        self.assertIn("계획 수정마다 결정 줄 하나다", body)
+        self.assertIn("커밋하기 전에 이번 수정의 결정 줄이 task 머리(tasks 머리를 고쳤으면 tasks 머리에도)에 있는지 보고", body)
+        self.assertLess(body.index("커밋하기 전에 이번 수정의 결정 줄이"), body.index("고친 계획 파일과 `RUNLOG.md`만 커밋한다"))
+
+    def test_51_marker_line_ends_every_hand_off_block(self):
+        for heading in ("4. 수행을 맡긴다", "5. 확인을 맡긴다", "7. task 회고를 맡긴다", "코드 평가를 맡긴다", "하네스 eval을 맡긴다"):
+            with self.subTest(heading=heading):
+                blocks = re.findall(r"^```\n(.*?)\n```$", subsection(self.text, heading), re.S | re.M)
+                self.assertEqual(len(blocks), 1)
+                self.assertEqual(blocks[0].split("\n")[-1], "부른 쪽: plate:run")
+        self.assertIn("`고칠 문제:` 줄은", section(self.text, "4. 수행을 맡긴다"))
+        self.assertIn("**표지 줄**: 맡기는 글 코드 블록의 마지막 줄 `부른 쪽: plate:run`", section(self.text, "낱말"))
+
 class PlanRulesTest(unittest.TestCase):
     def setUp(self):
         self.text = read("plan")
@@ -211,6 +244,21 @@ class PlanRulesTest(unittest.TestCase):
         self.assertIn("뒤 phase의 실행 조건(허용 목록, 차례)이 앞 phase의 산출물의 동작에 기대는지 본다", draft)
 
 
+    def test_46_rerun_results_compared_by_body_hash(self):
+        body = part(section(self.text, "적는 규칙"), "조건")
+        self.assertIn("돌려 본 결과가 지금 본문의 것인지는 커밋 시각이 아니라 돌릴 때 적은 본문 해시(`git hash-object <경로>`)와 `git rev-parse HEAD:<경로>`로 견준다", body)
+
+    def test_52_earlier_task_changes_named_by_section_and_text(self):
+        body = part(section(self.text, "적는 규칙"), "phase의 파일")
+        self.assertIn("앞 task의 변경에 기대면 이슈 번호만으로 가리키지 않고, 그 파일의 경로와 절 이름과 바뀐 글을 찾을 수 있게 적는다", body)
+
+    def test_53_draft_check_for_run_scenes(self):
+        body = section(self.text, "6. 초안을 보여 주고 승인받는다")
+        self.assertIn("돌려 보는 확인(임시 복제본이나 시험 저장소에서 스킬과 장면을 돌리는 확인)마다 세 가지를 본다", body)
+        self.assertIn("그 차림이 앞 단계(예: 회고 통과, 고칠 것이 나오는 자리)를 지나 기대한 자리에 닿는지", body)
+        self.assertIn("기대가 해결 방식이 아니라 관찰할 결과로 적혔는지", body)
+        self.assertIn("결정과 TODO가 같은 멈출 자리를 말하는지", body)
+
 class PhaseRulesTest(unittest.TestCase):
     def test_42_does_not_read_earlier_phase_records(self):
         body = section(read("phase"), "1. 읽는다")
@@ -218,7 +266,49 @@ class PhaseRulesTest(unittest.TestCase):
         self.assertIn("필요하면 읽지 않고, 무엇이 왜 필요했는지를", body)
 
 
+REPORT_SECTIONS = (
+    ("phase", "6. 다섯 줄을 돌려준다"),
+    ("check", "8. 세 줄을 돌려준다"),
+    ("retro", "9. 세 줄을 돌려준다"),
+    ("review", "9. 네 줄을 돌려준다"),
+    ("eval", "8. 세 줄을 돌려준다"),
+)
+
+
+class CallerMarkerTest(unittest.TestCase):
+    """#51: run이 띄운 호출은 표지 줄이나 작업 트리의 스킬 줄로 가르고, 둘 다 없을 때만 직접 부른 꼴로 보고한다."""
+
+    def test_51_direct_report_only_without_marker(self):
+        for skill, heading in REPORT_SECTIONS:
+            with self.subTest(skill=skill):
+                body = section(read(skill), heading)
+                self.assertIn("맡은 글에 `부른 쪽: plate:run` 줄도 작업 트리의 스킬 줄", body)
+                self.assertIn("`작업 트리의 {경로}를 읽어 그 절차를 따른다.`로 시작하는 줄)도 없을 때만 사용자가 직접 부른 것으로 보고", body)
+                self.assertNotIn("사용자가 직접 불렀으면", body)
+
+
+class RetroRulesTest(unittest.TestCase):
+    def test_49_friction_problem_only_for_remaining_lines_judged_problem(self):
+        body = section(read("retro"), "5. tasks 끝에 볼 것을 모은다")
+        self.assertIn('확인 절 "하네스에서 걸린 것"의 `남은 것:`으로 시작하는 줄은 이번 회고 절 "남은 것"에서 "문제"로 판정한 것만 모으고', body)
+        self.assertIn('"문제 아님"으로 판정한 줄은 모으지 않는다', body)
+
+    def test_50_stop_list_includes_permission(self):
+        body = section(read("retro"), "5. tasks 끝에 볼 것을 모은다")
+        self.assertIn("물은 자리가 `멈춤`이 아닌 줄(권한, 실행 방식,", body)
+
+
 class EvalRulesTest(unittest.TestCase):
+    def test_50_runlog_commits_in_rule_table(self):
+        body = section(read("eval"), "3. 기준마다 근거를 적고 등급을 매긴다")
+        for message in ("`NNN-slug: RUNLOG`", "`<tasks 이름>: RUNLOG`"):
+            with self.subTest(message=message):
+                self.assertIn("| %s | run | `RUNLOG.md`와 사용량 까닭을 적은 `docs/TOOLS.md` |" % message, body)
+
+    def test_50_permission_is_a_set_question(self):
+        body = section(read("eval"), "낱말")
+        self.assertIn("모두(`권한`, `실행 방식`,", body)
+
     def test_36_moved_remaining_lines_count_only_when_retro_says_problem(self):
         body = section(read("eval"), "2. 실패를 모아 MAST 유형으로 나눈다")
         self.assertIn("`남은 것:`으로 시작하는 줄", body)
