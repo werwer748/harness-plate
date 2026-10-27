@@ -49,3 +49,31 @@
 - 계획의 장면 B는 "phase가 모두 통과하고 회고가 없는 작은 tasks"만 정하고, 그 task가 맥락 문서와 맞아 회고가 통과해야 tasks 끝에 닿는다는 것을 적지 않았다. 처음 차린 tasks가 회고에서 멈춰 다시 차렸다
 - 결정의 "이 저장소의 main을 복제"는 원본이 다른 브랜치에 있으면 복제본의 `origin/HEAD`가 그 브랜치를 가리키는 것을 다루지 않는다. run과 review가 기본 브랜치를 `tasks/release-prep`으로 봤다
 
+
+## 확인 1
+
+**통과 조건**
+- 장면 A와 B의 결과가 남았고 기대대로다(완료 조건 3의 A, B).
+  - `docs/TOOLS.md`의 "고친 run을 장면 A·B로 돌려 본 것" 절(272행부터)을 읽음 → 장면 A: 버전 2.1.311, 돌린 시각 2026-10-27T18:40:01+09:00~18:40:18, 세션 id `75d5f20c-9f1c-46fe-a502-f1083791eda0`, 기대(에이전트 줄 없음, plan 모드를 알리며 묻고 멈춤)와 본 결과(Agent 호출 0, `RUNLOG.md` 없음, "plan 모드가 켜져 있어서 에이전트를 띄우지 않고 멈췄습니다"와 "plan 모드를 끄고 이어 갈까요?")가 같다. 장면 B: 버전 2.1.311, 2026-10-27T18:44:23+09:00~19:26:47, 세션 id `02367cb0-21ae-453b-b9b0-1b55551ac367`, 기대(회고 커밋 뒤와 하네스 eval 커밋 뒤에 `RUNLOG.md`만 바꾼 커밋, 멈춘 자리의 빈 `git status --short`)와 본 결과(`9e7967b 001-hello: 회고` 뒤 `ed93268 001-hello: RUNLOG`, `5f2428e scene-b: 하네스 eval` 뒤 `823e8ea scene-b: RUNLOG`, 저마다 `docs/tasks/RUNLOG.md` 하나, `git status --short` 빔)가 같다. 통과
+  - `git log -1 --format=%cI -- plugins/plate/skills/run/SKILL.md` → `2026-10-27T18:38:03+09:00`. 절의 돌린 시각 18:40:01(A), 18:44:23(B), 첫 차림 18:40:37이 모두 늦다. 통과
+- 완료 조건 1이 여전히 참이다(이 phase가 run 본문을 고쳤을 때).
+  - `git show --stat 8bf5314` → 이 phase의 커밋은 `docs/TOOLS.md`와 `phase-2.md`만 바꿨고 run 본문을 고치지 않았다. 그래도 run 본문을 읽음 → #40은 "1. 시작 조건을 본다"의 "권한"(62~65행)과 description, #44는 "7. task 회고를 맡긴다"(167행)와 "코드 평가를 맡긴다"·"하네스 eval을 맡긴다"의 `RUNLOG.md`만 넣는 커밋, #35는 "`RUNLOG.md`" 절 512행의 단위 없는 `모름`, #34·#38은 8번 174행과 "멈춘다" 259행, 514행의 `멈춤`, #38은 8번 181~182행과 양식 212~218행(맥락 문서·README 줄을 TODO에, 계획 커밋으로 고친 문제는 통과 조건에 해시와 함께)에 저마다 적혀 있다. 통과
+  - `python3 -m unittest discover -s tests` → `Ran 129 tests` / `OK`. `claude plugin validate .` → `✔ Validation passed`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 129 tests in 16.851s` / `OK`. 통과
+
+**남은 것**
+- 장면 B의 복제본의 `origin/HEAD`가 `tasks/release-prep`을 가리켜 run의 스킬 줄 판정과 코드 평가의 `git merge-base`가 실패하고 원격 추적 ref로 돌아갔다 → 통과 조건이 보는 동작(회고·하네스 eval 뒤의 `RUNLOG.md`만 넣는 커밋, 빈 `git status --short`)에 걸리지 않는다. 하네스에서 걸린 것
+- 헤드리스 acceptEdits 세션에서 쓰기가 막힐 모드를 알아보는 갈래는 돌려 보지 않았다 → 통과 조건의 장면 A는 plan 모드의 갈래만 보고, 이 갈래는 보지 않는다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 장면 B의 복제본은 `git clone`이 원본의 지금 브랜치를 원격 HEAD로 두어 run과 코드 평가가 기본 브랜치를 `tasks/release-prep`으로 봤다. 계획 결정의 "이 저장소의 main을 복제"가 이를 다루지 않는다. phase 3의 장면은 `git remote set-head origin main`으로 피할 수 있다
+- 남은 것: run 1번의 "쓰기가 막힐 권한 모드" 갈래(plan 모드 밖)는 장면으로 돌려 보지 않았다. 헤드리스 acceptEdits 세션은 지금 모드를 run에 알려 주지 않아 "확인할 수 없으면" 갈래로 갔다
+
+**판정**: 통과
