@@ -58,3 +58,4 @@ plan, check, retro, review, eval, run의 본문이 여섯 이슈의 해결대로
 - `003-base-branch`: run이 로컬에만 있는 계획 커밋을 알리고 묻고, 갈라진 곳이 로컬 기본 브랜치로 정해진다(#29)
 - `004-review-eval`: review의 테스트 적절성(#27)과 eval의 정해 둔 물음(#28)이 고쳐진다
 - `005-release`: 버전이 0.15.0이 되고 맥락 문서와 README가 바뀐 동작과 맞는다
+- `006-fixes`: tasks 끝에서 고치기로 한 것이 고쳐진다
