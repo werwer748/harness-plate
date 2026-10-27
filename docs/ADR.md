@@ -39,3 +39,8 @@
 - **결정**: GitHub의 `werwer748/harness-plate`를 공개 저장소로 둔다. 2026-10-24에 비공개에서 공개로 바꿨다. Claude Code에서는 `claude plugin marketplace add werwer748/harness-plate`로 마켓플레이스를 더해 `plate@harness-plate`를 설치하고, 대상 프로젝트의 CI 워크플로(ADR-021)는 토큰 없이 `https://github.com/werwer748/harness-plate.git`에서 plate를 받는다. 저장소에는 Claude 키 같은 시크릿을 넣지 않는다. 플러그인과 셋업 스킬로 배포하는 것(ADR-005)은 그대로이고, 받는 곳만 정한다.
 - **이유**: ADR-021의 워크플로가 토큰 없이 plate를 받으려면 저장소가 공개여야 한다. 그 밖의 이유는 말하지 않았다.
 - **트레이드오프**: 스킬 본문, 훅, `docs/`의 기록, 커밋 이력이 모두 공개된다. 커밋 이력의 작성자 메일도 공개되고, 그대로 두기로 했다. 대상 프로젝트의 CI는 plate의 기본 브랜치를 그때그때 받으므로 harness-plate의 기본 브랜치에 들어간 변경이 곧바로 다른 프로젝트의 PR 평가를 바꾼다. 태그나 릴리스로 받을 버전을 고정하는 방식은 아직 없다.
+
+### ADR-023: 워크플로를 바꾼 PR은 판정 검사가 머지 요청으로 내리고, 저장소 설정이 머지를 막는다
+- **결정**: 워크플로 경로(`.github/workflows/`로 시작하는 경로)를 바꾼 PR은 판정 스크립트(`plugins/plate/ci/verdict.py`)의 워크플로 검사가 자동 머지 대신 머지 요청으로 내린다. 워크플로의 `verdict` 잡이 PR의 바뀐 파일 목록을 `--changed-files`로 넘긴다. 저장소 설정(기본 브랜치의 ruleset과 `.github/CODEOWNERS`)은 PR을 연 계정이 코드 소유자가 아닐 때의 머지와 기본 브랜치 직접 푸시를 막는다. setup은 CI를 승인받았고 CODEOWNERS가 없고 `gh api user`의 login을 얻었을 때 CODEOWNERS(`/.github/workflows/ @<login>`, `/.github/CODEOWNERS @<login>`)만 쓰고, ruleset은 걸지 않고 보고에 거는 법을 적는다.
+- **이유**: PR은 워크플로를 고칠 수 있지만 저장소 설정은 바꾸지 못한다. 그러나 GitHub는 PR을 연 계정이 유일한 코드 소유자면 코드 소유자 리뷰를 채운 것으로 본다(`docs/TOOLS.md`의 "ruleset과 CODEOWNERS로 워크플로 PR의 자동 머지를 막는지 본 것"). 시크릿 등록처럼 관리자 권한이 드는 일은 사용자가 한다.
+- **트레이드오프**: 사용자가 ruleset을 걸지 않으면 판정 검사만 남는다. 비공개 저장소는 요금제에 따라 ruleset을 걸 수 없다. 워크플로를 바꾼 PR은 사람이 관리자 우회로 머지해야 한다. 판정 검사는 PR이 워크플로를 고쳐 건너뛸 수 있다. 혼자 쓰는 저장소에서는 PR을 여는 계정과 다른 쓰기 권한 계정을 코드 소유자로 두어야 설정이 그 길을 닫는다.

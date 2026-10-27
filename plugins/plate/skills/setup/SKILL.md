@@ -1,13 +1,13 @@
 ---
 name: setup
-description: 프로젝트에 하네스를 설치한다. `docs/`에 문서 양식(PRD, ARCHITECTURE, ADR, 화면이 있는 프로젝트면 DESIGN)과 tasks 기록 폴더를 만들고, `AGENTS.md`에 문서 지도와 작업 규칙을 넣고, `CLAUDE.md`가 `AGENTS.md`를 불러오게 한다. GitHub 원격이 있고 plate 워크플로가 없으면 PR마다 review로 평가해 판정대로 자동 머지, 머지 요청, 닫기를 하는 CI 워크플로를 둘지 묻고, 승인하면 `.github/workflows/`에 쓰고 보고에 시크릿 등록 방법을 적는다. 설치만 하고 보고로 끝나며, 끝에 다른 일로 이어 갈지 묻지 않는다. plate를 프로젝트에 처음 쓸 때, 또는 "하네스 셋업해줘", "문서 위치 잡아줘"라고 할 때 쓴다. 문서 내용을 채우는 일에는 쓰지 않는다.
+description: 프로젝트에 하네스를 설치한다. `docs/`에 문서 양식(PRD, ARCHITECTURE, ADR, 화면이 있는 프로젝트면 DESIGN)과 tasks 기록 폴더를 만들고, `AGENTS.md`에 문서 지도와 작업 규칙을 넣고, `CLAUDE.md`가 `AGENTS.md`를 불러오게 한다. GitHub 원격이 있고 plate 워크플로가 없으면 PR마다 review로 평가해 판정대로 자동 머지, 머지 요청, 닫기를 하는 CI 워크플로를 둘지 묻고, 승인하면 `.github/workflows/`에 쓰고, `.github/CODEOWNERS`가 없고 GitHub login을 얻었으면 워크플로와 CODEOWNERS의 코드 소유자를 그 login으로 두는 CODEOWNERS를 쓰고, 보고에 시크릿 등록 방법과 ruleset 거는 법을 적는다. 설치만 하고 보고로 끝나며, 끝에 다른 일로 이어 갈지 묻지 않는다. plate를 프로젝트에 처음 쓸 때, 또는 "하네스 셋업해줘", "문서 위치 잡아줘"라고 할 때 쓴다. 문서 내용을 채우는 일에는 쓰지 않는다.
 ---
 
 # 셋업
 
 **막는 실패**: 기록을 둘 위치가 정해져 있지 않으면 세션마다 다른 곳에 문서를 만들고, 다음 세션은 그 문서를 찾지 못한다.
 
-프로젝트에 하네스 문서의 위치 기준을 세운다. 끝나면 `docs/`에 문서 양식과 tasks 기록 폴더가 있고, `AGENTS.md`에 문서 지도와 작업 규칙이 있고, `CLAUDE.md`가 `AGENTS.md`를 불러온다. CI 에이전트를 승인했으면 `.github/workflows/plate-review.yml`이 있다. 문서의 내용은 채우지 않고, 4번의 보고로 끝난다.
+프로젝트에 하네스 문서의 위치 기준을 세운다. 끝나면 `docs/`에 문서 양식과 tasks 기록 폴더가 있고, `AGENTS.md`에 문서 지도와 작업 규칙이 있고, `CLAUDE.md`가 `AGENTS.md`를 불러온다. CI 에이전트를 승인했으면 `.github/workflows/plate-review.yml`이 있고, `.github/CODEOWNERS`가 없었고 login을 얻었으면 그 파일도 있으며, 보고에 ruleset 거는 법이 있다. 문서의 내용은 채우지 않고, 4번의 보고로 끝난다.
 
 ## 절대 규칙
 
@@ -21,7 +21,7 @@ description: 프로젝트에 하네스를 설치한다. `docs/`에 문서 양식
 - git 레포인지 확인한다.
 - 파일 목록을 본다. git 레포면 `git ls-files --cached --others --exclude-standard`, 아니면 숨김 파일을 포함한 전체 목록을 쓴다.
 - `AGENTS.md`, `CLAUDE.md`, `docs/`가 있으면 읽는다.
-- 아래 기준으로 여섯 가지를 판정한다. 기준에 없는 것을 근거로 판정하지 않는다.
+- 아래 기준으로 일곱 가지를 판정한다. 기준에 없는 것을 근거로 판정하지 않는다.
 
 **빈 프로젝트**: 소스 코드 파일과 빌드 매니페스트(`package.json`, `pyproject.toml`, `build.gradle`, `build.gradle.kts`, `pom.xml`, `Cargo.toml`, `go.mod`, `Gemfile`, `pubspec.yaml`, `Package.swift`)가 하나도 없으면 빈 프로젝트다.
 
@@ -49,6 +49,8 @@ description: 프로젝트에 하네스를 설치한다. `docs/`에 문서 양식
 
 **plate 워크플로**: `.github/workflows/` 아래에 `plate@harness-plate`가 적힌 파일이 있으면 plate 워크플로가 있다.
 
+**GitHub login과 CODEOWNERS**: GitHub 원격이 있고 plate 워크플로가 없을 때만 본다. `gh api user`를 돌려 `login`을 읽는다. `gh`가 없거나 인증되지 않았거나 명령이 실패하면 login이 없다. `.github/CODEOWNERS`가 있는지 본다.
+
 ## 2. 할 일을 표 하나로 보여 주고 한 번에 묻는다
 
 3번에서 할 일을 표 하나로 보여 준다(할 일, 대상, 승인이 필요한지). 승인이 필요한 일은 아래 여섯뿐이고, 해당하는 것을 한 번에 묻는다.
@@ -60,7 +62,7 @@ description: 프로젝트에 하네스를 설치한다. `docs/`에 문서 양식
 | git 레포가 아니다 | `git init`을 할지 |
 | 빈 프로젝트이고 `AGENTS.md`에 문서 지도 구간이 없다 | 화면이 있는 프로젝트인지 |
 | `AGENTS.md`에 문서 지도 구간이 있고 규칙 구간이 없다 | 규칙 구간을 더할지. 더할 글을 표 아래에 함께 보여 준다 |
-| GitHub 원격이 있고 plate 워크플로가 없다 | CI 에이전트를 둘지. PR이 열리거나 갱신될 때 review가 평가하고 판정대로 평가서 댓글을 달고 자동 머지하거나 PR을 닫는 워크플로이고, 저장소에 시크릿을 넣어야 돈다고 함께 알린다 |
+| GitHub 원격이 있고 plate 워크플로가 없다 | CI 에이전트를 둘지. PR이 열리거나 갱신될 때 review가 평가하고 판정대로 평가서 댓글을 달고 자동 머지하거나 PR을 닫는 워크플로이고, 저장소에 시크릿을 넣어야 돈다고 함께 알린다. login을 보여 주고, 승인하면 `.github/CODEOWNERS`에 그 login을 코드 소유자로 두는 두 줄을 쓴다고 알린다. CODEOWNERS가 이미 있거나 login을 얻지 못했으면 그 까닭과, 쓰지 않고 넣을 줄을 보고에 적는다고 알린다 |
 
 - 물을 것이 하나도 없으면 묻지 않고 3번으로 간다.
 - 요청에 이미 답이 적혀 있는 물음은 다시 묻지 않는다.
@@ -82,6 +84,12 @@ description: 프로젝트에 하네스를 설치한다. `docs/`에 문서 양식
 - `docs/tasks/`: 폴더가 없으면 만들고 내용이 없는(0바이트) 파일 `.gitkeep`을 둔다.
 
 **CI 워크플로**: CI 에이전트를 승인받았으면 이 문서 끝의 "양식" 절에서 `.github/workflows/plate-review.yml`을 가져와 그 경로에 쓴다. 거절했으면 쓰지 않는다.
+- CODEOWNERS: CI 에이전트를 승인받았고, `.github/CODEOWNERS`가 없고, 1번에서 login을 얻었을 때만 `.github/CODEOWNERS`를 아래 두 줄로 만든다. `<login>`은 1번에서 읽은 login으로 바꾼다. 그 밖(거절했다, 파일이 이미 있다, login이 없다)에는 쓰지 않는다. 이미 있는 CODEOWNERS는 고치지 않는다(절대 규칙 1).
+  ```
+  /.github/workflows/ @<login>
+  /.github/CODEOWNERS @<login>
+  ```
+- 이 두 줄은 "양식" 절의 파일이 아니다. login을 넣는 것은 양식의 `{…}` 칸을 채우는 일이 아니고(절대 규칙 2), 양식은 이 일로 바뀌지 않는다(절대 규칙 3).
 
 **`AGENTS.md`**: 순서대로 한다.
 1. `CLAUDE.md` 내용을 옮기기로 했으면, `CLAUDE.md`에서 `@AGENTS.md` 줄을 뺀 나머지를 한 글자도 바꾸지 않고 `AGENTS.md` 끝에 붙인다. `AGENTS.md`에 기존 내용이 있으면 그 뒤에 빈 줄 하나를 두고 붙인다. `AGENTS.md`가 없거나 비어 있으면 빈 줄 없이 첫 줄부터 적는다. `AGENTS.md`의 기존 내용은 바꾸지 않는다.
@@ -107,6 +115,32 @@ description: 프로젝트에 하네스를 설치한다. `docs/`에 문서 양식
 - 만든 것, 옮긴 것, 건드리지 않은 것(기존 문서와 거절한 일)
 - 사용자가 채울 칸: `{…}`가 남아 있는 파일
 - CI 워크플로를 썼으면 시크릿 등록 방법: 워크플로는 저장소 시크릿 `CLAUDE_CODE_OAUTH_TOKEN`이 있어야 돈다. 로컬에서 `claude setup-token`을 돌려 토큰을 만들고, `gh secret set CLAUDE_CODE_OAUTH_TOKEN`으로 넣거나 GitHub 저장소의 Settings → Secrets and variables → Actions에서 같은 이름으로 넣는다. 워크플로 파일은 커밋해 GitHub에 올린 뒤부터 돈다.
+- CI 워크플로를 썼는데 CODEOWNERS를 쓰지 않았으면 그 까닭(이미 있다, login을 얻지 못했다)과 넣을 줄: `/.github/workflows/ @<login>`, `/.github/CODEOWNERS @<login>`. login을 얻었으면 `<login>`을 그것으로 바꿔 보이고, 못 얻었으면 `<login>`을 코드 소유자로 둘 GitHub 계정으로 바꾸라고 적는다.
+- CI 워크플로를 썼으면 ruleset 거는 법. 판정 스크립트는 워크플로를 바꾼 PR을 자동 머지하지 않고 머지 요청으로 내리지만, PR이 워크플로를 고쳐 이 검사를 건너뛸 수 있다. 기본 브랜치에 ruleset을 걸면 코드 소유자가 아닌 계정이 연 워크플로 PR의 머지와, 워크플로 토큰의 기본 브랜치 직접 푸시를 저장소 설정이 막는다. 아래를 그대로 보인다.
+  - 명령: 저장소 폴더에서 아래를 돌린다. `{owner}`와 `{repo}`는 `gh`가 지금 저장소로 바꾼다. 관리자 권한이 있는 계정이어야 한다.
+    ```sh
+    gh api -X POST 'repos/{owner}/{repo}/rulesets' --input - <<'JSON'
+    {
+      "name": "plate-workflow-guard",
+      "target": "branch",
+      "enforcement": "active",
+      "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
+      "rules": [
+        {"type": "pull_request", "parameters": {
+          "required_approving_review_count": 0,
+          "require_code_owner_review": true,
+          "dismiss_stale_reviews_on_push": false,
+          "require_last_push_approval": false,
+          "required_review_thread_resolution": false}}
+      ],
+      "bypass_actors": [{"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "pull_request"}]
+    }
+    JSON
+    ```
+  - 화면에서 걸려면 GitHub 저장소의 Settings → Rules → Rulesets에서 기본 브랜치를 대상으로 PR 필수, 승인 수 0, 코드 소유자 리뷰 필수를 켜고, 우회 목록에 Repository admin을 PR로만(pull request) 둔다.
+  - 비공개 저장소는 요금제에 따라 ruleset을 걸 수 없다.
+  - 걸기 전에는 워크플로를 바꾼 PR을 판정 스크립트의 검사만 막는다.
+  - 걸어도 PR을 연 계정이 유일한 코드 소유자면 GitHub가 코드 소유자 리뷰를 채운 것으로 보아 막지 못한다. 이 길까지 닫으려면 CODEOWNERS의 코드 소유자를 PR을 여는 계정과 다른, 쓰기 권한이 있는 계정으로 둔다. 워크플로를 바꾼 PR은 코드 소유자가 승인하거나 관리자가 우회(`gh pr merge --admin`)해 머지한다.
 - `AGENTS.md`가 32KiB(32,768바이트)를 넘으면 알린다. 그보다 큰 `AGENTS.md`는 끝까지 읽지 않는 도구가 있다.
 
 보고한 뒤에는 묻지 않고 끝난다.
@@ -293,7 +327,7 @@ components:
 
 ### `.github/workflows/plate-review.yml`
 
-CI 에이전트의 워크플로다. `${{ … }}`는 GitHub Actions의 식이라 채울 칸이 아니다. `review` 잡은 읽기 권한만으로 공개 마켓플레이스에서 plate를 받아 review의 PR 모드를 부르고 등급 묶음을 구조화 출력으로 낸다. 액션을 부르기 전에 `AGENTS.md`를 기준 브랜치(`origin/${{ github.base_ref }}`)의 것으로 되돌리고, 기준 브랜치에 `AGENTS.md`가 없으면 PR의 것을 지운다. `CLAUDE.md`의 `@AGENTS.md`로 PR이 바꾼 지시가 세션에 실리지 않게 하려는 것이다. review 단계가 실패하면 다음 단계가 액션의 실행 결과 파일(`execution_file`)에서 결과 줄의 `subtype`, `is_error`, `api_error_status`, 오류 목록과, 오류일 때의 결과 글만 로그에 낸다. Claude의 메시지 전부를 로그에 내는 액션의 입력은 켜지 않는다. 로그가 공개되면 도구 결과에 든 비밀이 드러나기 때문이다. `verdict` 잡은 쓰기 권한으로 등급 묶음을 판정 스크립트(`plugins/plate/ci/verdict.py`)에 넘겨, 평가서를 PR 댓글로 달고, 자동 머지면 merge commit으로 합치고 머리 브랜치를 지우며, 닫기면 PR을 닫는다. 머지 요청이면 댓글만 단다.
+CI 에이전트의 워크플로다. `${{ … }}`는 GitHub Actions의 식이라 채울 칸이 아니다. `review` 잡은 읽기 권한만으로 공개 마켓플레이스에서 plate를 받아 review의 PR 모드를 부르고 등급 묶음을 구조화 출력으로 낸다. 액션을 부르기 전에 `AGENTS.md`를 기준 브랜치(`origin/${{ github.base_ref }}`)의 것으로 되돌리고, 기준 브랜치에 `AGENTS.md`가 없으면 PR의 것을 지운다. `CLAUDE.md`의 `@AGENTS.md`로 PR이 바꾼 지시가 세션에 실리지 않게 하려는 것이다. review 단계가 실패하면 다음 단계가 액션의 실행 결과 파일(`execution_file`)에서 결과 줄의 `subtype`, `is_error`, `api_error_status`, 오류 목록과, 오류일 때의 결과 글만 로그에 낸다. Claude의 메시지 전부를 로그에 내는 액션의 입력은 켜지 않는다. 로그가 공개되면 도구 결과에 든 비밀이 드러나기 때문이다. `verdict` 잡은 쓰기 권한으로 PR의 바뀐 파일 목록(`gh pr diff --name-only`)을 파일로 받아, 등급 묶음과 함께 판정 스크립트(`plugins/plate/ci/verdict.py`)에 `--changed-files`로 넘긴다. 판정 스크립트는 목록에 워크플로 경로(`.github/workflows/`)가 있으면 자동 머지를 머지 요청으로 내린다. 그 판정으로 평가서를 PR 댓글로 달고, 자동 머지면 merge commit으로 합치고 머리 브랜치를 지우며, 닫기면 PR을 닫는다. 머지 요청이면 댓글만 단다.
 
 ````yaml
 name: plate review
@@ -389,7 +423,8 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           BUNDLE: ${{ needs.review.outputs.bundle }}
         run: |
-          verdict=$(printf '%s' "$BUNDLE" | python3 harness-plate/plugins/plate/ci/verdict.py)
+          gh pr diff "$PR" --name-only > changed-files.txt
+          verdict=$(printf '%s' "$BUNDLE" | python3 harness-plate/plugins/plate/ci/verdict.py --changed-files changed-files.txt)
           case "$verdict" in
             merge) label="자동 머지" ;;
             request) label="머지 요청" ;;
