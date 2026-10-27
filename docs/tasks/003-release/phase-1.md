@@ -60,3 +60,29 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- (완료 조건 1) 버전, 마켓플레이스, 테스트
+  - `grep -h '"version"' plugins/plate/.claude-plugin/plugin.json plugins/plate/.codex-plugin/plugin.json` → `"version": "0.14.0",` 두 줄. 통과
+  - `claude plugin validate .` → 마지막 줄 `✔ Validation passed`. 통과
+  - `python3 -m unittest discover -s tests` → `Ran 104 tests in 16.985s`, 마지막 줄 `OK`. 통과
+- (완료 조건 2) README
+  - `README.md` 7줄 표의 `setup` 행 → CI를 두면 `.github/CODEOWNERS`가 없을 때 쓰고(있거나 login을 못 얻으면 넣을 줄을 알림) 기본 브랜치에 ruleset 거는 법을 보고에 알린다고 적음. "CI 워크플로" 절 → 판정 표의 자동 머지 조건에 "PR이 워크플로(`.github/workflows/`로 시작하는 경로)를 바꾸지 않음", `--changed-files` 문단, "ruleset과 CODEOWNERS" 소절에 막는 것·막지 못하는 것(PR을 연 계정이 유일한 코드 소유자일 때)·`gh api` ruleset JSON과 화면에서 거는 법이 있음. "훅" 절(88줄) → 편집 훅이 아직 없는 `plate-review.yml`과 `.github/CODEOWNERS`를 setup이 쓰는 것은 막지 않고 이미 있는 두 파일의 편집은 막는다고 적음(`edit_guard.py` 25·214줄의 `SETUP_FILES`와 맞음). 통과
+  - "이미 CI 워크플로를 둔 프로젝트" 소절 → 1. CODEOWNERS 두 줄 넣기, 2. ruleset 걸기, 3. verdict 단계에 `--changed-files` 넘기기가 저마다 있음. 통과
+- (완료 조건 3) 맥락 문서
+  - `docs/PRD.md` 핵심 기능 8(워크플로를 바꾼 PR은 머지 요청, setup의 CODEOWNERS와 ruleset 안내, ADR-023), `docs/ARCHITECTURE.md`(17·23줄 디렉터리 구조, 49줄 편집 훅의 CODEOWNERS 예외, 51줄 CI·CODEOWNERS·ruleset·`--changed-files`, 55·74줄 데이터 흐름), `docs/ADR.md`(ADR-021 트레이드오프의 #18 줄, ADR-023), `docs/TOOLS.md`(131줄부터의 ruleset과 CODEOWNERS 절), `README.md`를 따로 읽고 `판정|verdict|edit_guard|편집 훅|CODEOWNERS|ruleset|자동 머지`로 걸리는 줄을 봄. `verdict.py`의 `WORKFLOW_PREFIX`·`--changed-files` 처리와도 대어 봄 → 어긋나는 줄이 없음. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 104 tests`, `OK`. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
