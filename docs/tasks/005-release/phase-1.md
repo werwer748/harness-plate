@@ -47,3 +47,29 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 1이 참이다.
+  - `grep -h '"version"' plugins/plate/.claude-plugin/plugin.json plugins/plate/.codex-plugin/plugin.json` → `"version": "0.15.0",` 두 줄. 통과
+  - `claude plugin validate .` → 마지막 줄 `✔ Validation passed`. 통과
+  - `python3 -m unittest discover -s tests` → `Ran 104 tests in 17.414s`, 마지막 줄 `OK`. 통과
+- 완료 조건 2가 참이다.
+  - `docs/PRD.md`, `docs/ARCHITECTURE.md`, `docs/ADR.md`, `docs/TOOLS.md`, `README.md`를 문서마다 읽고 여섯 동작에 걸리는 줄을 스킬 본문(run의 "작업 트리의 스킬 줄" 낱말과 시작 단계, eval의 "정해 둔 물음" 낱말, review의 테스트 적절성 행)에 견줬다 → ARCHITECTURE의 run 규칙 줄과 데이터 흐름, README의 `run` 행은 run 본문의 로컬 기본 브랜치 물음(모두 tasks 브랜치에 있으면 묻고, 없는 커밋이 있으면 묻지 않고 그대로 둔다)과 같다. ADR-024 트레이드오프의 결과물인 마크다운뿐인 tasks의 테스트 적절성은 review 본문과 같다. TOOLS "Claude Code" 절의 "기본 브랜치에서 갈라진 곳부터"는 origin과 로컬을 가리지 않아 로컬 merge-base와 어긋나지 않고, `ci-run` 줄의 "로컬 `main` 기준"은 2026-10-24에 본 사실이다. ARCHITECTURE 데이터 흐름의 "물은 자리마다 RUNLOG.md에 한 줄"은 eval의 정해 둔 물음과 어긋나지 않는다. PRD 핵심 기능 3~8과 README의 `plan`, `check`, `retro`, `review`, `eval` 행은 여섯 동작의 세부를 적지 않아 어긋나는 줄이 없다. 어긋나는 줄 없음. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 104 tests`, `OK`. 통과
+
+**남은 것**
+- 없음
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
