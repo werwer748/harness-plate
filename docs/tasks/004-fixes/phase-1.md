@@ -66,3 +66,35 @@
 ## 하네스에서 걸린 것
 - 시작할 때 `docs/tasks/RUNLOG.md`에 커밋되지 않은 변경이 있어 커밋에 넣지 않았다
 - 완료 조건 3은 도구를 더할지 ADR로 둘지 고르게 해, 수행 쪽이 ADR(두지 않음)을 골랐다. 사용자가 말한 이유가 없어 ADR-024의 이유에 그렇다고 적었다
+
+## 확인 1
+
+**통과 조건**
+- task 머리의 완료 조건이 모두 참이다.
+  - 완료 조건 1: `sed -n 415,440p plugins/plate/skills/setup/SKILL.md`와 `grep -nF "pr diff"` → verdict 단계(426~428줄)가 `gh api --paginate "repos/$GH_REPO/pulls/$PR/files" --jq '.[].filename'`로 목록을 받고, 실패하면 `echo '.github/workflows/' > changed-files.txt`로 워크플로 경로를 적어 `--changed-files`로 넘긴다. `gh pr diff`는 330줄의 설명 글에만 있다. 통과
+  - 완료 조건 2: `docs/TOOLS.md`의 "verdict 단계의 바뀐 파일 목록과 setup의 CODEOWNERS를 돌려 본 것" 절을 읽었다 → 워크플로를 바꾼 PR #24(실행 `40431431712`, 머지 요청), 바꾸지 않은 PR #25(실행 `40431626685`, 자동 머지), `mktemp -d` 임시 git 저장소에서 CODEOWNERS 없을 때 쓰기와 있을 때 건너뛰기의 결과가 저마다 있다. `gh pr view`로 시험 저장소를 봤다 → #24 `CLOSED`(파일 `.github/workflows/merge-probe.yml`, 댓글 `판정: 머지 요청`), #25 `MERGED` by `app/github-actions`(댓글 `판정: 자동 머지`), 두 실행 모두 `success`. 통과
+  - 완료 조건 3: `grep -n "ADR-024" docs/ADR.md docs/ARCHITECTURE.md` → ADR.md 48줄에 두지 않는다는 ADR-024(결정·이유·트레이드오프), ARCHITECTURE.md 90줄 명령 절에 참조. 도구를 더하지 않아 돌릴 명령은 없다. 통과
+  - 완료 조건 4: `grep -n "장면 4" docs/TOOLS.md` → 156줄 "PR #20의 같은 실행 `40352605265`". 통과
+  - 완료 조건 5: `grep -n scratchpad docs/TOOLS.md` → 출력 없음(rc 1). 그 절 166~179줄에 PR #11~#17의 표, 163·164·189·200줄에 422 오류 글 `Source only org-owned repos can have push rules`와 `Invalid rule 'file_path_restriction': `, 그 두 ruleset JSON이 있다. 통과
+  - 완료 조건 6, 다섯 장면: `docs/TOOLS.md` 152~157줄을 읽었다 → 장면 1~5가 저마다 PR 번호(#18, #19, #20, #20, #19), 명령이나 실행 id, 결과, 막힌 장면의 오류 글을 적었고 시험한 ruleset JSON이 있다. 통과
+  - 완료 조건 6, 테스트: `python3 -m unittest discover -s tests` → `Ran 104 tests in 17.394s`, 마지막 줄 `OK`. 통과
+  - 완료 조건 6, `tests/test_verdict.py` 124~142줄 → 워크플로 경로면 request, close·request 그대로, 목록 없음·워크플로 경로 없음은 그대로의 세 시험이 있다. 통과
+  - 완료 조건 6, `tests/test_edit_guard.py` 246~253, 279~287줄 → 없는 CODEOWNERS 쓰기 통과, 이미 있으면 막음이 두 경우 모두 있다. 통과
+  - 완료 조건 6, setup SKILL.md: 52줄(login 읽기), 65줄 2번 표(login 보이기, CODEOWNERS 알림), 87~92줄 3번(없을 때만 쓰기), 118~143줄 4번(쓰지 못하면 넣을 줄, ruleset 거는 법과 한계), 426~429줄 양식(목록을 `--changed-files`로 넘김) → 네 곳이 모두 적는다. 통과
+  - 완료 조건 6, ruleset JSON: python으로 SKILL.md 보고의 JSON과 TOOLS.md의 시험한 JSON을 견줬다 → `target`, `conditions`, `rules`, `bypass_actors`, `enforcement`가 같고 `name`만 다르다. 통과
+  - 완료 조건 6, 버전: `grep -h '"version"' plugins/plate/.claude-plugin/plugin.json plugins/plate/.codex-plugin/plugin.json` → 두 줄 모두 `"version": "0.14.0",`. 통과
+  - 완료 조건 6, `claude plugin validate .` → 마지막 줄 `✔ Validation passed`. 통과
+  - 완료 조건 6, 문서: `docs/PRD.md`, `docs/ARCHITECTURE.md`, `docs/ADR.md`, `README.md`에서 `pr diff|CODEOWNERS|ruleset|changed-files|워크플로 경로|자동 머지`를 찾아 문서마다 읽었다 → CODEOWNERS·ruleset(ADR-023, ARCHITECTURE 51줄, README 37~84줄), 판정의 워크플로 검사(ARCHITECTURE 17·74줄, README 29·33줄), 편집 훅의 CODEOWNERS 예외(README 90줄, ARCHITECTURE 49줄)가 바뀐 동작과 맞고, 옛 `gh pr diff --name-only` 글은 남지 않았다. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 104 tests`, `OK`. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
