@@ -2,6 +2,7 @@
 
 이슈마다(run의 #34·#35·#38·#40·#44, plan의 #37·#41, phase의 #42, eval의 #36) 그 규칙을 이루는
 글이 그 본문의 그 절에 있는지 본다. 글이 빠지거나 다른 절로 옮겨지면 실패한다.
+모든 스킬의 앞머리가 Agent Skills 규격의 한도(description 1024자, name 64자) 안에 있는지도 본다.
 """
 
 import re
@@ -40,12 +41,94 @@ def section(text, heading):
     return "\n".join(out)
 
 
+def subsection(text, heading):
+    """`## {heading}`이나 `### {heading}` 절의 본문(같은 깊이나 더 얕은 다음 머리 앞까지)을 돌려준다.
+    코드 블록 안의 머리는 건너뛴다."""
+    fence = None
+    level = None
+    out = []
+    for line in text.split("\n"):
+        marker = re.match(r"^(`{3,})", line)
+        head = re.match(r"^(#{2,3}) (.*)$", line) if fence is None else None
+        if marker:
+            if fence is None:
+                fence = marker.group(1)
+            elif line.strip() == fence:
+                fence = None
+        elif head:
+            depth = len(head.group(1))
+            if level is not None and depth <= level:
+                break
+            if level is None and head.group(2).strip() == heading:
+                level = depth
+                continue
+        if level is not None:
+            out.append(line)
+    if level is None:
+        raise AssertionError("절이 없다: %s" % heading)
+    return "\n".join(out)
+
+
 def part(body, name):
     """절 안의 `**{name}**` 줄에서 다음 굵은 머리 줄 앞까지를 돌려준다."""
     match = re.search(r"^\*\*%s\*\*\n(.*?)(?=^\*\*[^*\n]+\*\*$|\Z)" % re.escape(name), body, re.S | re.M)
     if match is None:
         raise AssertionError("굵은 머리가 없다: **%s**" % name)
     return match.group(1)
+
+
+def front_matter(skill):
+    """`SKILL.md` 앞머리(`---`와 `---` 사이)의 `키: 값` 줄을 사전으로 돌려준다."""
+    lines = read(skill).split("\n")
+    if lines[0] != "---":
+        raise AssertionError("앞머리가 없다: %s" % skill)
+    fields = {}
+    for line in lines[1:]:
+        if line == "---":
+            return fields
+        key, sep, value = line.partition(": ")
+        if not sep or not re.match(r"^[a-z-]+$", key):
+            raise AssertionError("한 줄 `키: 값` 꼴이 아닌 앞머리 줄이다(%s): %r" % (skill, line))
+        fields[key] = value
+    raise AssertionError("앞머리가 닫히지 않았다: %s" % skill)
+
+
+def skill_names():
+    return sorted(p.parent.name for p in SKILLS.glob("*/SKILL.md"))
+
+
+class DescriptionTest(unittest.TestCase):
+    """Agent Skills 규격의 한도를 본다. Codex는 1024자를 넘는 description을 잘라 끝의 부르는 말과
+    쓰지 않을 때를 모델에게 싣지 않는다(release-prep의 코드 평가 1, run이 1142자였다)."""
+
+    def test_skills_exist(self):
+        self.assertGreaterEqual(len(skill_names()), 10)
+
+    def test_description_at_most_1024_chars(self):
+        for skill in skill_names():
+            with self.subTest(skill=skill):
+                description = front_matter(skill)["description"]
+                self.assertTrue(description.strip(), "description이 비었다")
+                self.assertLessEqual(len(description), 1024)
+
+    def test_name_matches_folder_and_limit(self):
+        for skill in skill_names():
+            with self.subTest(skill=skill):
+                name = front_matter(skill)["name"]
+                self.assertEqual(name, skill)
+                self.assertLessEqual(len(name), 64)
+
+    def test_description_ends_with_when_not_to_use(self):
+        # 길이를 줄이다 끝의 "쓰지 않는다" 문장을 잃으면 실패한다.
+        for skill in skill_names():
+            with self.subTest(skill=skill):
+                self.assertRegex(front_matter(skill)["description"], r"쓰지 않는다\.$")
+
+    def test_run_description_keeps_triggers(self):
+        description = front_matter("run")["description"]
+        for phrase in ('"실행해줘"', '"phase 진행하자"', '"이어서 하자"', '"끝까지 돌려줘"', "계획이 없는 요청에는 쓰지 않는다"):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, description)
 
 
 class RunRulesTest(unittest.TestCase):
@@ -86,6 +169,17 @@ class RunRulesTest(unittest.TestCase):
         body = section(self.text, "7. task 회고를 맡긴다")
         self.assertIn("그 자리에서 `RUNLOG.md`만 한 커밋으로 넣는다", body)
         self.assertIn("메시지는 `NNN-slug: RUNLOG`다", body)
+
+    def test_tools_md_commit_rule_in_one_place(self):
+        # 커밋 자리마다 같은 괄호 글을 되풀이하지 않고 "`RUNLOG.md`" 절 한 곳에 둔다(release-prep 코드 평가 1의 소스 문제 2).
+        rule = "아직 커밋하지 않은 `docs/TOOLS.md`"
+        self.assertEqual(self.text.count(rule), 1)
+        runlog = section(self.text, "`RUNLOG.md`")
+        self.assertIn(rule + "는 이 스킬이 `RUNLOG.md`를 넣는 커밋마다 함께 넣는다", runlog)
+        follow = '(사용량 까닭을 적은 `docs/TOOLS.md`는 "`RUNLOG.md`" 절을 따른다)'
+        for heading in ("6. 통과한 phase의 이름을 바꾼다", "7. task 회고를 맡긴다", "8. 고칠 phase를 더한다", "멈춘다", "코드 평가를 맡긴다", "하네스 eval을 맡긴다", "비운다"):
+            with self.subTest(heading=heading):
+                self.assertIn(follow, subsection(self.text, heading))
 
     def test_44_runlog_commit_after_review_and_eval(self):
         runlog = section(self.text, "`RUNLOG.md`")
