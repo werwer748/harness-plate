@@ -59,3 +59,30 @@
 - 막힘: 권한 — 파일 쓰기 도구의 호출이 auto mode 분류기의 무판정으로 막혀 `plugins/plate/skills/cleanup/SKILL.md`를 만들지 못함. 해결책: 사용자가 그 쓰기를 승인하거나 권한 모드를 바꾼 뒤 이어 수행.
 - 막힘(이어 한 수행에서 다시): 같은 파일을 쓰는 호출이 다시 auto mode 분류기의 무판정으로 막힘. 다른 도구(셸)로 돌아가 쓰는 것은 권한 검사를 피하는 일이라 하지 않음. 해결책: 사용자가 `plugins/plate/skills/cleanup/` 쓰기를 허용(권한 규칙 추가나 수동 승인 모드)한 뒤 이어 수행.
 - 이어 한 수행에서 plan 모드가 끝난 뒤 다시 쓰자 `plugins/plate/skills/cleanup/SKILL.md` 쓰기가 통과했다. 앞의 두 막힘은 plan 모드가 켜진 채라 분류기가 쓰기를 판정하지 않은 것으로 보인다.
+
+## 확인 1
+
+**통과 조건**
+- 스킬 파일이 있고 앞머리가 맞다(완료 조건 1)
+  - `head -3 plugins/plate/skills/cleanup/SKILL.md` → 둘째 줄이 `name: cleanup`. 통과
+- 여섯 기준, 보고서 위치, plan 호출이 본문에 있다
+  - `grep -c -E '보안|성능|신뢰성|유지보수성|기능 적합성|기존 작업 정합성' plugins/plate/skills/cleanup/SKILL.md` → `29`. 통과
+  - `grep -o -E 'docs/cleanup/|plate:plan|미룸' plugins/plate/skills/cleanup/SKILL.md | sort -u` → `docs/cleanup/`, `plate:plan`, `미룸` 세 줄. 통과
+- 금지가 절대 규칙에 있다
+  - `plugins/plate/skills/cleanup/SKILL.md`의 `## 절대 규칙` 절을 읽음 → 1번 "코드를 고치지 않는다", 2번 "쓰는 파일은 그 날의 보고서와 `AGENTS.md` 문서 지도의 행뿐이다. 커밋에도 이 둘만 넣는다", 3번 "푸시하지 않는다. 브랜치를 만들거나 바꾸지 않는다"가 있다. 통과
+- 마켓플레이스가 유효하고 테스트가 통과한다
+  - `claude plugin validate .` → 마지막 줄 `✔ Validation passed`. 통과
+  - `python3 -m unittest discover -s tests` → `Ran 104 tests`, 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → 104개 실행, `OK`. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
