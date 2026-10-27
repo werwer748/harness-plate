@@ -1,6 +1,6 @@
 # harness-plate
 
-레일 하네스 `plate`의 플러그인 레포다. 지금은 스킬이 아홉 있다.
+레일 하네스 `plate`의 플러그인 레포다. 지금은 스킬이 열 있다.
 
 | 스킬 | 하는 일 |
 |---|---|
@@ -13,6 +13,7 @@
 | `retro` | phase가 모두 통과한 task 하나를 회고해 task 폴더의 `retro.md`와 `docs/tasks/FRICTION.md`에 적는다. `run`이 띄운 에이전트가 부른다 |
 | `review` | 모든 task가 끝난 tasks에서 바뀐 코드를 다섯 범주로 A~E로 평가해 `docs/tasks/review.md`에 적는다. `run`이 띄운 에이전트가 부르고, CI 워크플로가 PR마다 PR 모드로 부른다 |
 | `eval` | 모든 task가 끝난 tasks에서 하네스가 어떻게 돌았는지 여섯 기준으로 A~E로 평가해 `docs/tasks/eval.md`에 적는다. `run`이 띄운 에이전트가 부른다 |
+| `cleanup` | 저장소를 여섯 기준(보안, 성능, 신뢰성, 유지보수성, 기능 적합성, 기존 작업 정합성)마다 새 에이전트가 따로 살피고 서로의 발견을 교차 검토해 `docs/cleanup/YYYY-MM-DD.md`에 보고서를 쓰고, 발견을 tasks로 만들지 묻는다. 동의하면 고른 발견을 `plan`에 넘긴다. 코드를 고치지 않는다. 사용자가 부른다 |
 
 ## tasks 끝의 PR
 
@@ -102,7 +103,7 @@ claude plugin marketplace add werwer748/harness-plate
 claude plugin install plate@harness-plate
 ```
 
-받아 둔 폴더에서 설치하려면 첫 줄을 `claude plugin marketplace add <폴더>`로 바꾼다. 설치하지 않고 한 세션에서만 쓰려면 `claude --plugin-dir <폴더>/plugins/plate`로 시작한다. 스킬은 `/plate:setup`, `/plate:context`, `/plate:plan`, `/plate:run`, `/plate:phase`, `/plate:check`, `/plate:retro`, `/plate:review`, `/plate:eval`로 부른다.
+받아 둔 폴더에서 설치하려면 첫 줄을 `claude plugin marketplace add <폴더>`로 바꾼다. 설치하지 않고 한 세션에서만 쓰려면 `claude --plugin-dir <폴더>/plugins/plate`로 시작한다. 스킬은 `/plate:setup`, `/plate:context`, `/plate:plan`, `/plate:run`, `/plate:phase`, `/plate:check`, `/plate:retro`, `/plate:review`, `/plate:eval`, `/plate:cleanup`으로 부른다.
 
 ### Codex
 
@@ -111,6 +112,6 @@ codex plugin marketplace add <폴더>
 codex plugin add plate@harness-plate
 ```
 
-스킬은 `$plate:setup`, `$plate:context`, `$plate:plan`, `$plate:run`, `$plate:phase`, `$plate:check`, `$plate:retro`, `$plate:review`, `$plate:eval`로 부른다. Codex는 설치할 때 플러그인을 복사해 두므로, 스킬이 바뀌면 `codex plugin add plate@harness-plate`를 다시 실행한다.
+스킬은 `$plate:setup`, `$plate:context`, `$plate:plan`, `$plate:run`, `$plate:phase`, `$plate:check`, `$plate:retro`, `$plate:review`, `$plate:eval`, `$plate:cleanup`으로 부른다. Codex는 설치할 때 플러그인을 복사해 두므로, 스킬이 바뀌면 `codex plugin add plate@harness-plate`를 다시 실행한다.
 
-Codex에서의 확인은 2026-10-08에 멈춘 상태다. 그 뒤에 고친 스킬과 새로 더한 `plan`, `run`, `phase`, `check`, `retro`, `review`, `eval` 스킬은 Codex에서 확인하지 않았고, 확인해 둔 것과 남은 것은 `docs/TOOLS.md`에 있다.
+Codex에서의 확인은 2026-10-08에 멈춘 상태다. 그 뒤에 고친 스킬과 새로 더한 `plan`, `run`, `phase`, `check`, `retro`, `review`, `eval`, `cleanup` 스킬은 Codex에서 확인하지 않았고, 확인해 둔 것과 남은 것은 `docs/TOOLS.md`에 있다.
