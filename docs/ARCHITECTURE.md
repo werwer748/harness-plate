@@ -34,7 +34,9 @@ tests/                             # 단위 테스트(`python3 -m unittest disco
 ├── test_edit_guard.py             # 편집 훅의 테스트
 ├── test_push_guard.py             # 푸시 훅의 테스트
 ├── test_verdict.py                # 판정 스크립트의 테스트
-└── test_cleanup_skill.py          # 정리 점검 스킬 본문의 꼴(여섯 기준, 맡기는 글, 보고서 양식, 커밋, 묻는 자리, 절대 규칙)의 테스트
+├── test_cleanup_skill.py          # 정리 점검 스킬 본문의 꼴(여섯 기준, 맡기는 글, 보고서 양식, 커밋, 묻는 자리, 절대 규칙)의 테스트
+├── test_manifests.py              # 두 매니페스트의 버전 줄이 같은지의 테스트
+└── test_skill_rules.py            # run·plan·phase·eval 본문의 고친 규칙(시작 권한 물음, RUNLOG 커밋 자리, 계획을 바꾸는 회고의 멈춤, 갈래마다 확인, 앞 phase 산출물에 기대는 조건, 앞 phase 기록 읽지 않음, `남은 것:` 줄)의 글이 제 절에 있는지의 테스트
 docs/                              # 이 레포의 하네스 기록. 위치는 AGENTS.md의 문서 지도를 따른다
 ```
 
