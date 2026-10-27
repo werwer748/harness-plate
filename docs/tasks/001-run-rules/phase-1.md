@@ -63,3 +63,36 @@
 
 ## 하네스에서 걸린 것
 - 통과 조건의 `git archive HEAD`는 phase 스킬 5번(끝에 한 커밋)과 차례가 맞지 않는다. 커밋 전에는 HEAD에 바뀐 것이 없다. 스테이지한 트리로 대신했다.
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 1이 참이다
+  - `plugins/plate/skills/run/SKILL.md`의 "8. 고칠 phase를 더한다", "멈춘다", 낱말 "작업 트리의 스킬 줄", 맡기는 글 다섯의 코드 블록을 읽음 → #46: 8번 첫 문단이 고칠 파일이 완료 조건의 시각·본문 해시로 보는 파일인지와 다시 참으로 둘 길이 계획에 있는지 보고, 없으면 "계획을 바꾸게 하는 문제"로 "멈춘다"로 간다. "멈춘다" 자리 목록에도 그 경우가 있다. #47: 8번은 `git log -1 --format=%h -- docs/tasks/NNN-slug/retro.md`로 해시를 얻고 `git log --format='%h %s' {해시}..HEAD -- docs/tasks/`를 따로 부르고, 낱말은 `git merge-base {기본 브랜치} HEAD`로 해시를 얻고 `git diff --name-only {해시} HEAD`를 따로 부르는 두 단계다. #48: "멈춘다" 4가 "계획 수정마다 결정 줄 하나다"를 적고, 커밋하기 전에 결정 줄이 task 머리(tasks 머리)에 있는지 본다. #51: 130, 146, 168, 296, 307행 — 다섯 코드 블록의 마지막 줄이 `부른 쪽: plate:run`이다. 통과
+  - `grep -n 'git[^`]*\$(' plugins/plate/skills/run/SKILL.md` → 출력 없음(종료 코드 1). 통과
+- 완료 조건 2가 참이다
+  - `python3 -m unittest discover -s tests` → `Ran 153 tests in 16.054s` / `OK`. 통과
+  - `mktemp -d`에 `git archive HEAD`(39804cf)를 풀어 "하네스 eval을 맡긴다" 코드 블록의 `부른 쪽: plate:run` 줄을 지우고 돌림 → `FAIL: test_51_marker_line_ends_every_hand_off_block (test_skill_rules.RunRulesTest) (heading='하네스 eval을 맡긴다')`, `FAILED (failures=1)`. 다시 풀어 8번의 계획 커밋 찾기를 `` `git log --format='%h %s' $(git log -1 --format=%h -- docs/tasks/NNN-slug/retro.md)..HEAD -- docs/tasks/` `` 한 줄로 되돌리고 돌림 → `FAIL: test_47_no_command_substitution_in_git_commands (test_skill_rules.RunRulesTest)`, `FAILED (failures=1)`. 통과
+- 완료 조건 3이 참이다
+  - `docs/PRD.md` 7 → 계획이 틀림의 괄호에 시각·본문 해시로 보는 파일을 고칠 때의 멈춤이 있고, "고칠 때마다 결정에 줄 하나를 더하고, 커밋 전에 그 줄이 있는지 본다"가 있다. `docs/ARCHITECTURE.md` 48행 맡기는 글 문단 → 표지 줄 `부른 쪽: plate:run`이 있다. 54행 run 문단 → 시각·해시 멈춤(#46)과 수정마다 결정 줄 하나·커밋 전 점검(#48)이 있다. 39행 `test_skill_rules.py` 줄 → 시각·해시 멈춤, 명령 치환 없음, 결정 줄, 표지 줄 넷이 있다. `README.md` `run` 행의 멈춤 괄호 → 시각·본문 해시로 보는 파일의 멈춤이 있다. 통과
+- 모든 스킬의 description이 1024자 이하다
+  - 위 `python3 -m unittest discover -s tests`의 `OK`에 `test_description_at_most_1024_chars`가 든다. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 153 tests`, `OK`. 통과
+
+**남은 것**
+- 고친 run의 동작(8번의 시각·해시 판정, "멈춘다" 4의 결정 줄 점검, 두 단계 명령의 헤드리스 통과)은 돌려 보지 않았다 → 돌려 보지 않은 위험이고, task 머리 완료 조건 1의 `- 돌리지 않음: run은 사람에게 묻는 스킬이고, 8번과 "멈춘다"는 회고의 문제와 계획 수정까지 가는 tasks를 차려야 닿는다…` 줄이 돌리지 않기로 정한 동작이다. 하네스에서 걸린 것
+- 테스트는 규칙 글이 제 절에 있는지만 보아 같은 뜻의 다른 말로 고치면 실패한다 → 테스트의 취약함에 대한 위험이고, 통과 조건(완료 조건 2)은 글이 빠지면 실패하는지와 모든 테스트 통과를 볼 뿐 다른 말로 고쳤을 때의 동작을 보지 않는다. 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 고친 run의 동작(8번의 시각·해시 판정, "멈춘다" 4의 결정 줄 점검, 두 단계 명령의 헤드리스 통과)은 돌려 보지 않았다(task 머리 완료 조건 1의 `돌리지 않음` 줄).
+- 남은 것: 테스트는 규칙 글이 제 절에 있는지만 본다. 글을 다른 말로 고치면 같은 뜻이어도 실패한다.
+- 통과 조건의 `git archive HEAD`는 phase 스킬이 기록까지 한 커밋으로 넣는 차례와 맞지 않아 수행 쪽이 스테이지한 트리로 대신했다. 확인은 커밋 뒤라 `git archive HEAD` 그대로 돌렸다.
+
+**판정**: 통과
