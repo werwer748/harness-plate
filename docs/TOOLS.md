@@ -247,6 +247,15 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
 - 장면 1(만들지 않음): `claude -p --resume 56d46cfa-… "만들지 않는다"`, 15:58:00~15:58:32(32초). 세션 id는 첫 턴과 같은 `56d46cfa-e292-4f88-b6ed-f0d739b8951c`. 커밋 `f390dce cleanup: 2026-10-27 미룸`이 들어갔고 `git show --name-only HEAD`는 `docs/cleanup/2026-10-27.md` 하나였다. 남은 발견 33개의 "처리"가 모두 `미룸`이고 "미룬 것"에 33개가 모였다. `plate:plan` 호출은 없었고, `docs/tasks/plan.md`의 블롭은 첫 턴 전과 같은 `63911a9`였다. 장면 1이 커밋한 파일을 모두 합치면 `AGENTS.md`, `docs/cleanup/2026-10-27.md` 둘이다.
 - 막힌 명령. 첫 턴의 메인에서는 `git ls-files | wc -l; …`, `git -C <복제본> ls-files`, `wc -l docs/*.md; git rev-parse --short HEAD; gh auth status`가 승인을 요구하며 막혔다(`git ls-files`와 `git rev-parse`가 허용 목록에 없다). 서브에이전트에서는 파이프·`;`·`for`를 이은 Bash와 `git -C <복제본> show 491a923^:…`(`git -C` 꼴은 `Bash(git show:*)`에 맞지 않는다) 20개가 "Permission to use Bash has been denied"로 막혔고, 그 에이전트들은 읽기 도구로 돌아가거나 작업 트리의 파일로만 판정했다. 장면 1과 장면 2에서는 막힌 명령이 없었다.
 
+**스킬을 헤드리스로 돌려 볼 때의 허용 목록** (2.1.311, 2026-10-27. 위 "cleanup 스킬을 두 장면으로 돌려 본 것"의 막힌 명령에서 옮겼다. 옮긴 항목으로 다시 돌려 보지는 않았다)
+
+- 그 장면의 허용 목록(`"Bash(git add:*)" "Bash(git commit:*)" "Bash(git log:*)" "Bash(git diff:*)" "Bash(git show:*)" "Bash(git status:*)" "Bash(gh issue list:*)" "Bash(python3:*)"`)에 아래를 더해 `--allowedTools`에 넣는다. 다음 계획은 이 목록을 그대로 쓴다.
+  - `"Bash(git ls-files:*)"`: 살필 파일 목록(`git ls-files -- <범위>`)과 `git ls-files | wc -l`
+  - `"Bash(git rev-parse:*)"`: 보고서의 커밋(`git rev-parse --short HEAD`)
+  - `"Bash(git -C:*)"`: 복제본을 가리키는 `git -C <복제본> ls-files`, `git -C <복제본> show <커밋>^:<경로>`. `git -C` 꼴은 `Bash(git show:*)`나 `Bash(git ls-files:*)`에 맞지 않는다
+  - `"Bash(gh auth status:*)"`, `"Bash(wc:*)"`: 메인이 `wc -l docs/*.md; git rev-parse --short HEAD; gh auth status`처럼 이어 부른 명령
+  - 파이프·`;`·`for`로 이은 Bash: 허용 목록의 항목으로는 풀리지 않는다(이은 명령 가운데 하나만 승인이 필요해도 전체가 막힌다. 위 "실행 스킬의 판정에서 본 것"). 헤드리스 실행에서는 `--permission-mode bypassPermissions`로 돌리거나, 요청 글에 명령을 하나씩 부르라고 적는다
+
 ## Codex
 
 0.160.0에서 확인했다(2026-10-06).

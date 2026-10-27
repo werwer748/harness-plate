@@ -33,7 +33,8 @@ plugins/plate/
 tests/                             # 단위 테스트(`python3 -m unittest discover -s tests`)
 ├── test_edit_guard.py             # 편집 훅의 테스트
 ├── test_push_guard.py             # 푸시 훅의 테스트
-└── test_verdict.py                # 판정 스크립트의 테스트
+├── test_verdict.py                # 판정 스크립트의 테스트
+└── test_cleanup_skill.py          # 정리 점검 스킬 본문의 꼴(여섯 기준, 맡기는 글, 보고서 양식, 커밋, 묻는 자리, 절대 규칙)의 테스트
 docs/                              # 이 레포의 하네스 기록. 위치는 AGENTS.md의 문서 지도를 따른다
 ```
 
