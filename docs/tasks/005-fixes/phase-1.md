@@ -82,3 +82,53 @@
 - 장면을 돌린 Bash 셸이 zsh라 `set -- $x`가 낱말로 나뉘지 않았고, 허용 목록의 `"Bash(gh issue list:*)"`처럼 빈칸이 든 항목을 빈칸으로 나누면 깨져 줄마다 하나로 읽게 했다. 헤드리스 장면을 차리는 스크립트가 하네스에 없어 장면마다 손으로 차린다(eval 1의 스킬로 만들 후보)
 - 네 장면을 한 배경 명령으로 띄우면 하나를 끝내려는 신호가 나머지를 함께 끝낸다. 중간에 끝낼 장면은 따로 띄워야 한다
 - 22개 허용 목록으로도 명령 치환(`$(git merge-base …)`)과 `;`·변수로 이은 Bash가 메인과 서브에이전트에서 막혔다(지난 장면들과 같다. 허용 목록으로는 풀리지 않는다)
+
+## 확인 1
+
+**통과 조건**
+- task 머리의 완료 조건이 모두 참이다.
+  - 완료 조건 1: `python3`으로 run 앞머리 description 글자 수 → `988`. 끝에 `"실행해줘", "phase 진행하자", "이어서 하자", "끝까지 돌려줘"`와 `계획이 없는 요청에는 쓰지 않는다.`가 있다. 통과
+  - 완료 조건 2: `grep -c '아직 커밋하지 않은 \`docs/TOOLS.md\`' plugins/plate/skills/run/SKILL.md` → `1`(503행, "`RUNLOG.md`" 절). 154, 167, 195, 269, 294, 304, 443행의 커밋 자리는 "(사용량 까닭을 적은 `docs/TOOLS.md`는 "`RUNLOG.md`" 절을 따른다)"이고 236행은 그 절을 가리킨다. 통과
+  - 완료 조건 3: `docs/TOOLS.md`의 "스킬을 헤드리스로 돌려 볼 때의 허용 목록" 절을 읽음 → `git remote`, `git rm`, `git merge-base`, `git symbolic-ref`, `git switch`, `git branch`, `claude plugin validate`, `grep`, `cut` 아홉 항목과 "차림에서 지킬 것"의 세 사실(프롬프트는 `-p` 바로 뒤, 복제한 뒤 `git remote set-head origin main`, 세션 기록은 `${CLAUDE_CONFIG_DIR:-~/.claude}/projects/` 아래)이 저마다 있다. 통과
+  - 완료 조건 4: `python3 -m unittest discover -s tests` → `Ran 149 tests`, 마지막 줄 `OK`. 통과
+  - 완료 조건 4: `mktemp -d`에 작업 트리를 `rsync`로 복사해 `context`의 description을 1025자로 늘리고 돌림 → `FAIL: test_description_at_most_1024_chars … (skill='context')`, `AssertionError: 1025 not less than or equal to 1024`, `FAILED (failures=2)`(다른 하나는 끝 문장 테스트). 통과
+  - 완료 조건 5: `docs/TOOLS.md`의 "description을 줄이고 … 장면 A~D로 다시 돌려 본 것" 절을 읽음 → 장면 A~D마다 Claude Code 2.1.311, 돌린 시각, 세션 id(`1abe1354-…`, `448bb591-…`, `6e0f7103-…`, `ce45e487-…`), run 본문 해시 `ece6d9e47aad79886e5ffa5b968ed93a8a098dbd`, 기대한 결과, 본 결과가 있고 넷 모두 "기대와 같다". 통과
+  - 완료 조건 6: run의 "1. 시작 조건을 본다"(65행, plan 모드·권한 물음과 `권한` 줄, #40), "7. task 회고를 맡긴다"(167행, 회고 뒤 `RUNLOG.md` 커밋, #44), "8. 고칠 phase를 더한다"(174행 멈춤과 `멈춤` 줄, 181행 맥락 문서·README 줄, 182행 계획 커밋 문제는 통과 조건에 해시와 함께, #34·#38), "tasks 끝"(294·304행 코드 평가·eval 뒤 커밋, #44), "`RUNLOG.md`"(514행 단위 없는 `모름`, 516행 `멈춤`)를 읽음 → 다섯 해결이 저마다 있다. 통과
+  - 완료 조건 6: `docs/TOOLS.md` run 장면 절(위 완료 조건 5의 절) → 장면 A(Agent 0, plan 모드 알리고 묻고 멈춤), B(회고·코드 평가·eval 뒤 `RUNLOG` 커밋, "고칠지"에서 `git status --short` 빔), C(완료 조건을 좁히는 문제에 멈추고 답한 뒤 `멈춤` 줄), D(`phase-2.md` TODO에 `README.md`, 통과 조건에 `2813e4a`)가 기대와 같다. 통과
+  - 완료 조건 6: `git rev-parse HEAD:plugins/plate/skills/run/SKILL.md` → `ece6d9e47aad79886e5ffa5b968ed93a8a098dbd`, 장면 A~D에 적힌 해시와 같다(`git hash-object`도 같다). 통과
+  - 완료 조건 6: plan의 "6. 초안을 보여 주고 승인받는다"(갈래마다 확인과 `git clone --bare`/`git remote add`, 앞 phase 산출물), 적는 규칙 "조건"(갈래, 원격 차림)·"TODO"(앞 phase의 산출물에 대어 맞춘다), phase의 "1. 읽는다"(다른 phase 파일과 `done-phase-N.md`를 읽지 않는다)를 읽음 → #37, #41, #42의 해결이 저마다 있다. 통과
+  - 완료 조건 6: `docs/TOOLS.md` 장면 E·F·G 절 → 2.1.311, 시각(21:16:18, 21:16:18, 21:28:06), 세션 id, 기대한 결과, 본 결과가 있고 셋 모두 "기대와 같다". 통과
+  - 완료 조건 6: `git log -1 --format=%cI -- plugins/plate/skills/plan/SKILL.md plugins/plate/skills/phase/SKILL.md` → `2026-10-27T21:16:02+09:00`. 장면 E·F·G의 시각이 더 늦다. 통과
+  - 완료 조건 6: eval의 "2. 실패를 모아 MAST 유형으로 나눈다" → `남은 것:` 줄은 회고가 "문제"로 판정한 것만 실패로 센다는 #36의 해결이 있다. 통과
+  - 완료 조건 6: `docs/TOOLS.md` 장면 H·I 절 → 2.1.311, 시각(21:35:55, 21:35:58), 세션 id, 기대한 결과, 본 결과가 있고 둘 모두 "기대와 같다". 통과
+  - 완료 조건 6: `git log -1 --format=%cI -- plugins/plate/skills/eval/SKILL.md plugins/plate/skills/review/SKILL.md` → `2026-10-27T21:34:17+09:00`. 장면 H·I의 시각이 더 늦다. 통과
+  - 완료 조건 6: `python3 -m unittest discover -s tests` → 마지막 줄 `OK`. 통과
+  - 완료 조건 6: 복사본에서 `.codex-plugin/plugin.json`의 버전만 `0.17.1`로 → `FAIL: test_versions_match`, `FAILED (failures=1)`. 새 복사본에서 run의 #44 글(회고, 코드 평가, eval 뒤 "그 자리에서 `RUNLOG.md`만 한 커밋으로 넣는다…" 세 곳)을 지움 → `test_44_runlog_commit_after_retro`, `test_44_runlog_commit_after_review_and_eval` 등 `FAILED (failures=5)`. 통과
+  - 완료 조건 6: `cat docs/BACKLOG.md` → `# BACKLOG` 한 줄. 통과
+  - 완료 조건 6: `grep -h '"version"' …` → 두 줄 모두 `"version": "0.17.0",`. 통과
+  - 완료 조건 6: `claude plugin validate .` → 마지막 줄 `✔ Validation passed`. 통과
+  - 완료 조건 6: `docs/PRD.md`(7항), `docs/ARCHITECTURE.md`(39, 54, 64~71행), `docs/ADR.md`(걸리는 줄 없음), `docs/TOOLS.md`, `README.md`(`run` 행)를 따로 읽음 → 시작 물음, RUNLOG 커밋, 고칠 phase, 새 테스트 설명이 바뀐 동작과 맞고 어긋나는 줄이 없다. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 149 tests`, `OK`. 통과
+
+**테스트 먼저 기록**
+- 기록 "한 일"의 "테스트 먼저" 항목 → 실패 출력(`AssertionError: 1142 not less than or equal to 1024`, `FAILED (failures=1)`) 다음에 통과 출력(`Ran 17 tests`, `OK`)이 이 순서로 있다. 통과
+
+**남은 것**
+- 장면 A~D의 해시가 `git rev-parse HEAD:…`와 같다는 것은 커밋 뒤에야 볼 수 있다 → 완료 조건 6의 해시 확인에 걸리지만, 이 확인에서 커밋 뒤의 값을 직접 돌려 같음을 봤다(`ece6d9e…`). 남은 위험이 아니다. 하네스에서 걸린 것
+- 장면 D에 결과 줄(`duration_ms`)이 없다 → 완료 조건 5가 보는 버전, 시각, 세션 id, 해시, 기대, 본 결과는 모두 있다. 걸리지 않는다. 하네스에서 걸린 것
+- Codex가 자르는 단위가 글자인지 바이트인지 다시 보지 않았다 → 완료 조건 1의 확인은 `python3`의 글자 수이고 Codex의 동작은 통과 조건이 보지 않는다. 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 장면 A~D 해시의 커밋 뒤 비교는 수행이 볼 수 없어 확인으로 넘겼다(이 확인에서 같음을 봤다)
+- 남은 것: 장면 D는 프로세스를 끝내 결과 줄(`duration_ms`)이 없다
+- 남은 것: description 길이를 `len()`(유니코드 글자 수)으로 센다. Codex가 자르는 단위가 글자인지 바이트인지는 다시 보지 않았다
+- 완료 조건 4의 "description을 1025자로 늘린다"는 늘리는 법을 적지 않아, 이 확인의 첫 시도(원래 글을 세 번 이어 붙임)가 `context`의 272자를 816자로만 늘려 테스트가 `OK`였다. 1025자로 채워 다시 돌렸다
+
+**판정**: 통과
