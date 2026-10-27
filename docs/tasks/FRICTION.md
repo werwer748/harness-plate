@@ -5,3 +5,4 @@
 - `001-cleanup-skill` 문제: task 머리 결정의 "확인용 실행"이 장면 2를 먼저 잇는 까닭을 "plan은 승인 전에 아무것도 쓰지 않으므로 폴더가 바뀌지 않는다"로 적었으나, phase 1이 쓴 스킬 7번은 plan을 부르기 전에 미룸 커밋을 넣어 HEAD가 옮겨졌다. phase 2가 장면 1 전에 복제본을 `git reset --hard fd899a0`으로 되돌려야 했다(`done-phase-2.md`의 "계획과 달라진 점"). 계획이 정한 확인 차례가 뒤 phase가 정할 스킬 절차에 기대었다
 - `001-cleanup-skill` 문제: task 머리 결정의 허용 목록(`git add/commit/log/diff/show/status`, `gh issue list`, `python3`)에 스킬이 쓰는 `git ls-files`와 `git rev-parse`, `git -C … show` 꼴, 파이프·`;`를 이은 Bash가 맞지 않아 첫 턴의 메인과 서브에이전트 명령 20여 개가 막혔고, 일부 2라운드 에이전트는 git 이력의 지난 tasks 기록을 다시 읽지 못하고 작업 트리로만 판정했다(`docs/TOOLS.md`의 cleanup 절 "막힌 명령"). 계획이 확인용 허용 목록을 스킬 본문의 명령에 대어 보지 않았다
 - `001-cleanup-skill` 문제: phase 스킬(`plate:phase`)의 1번은 task 머리와 그 phase의 파일만 읽는다고 하는데, phase 2 수행이 시작할 때 `done-phase-1.md`를 읽었다(`done-phase-2.md`의 "하네스에서 걸린 것"). 바꾼 것은 없었다
+- `002-docs-release` 없음
