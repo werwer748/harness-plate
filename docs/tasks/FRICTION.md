@@ -8,3 +8,7 @@
 - `001-ruleset-probe` 스킬 후보: 장면마다와 확인마다 같은 묶음(`gh workflow run` → 실행 결론 → `gh pr view --json state,author,mergedBy` → rule suite 조회)을 손으로 되풀이했다(`done-phase-2.md`의 "한 일"과 확인 1). 시험 저장소에서 PR 하나의 머지 결과와 rule suite를 모아 내는 스킬이 있으면 장면 기록과 확인의 손일이 준다
 - `002-guard-setup` 문제: task 머리 완료 조건 4와 phase 3 통과 조건의 확인이 `docs/ARCHITECTURE.md`를 "17·20·23줄, 49줄, 51줄(계획 커밋 시점 기준)"처럼 줄 번호로 가리켜, 같은 task가 그 문서를 고치는 동안 확인 쪽과 회고가 계획 커밋 `807bfc6`의 파일과 견줘 줄이 같은 항목인지부터 봐야 했다. 계획 스킬(`plate:plan`)의 확인 글이 고쳐질 문서를 줄 번호 대신 항목 이름으로 가리키면 이 손일이 준다(`docs/tasks/002-guard-setup/done-phase-3.md`의 확인 1)
 - `003-release` 없음
+- `004-fixes` 문제: task 머리 완료 조건 1이 바뀐 파일 목록을 파일 목록 API로 받게 정했는데, 그 API는 PR 하나에 파일 3000개까지만 내서 그보다 큰 PR은 잘린 목록을 받고 잘린 뒤쪽의 워크플로 경로를 판정 검사가 놓친다. 계획(완료 조건 1)이 이 한계와 다룰 길(예: 목록 수가 한도에 닿으면 request)을 적지 않았고 시험도 하지 않았다(`docs/tasks/004-fixes/done-phase-1.md`의 "남은 것", `plugins/plate/skills/setup/SKILL.md` 426줄)
+- `004-fixes` 문제: 완료 조건 3이 "도구를 더하거나 ADR로 두지 않는다" 둘 중 하나를 고르게 해 수행 쪽(`plate:phase`)이 사용자 없이 ADR-024(두지 않음)를 골랐고, ADR의 이유에 "사용자가 말한 이유는 따로 없다"고 적었다. 기술 선택을 계획(`plate:plan`)이 정하지 않고 수행에 넘긴 자리다(`docs/ADR.md` ADR-024, `done-phase-1.md`의 "하네스에서 걸린 것")
+- `004-fixes` 문제: CODEOWNERS 쓰기·건너뛰기를 따라 한 셸 스크립트가 세션 scratchpad(`codeowners-sim.sh`)에만 있고 `docs/TOOLS.md`의 새 절은 결과만 적는다. 001에서 scratchpad 근거를 저장소로 옮기는 고침을 했는데 같은 꼴이 다시 생겼다(`done-phase-1.md`의 "한 일")
+- `004-fixes` 문제: phase 1을 시작할 때 `docs/tasks/RUNLOG.md`에 커밋되지 않은 변경이 있어 수행 쪽이 커밋에 넣지 않았다(`done-phase-1.md`의 "하네스에서 걸린 것")
