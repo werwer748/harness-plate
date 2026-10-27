@@ -20,7 +20,7 @@ run의 #34, #35, #38, #40, #44가 고쳐지고, 맥락 문서와 README가 고�
      - 장면 B(#44): phase가 모두 통과하고 회고가 없는 작은 tasks를 tasks 일괄로 돌리면, 회고 커밋 뒤와 하네스 eval 커밋 뒤에 `RUNLOG.md`만 바꾼 커밋이 저마다 있고, "고칠지"를 묻고 멈춘 자리에서 `git status --short`가 비었다
      - 장면 C(#34, #38): 마지막 회고 절의 문제가 task 머리의 완료 조건을 좁혀야 고칠 수 있는 작은 tasks를 tasks 일괄로 돌리면, 새 `phase-M.md`가 생기지 않고 출력이 원인과 해결책을 보이고 묻고 멈춘다. 답한 뒤 `RUNLOG.md`의 마지막 물음 줄의 물은 자리가 `멈춤`이다
      - 장면 D(#38): 마지막 회고 절의 문제가 둘(하나는 README에 동작이 적힌 파일의 문제, 하나는 이미 `plan: NNN-slug 수정` 커밋으로 고친 문제)인 작은 tasks를 tasks 일괄로 돌리면, `plan: NNN-slug 수정` 커밋의 `phase-M.md`가 앞의 문제의 TODO에 README 경로를 두고, 뒤의 문제는 TODO에 없고 통과 조건에 그 커밋 해시와 함께 있다
-   - 확인: 그 절들의 돌린 시각이 모두 `git log -1 --format=%cI -- plugins/plate/skills/run/SKILL.md`보다 늦다
+   - 확인: 장면 B의 돌린 시각이 `git log -1 --format=%cI -- plugins/plate/skills/run/SKILL.md`보다 늦고, 장면 A·C·D의 돌린 시각이 `dfb0852`(2026-10-27T18:38:03+09:00)보다 늦고, `git diff dfb0852 HEAD -- plugins/plate/skills/run/SKILL.md`를 읽어 `dfb0852` 뒤에 바뀐 글이 `docs/TOOLS.md`를 커밋 자리에 넣는 글뿐이다
    - 돌리지 않음: #35는 에이전트의 사용량이 돌아오지 않는 경우를 장면으로 만들 수 없다
 
 ## 결정
@@ -28,3 +28,4 @@ run의 #34, #35, #38, #40, #44가 고쳐지고, 맥락 문서와 README가 고�
 - 장면 절은 장면마다 Claude Code 버전, 복제본의 main 커밋, 돌린 시각, 세션 id, 차린 tasks의 꼴, 기대한 결과, 본 결과, 걸린 시간, 막힌 명령을 적고, 임시 폴더의 기록 경로도 적되 지워질 수 있다고 밝힌다. 이유: tasks 완료 조건 1의 확인이 이 필드를 본다
 - `RUNLOG.md`의 새 커밋 메시지는 회고 뒤가 `NNN-slug: RUNLOG`, 코드 평가와 하네스 eval 뒤가 `<tasks 이름>: RUNLOG`다 (추천안으로 정함)
 - 시작할 때의 권한 물음의 물은 자리는 `권한`이고 task 이름 자리는 "없음"이다 (추천안으로 정함)
+- run 본문을 고치는 고칠 phase가 생겨, 시각 확인을 장면이 본 동작이 바뀐 커밋 기준으로 좁히고 그 동작에 걸리는 장면 B만 다시 돌린다 (001-run-rules phase 4의 멈춤에서 승인)
