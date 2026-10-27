@@ -1,6 +1,6 @@
 """release-prep tasks가 고친 스킬 규칙의 글이 본문의 제자리에 남아 있는지 시험한다.
 
-이슈마다(run의 #34·#35·#38·#40·#44, plan의 #37·#41, phase의 #42, eval의 #36) 그 규칙을 이루는
+이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41, phase의 #42, eval의 #36) 그 규칙을 이루는
 글이 그 본문의 그 절에 있는지 본다. 글이 빠지거나 다른 절로 옮겨지면 실패한다.
 모든 스킬의 앞머리가 Agent Skills 규격의 한도(description 1024자, name 64자) 안에 있는지도 본다.
 """
@@ -187,6 +187,38 @@ class RunRulesTest(unittest.TestCase):
         end = section(self.text, "tasks 끝")
         self.assertEqual(end.count("그 자리에서 `RUNLOG.md`만 한 커밋으로 넣는다"), 2)
 
+
+    def test_46_fix_file_checked_by_time_or_hash_stops(self):
+        body = section(self.text, "8. 고칠 phase를 더한다")
+        self.assertIn("고칠 파일이 task 머리나 tasks 머리의 완료 조건이 돌린 시각이나 본문 해시로 보는 파일이면", body)
+        self.assertIn("고친 뒤 그 확인을 다시 참으로 둘 길(고친 본문으로 다시 돌리는 TODO나 phase)이 계획에 있는지도 본다", body)
+        self.assertIn("이 경우도 계획을 바꾸게 하는 문제다", body)
+        stop = section(self.text, "멈춘다")
+        self.assertIn("고칠 파일이 완료 조건이 돌린 시각이나 본문 해시로 보는 파일인데 고친 뒤 그 확인을 다시 참으로 둘 길이 계획에 없을 때도 든다(8번)", stop)
+
+    def test_47_no_command_substitution_in_git_commands(self):
+        self.assertIsNone(re.search(r"git[^`\n]*\$\(", self.text))
+        body = section(self.text, "8. 고칠 phase를 더한다")
+        self.assertIn("먼저 `git log -1 --format=%h -- docs/tasks/NNN-slug/retro.md`로 마지막 회고 절을 더한 커밋의 해시를 얻고", body)
+        self.assertIn("그 해시를 넣어 `git log --format='%h %s' {해시}..HEAD -- docs/tasks/`를 따로 불러 찾는다", body)
+        terms = section(self.text, "낱말")
+        self.assertIn("먼저 `git merge-base {기본 브랜치} HEAD`로 갈라진 곳의 해시를 얻고", terms)
+        self.assertIn("그 해시를 넣어 `git diff --name-only {해시} HEAD`를 따로 부른다", terms)
+
+    def test_48_one_decision_line_per_plan_fix(self):
+        body = section(self.text, "멈춘다")
+        self.assertIn("계획 수정마다 결정 줄 하나다", body)
+        self.assertIn("커밋하기 전에 이번 수정의 결정 줄이 task 머리(tasks 머리를 고쳤으면 tasks 머리에도)에 있는지 보고", body)
+        self.assertLess(body.index("커밋하기 전에 이번 수정의 결정 줄이"), body.index("고친 계획 파일과 `RUNLOG.md`만 커밋한다"))
+
+    def test_51_marker_line_ends_every_hand_off_block(self):
+        for heading in ("4. 수행을 맡긴다", "5. 확인을 맡긴다", "7. task 회고를 맡긴다", "코드 평가를 맡긴다", "하네스 eval을 맡긴다"):
+            with self.subTest(heading=heading):
+                blocks = re.findall(r"^```\n(.*?)\n```$", subsection(self.text, heading), re.S | re.M)
+                self.assertEqual(len(blocks), 1)
+                self.assertEqual(blocks[0].split("\n")[-1], "부른 쪽: plate:run")
+        self.assertIn("`고칠 문제:` 줄은", section(self.text, "4. 수행을 맡긴다"))
+        self.assertIn("**표지 줄**: 맡기는 글 코드 블록의 마지막 줄 `부른 쪽: plate:run`", section(self.text, "낱말"))
 
 class PlanRulesTest(unittest.TestCase):
     def setUp(self):
