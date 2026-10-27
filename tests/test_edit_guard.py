@@ -242,6 +242,16 @@ class PlanFirstTest(GuardTestCase):
         self.assertBlocked(p.edit(".github/workflows/plate-review.yml"), PLAN_FIRST)
         self.assertBlocked(p.edit(".github/workflows/plate-review.yml", tool="Write"), PLAN_FIRST)
 
+    def test_setup_writes_new_codeowners(self):
+        # 이미 셋업된 프로젝트에서 setup을 다시 불러 CODEOWNERS를 쓰는 경우: 남은 phase가 없다
+        p = self.project()
+        self.assertPassed(p.edit(".github/CODEOWNERS", tool="Write"))
+        # 이미 있는 CODEOWNERS를 고치는 것은 막는다
+        p.write(".github/CODEOWNERS", "/.github/workflows/ @someone\n")
+        p.commit()
+        self.assertBlocked(p.edit(".github/CODEOWNERS"), PLAN_FIRST)
+        self.assertBlocked(p.edit(".github/CODEOWNERS", tool="Write"), PLAN_FIRST)
+
 
 class TestFirstTest(GuardTestCase):
     def test_blocks_code_without_test_change(self):
@@ -264,6 +274,17 @@ class TestFirstTest(GuardTestCase):
         p.commit()
         self.assertBlocked(p.edit(".github/workflows/plate-review.yml"), TEST_FIRST)
         self.assertBlocked(p.edit(".github/workflows/plate-review.yml", tool="Write"), TEST_FIRST)
+
+    def test_setup_writes_new_codeowners_in_test_first_phase(self):
+        # 이미 셋업된 프로젝트에서 남은 phase가 테스트 먼저일 때 setup을 다시 불러 CODEOWNERS를 쓰는 경우
+        p = self.project()
+        p.add_task("001-a", {1: "예"})
+        self.assertPassed(p.edit(".github/CODEOWNERS", tool="Write"))
+        # 이미 있는 CODEOWNERS를 고치는 것은 막는다
+        p.write(".github/CODEOWNERS", "/.github/workflows/ @someone\n")
+        p.commit()
+        self.assertBlocked(p.edit(".github/CODEOWNERS"), TEST_FIRST)
+        self.assertBlocked(p.edit(".github/CODEOWNERS", tool="Write"), TEST_FIRST)
 
     def test_setup_writes_new_ci_workflow_in_phase_without_test_first(self):
         p = self.project()

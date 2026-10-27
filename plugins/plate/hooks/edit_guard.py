@@ -21,6 +21,8 @@ TEST_NAMES = ("test_*", "*_test.*", "*.test.*", "*.spec.*")
 MARKER = re.compile(r"^\*\*테스트 먼저\*\*:\s*(.*)$")
 PHASE_FILE = re.compile(r"^phase-(\d+)\.md$")
 CI_WORKFLOW = ".github/workflows/plate-review.yml"  # setup이 쓰는 CI 워크플로
+CODEOWNERS = ".github/CODEOWNERS"  # setup이 쓰는 코드 소유자 파일
+SETUP_FILES = (CI_WORKFLOW, CODEOWNERS)  # setup이 처음 쓸 때 막지 않는 파일
 COUNT_FILE = "plate-test-first.json"  # git 폴더 안에 둔다. 작업 트리에 변경을 만들지 않는다
 
 PLAN_FIRST = (
@@ -209,7 +211,7 @@ def check(data):
         return None
     if not is_code_file(rel) or not is_setup(root):
         return None
-    if rel == CI_WORKFLOW and not os.path.exists(os.path.join(root, rel)):
+    if rel in SETUP_FILES and not os.path.exists(os.path.join(root, rel)):
         # setup이 승인받아 처음 쓰는 것. 남은 phase가 있든 없든, 테스트 먼저든 아니든 통과시킨다.
         # 이미 있으면 아래의 막음을 그대로 받는다
         return None
