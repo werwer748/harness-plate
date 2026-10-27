@@ -1,6 +1,7 @@
 """release-prep tasks가 고친 스킬 규칙의 글이 본문의 제자리에 남아 있는지 시험한다.
 
-이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41·#46·#52·#53, phase의 #42, eval의 #36) 그 규칙을 이루는
+이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41·#46·#52·#53, phase의 #42·#51, check의 #51,
+retro의 #49·#51, review의 #51, eval의 #36·#50·#51) 그 규칙을 이루는
 글이 그 본문의 그 절에 있는지 본다. 글이 빠지거나 다른 절로 옮겨지면 실패한다.
 모든 스킬의 앞머리가 Agent Skills 규격의 한도(description 1024자, name 64자) 안에 있는지도 본다.
 """
@@ -265,7 +266,49 @@ class PhaseRulesTest(unittest.TestCase):
         self.assertIn("필요하면 읽지 않고, 무엇이 왜 필요했는지를", body)
 
 
+REPORT_SECTIONS = (
+    ("phase", "6. 다섯 줄을 돌려준다"),
+    ("check", "8. 세 줄을 돌려준다"),
+    ("retro", "9. 세 줄을 돌려준다"),
+    ("review", "9. 네 줄을 돌려준다"),
+    ("eval", "8. 세 줄을 돌려준다"),
+)
+
+
+class CallerMarkerTest(unittest.TestCase):
+    """#51: run이 띄운 호출은 표지 줄이나 작업 트리의 스킬 줄로 가르고, 둘 다 없을 때만 직접 부른 꼴로 보고한다."""
+
+    def test_51_direct_report_only_without_marker(self):
+        for skill, heading in REPORT_SECTIONS:
+            with self.subTest(skill=skill):
+                body = section(read(skill), heading)
+                self.assertIn("맡은 글에 `부른 쪽: plate:run` 줄도 작업 트리의 스킬 줄", body)
+                self.assertIn("`작업 트리의 {경로}를 읽어 그 절차를 따른다.`로 시작하는 줄)도 없을 때만 사용자가 직접 부른 것으로 보고", body)
+                self.assertNotIn("사용자가 직접 불렀으면", body)
+
+
+class RetroRulesTest(unittest.TestCase):
+    def test_49_friction_problem_only_for_remaining_lines_judged_problem(self):
+        body = section(read("retro"), "5. tasks 끝에 볼 것을 모은다")
+        self.assertIn('확인 절 "하네스에서 걸린 것"의 `남은 것:`으로 시작하는 줄은 이번 회고 절 "남은 것"에서 "문제"로 판정한 것만 모으고', body)
+        self.assertIn('"문제 아님"으로 판정한 줄은 모으지 않는다', body)
+
+    def test_49_stop_list_includes_permission(self):
+        body = section(read("retro"), "5. tasks 끝에 볼 것을 모은다")
+        self.assertIn("물은 자리가 `멈춤`이 아닌 줄(권한, 실행 방식,", body)
+
+
 class EvalRulesTest(unittest.TestCase):
+    def test_50_runlog_commits_in_rule_table(self):
+        body = section(read("eval"), "3. 기준마다 근거를 적고 등급을 매긴다")
+        for message in ("`NNN-slug: RUNLOG`", "`<tasks 이름>: RUNLOG`"):
+            with self.subTest(message=message):
+                self.assertIn("| %s | run | `RUNLOG.md`와 사용량 까닭을 적은 `docs/TOOLS.md` |" % message, body)
+
+    def test_50_permission_is_a_set_question(self):
+        body = section(read("eval"), "낱말")
+        self.assertIn("모두(`권한`, `실행 방식`,", body)
+
     def test_36_moved_remaining_lines_count_only_when_retro_says_problem(self):
         body = section(read("eval"), "2. 실패를 모아 MAST 유형으로 나눈다")
         self.assertIn("`남은 것:`으로 시작하는 줄", body)
