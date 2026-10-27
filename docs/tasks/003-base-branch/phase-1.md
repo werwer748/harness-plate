@@ -56,3 +56,37 @@
 
 ## 하네스에서 걸린 것
 - 확인을 처음 돌릴 때 bare 원격에 `git push -q origin main`으로 첫 커밋을 넣으려 하자 plate의 푸시 훅(`push_guard.py`)이 기본 브랜치로의 푸시라며 막았다. 임시 디렉터리의 원격이어도 막는다. `git clone --bare`로 원격을 만들어 푸시 없이 돌렸다. 통과 조건의 확인 글은 원격을 어떻게 채우는지 적지 않아서, 다음 확인도 같은 훅에 걸릴 수 있다
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 1이 참이다.
+  - `mktemp -d` 안에서 `git init -b main src`에 빈 커밋을 넣고 `git clone --bare src remote.git`, `git clone remote.git c`로 원격과 복제본을 만든 뒤 복제본의 `main`에 빈 커밋 `plan: x`를 더하고, run 1번 3항목에 적힌 그대로 `git switch -c tasks/x`, `git remote get-url origin`, `git rev-parse --verify --quiet refs/remotes/origin/main`, `git log --oneline refs/remotes/origin/main..main`, `git branch -f main refs/remotes/origin/main`을 돌렸다 → origin 주소와 ref 해시가 나옴, 되돌리기 전 알아보기 1개, 되돌린 뒤 0개, `git merge-base main tasks/x`가 `refs/remotes/origin/main`의 끝과 같음, `git log tasks/x`에 `plan: x` 커밋이 있음, 지금 브랜치는 `tasks/x` 그대로, 임시 디렉터리 지움. 통과
+- 완료 조건 2가 참이다.
+  - `plugins/plate/skills/run/SKILL.md` 496줄의 물은 자리 목록과 497줄의 task에 걸리지 않는 물음 목록 → 둘 다 `기본 브랜치`가 있다. 통과
+- 완료 조건 3이 참이다.
+  - run 47줄의 "작업 트리의 스킬 줄" → "원격 추적 ref(`origin/{기본 브랜치}`)가 아니라 로컬 기본 브랜치와의 merge-base(`git merge-base {기본 브랜치} HEAD`)". review 31줄의 "갈라진 곳" → "`<기본 브랜치>`는 원격 추적 ref(`origin/<기본 브랜치>`)가 아니라 로컬 기본 브랜치다". 통과
+- 완료 조건 4가 참이다.
+  - `docs/ARCHITECTURE.md` 50줄 "run은 기본 브랜치" 항목 → 새 물음, fetch 없음, origin·ref 없으면 묻지 않음, 커밋은 tasks 브랜치에 남음이 run 본문 66~69줄과 맞다. "데이터 흐름"의 실행 줄 → 브랜치를 만들거나 바꾼 뒤의 새 물음 다음에 실행 방식을 묻는다. `README.md` 10줄 표의 `run` 행 → 시작할 때 새 물음과 실행 방식을 묻는다. 어긋남 없음. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 104 tests`, `OK`. 통과
+
+**남은 것**
+- `git branch -f`는 기본 브랜치가 다른 worktree에 체크아웃돼 있으면 실패하고 본문이 다루지 않는다 → 완료 조건 1의 확인은 worktree가 하나인 복제본만 보므로 걸리지 않는다. 하네스에서 걸린 것
+- `git branch -f`가 기본 브랜치의 upstream을 `origin/<기본 브랜치>`로 잡는다 → 완료 조건 1이 보는 알아보기 수, merge-base, tasks 브랜치의 커밋에 걸리지 않는다. 하네스에서 걸린 것
+- 에이전트가 묻고 답하는 부분은 돌리지 않았다 → 완료 조건 2·3·4는 본문의 글만 보고, task 머리의 결정이 이 부분을 돌리지 않기로 했다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: `git branch -f {기본 브랜치} refs/remotes/origin/{기본 브랜치}`는 기본 브랜치가 다른 worktree에 체크아웃돼 있으면 실패한다. run 1번 본문은 그 경우를 다루지 않는다
+- 남은 것: `git branch -f`로 되돌리면 로컬 기본 브랜치의 upstream이 `origin/<기본 브랜치>`로 잡힌다(`branch 'main' set up to track 'origin/main'.`)
+- 남은 것: 에이전트가 묻고 답하는 부분(목록을 보여 주는 것, `RUNLOG.md`의 `기본 브랜치` 줄)은 돌려 보지 않았다
+- 통과 조건 1의 확인 글이 bare 원격을 어떻게 채우는지 적지 않아, 푸시로 채우면 plate의 푸시 훅(`push_guard.py`)에 걸린다. 이 확인도 `git clone --bare`로 푸시 없이 채웠다
+- 명령 절의 빌드와 린트가 "없음"이다
+
+**판정**: 통과
