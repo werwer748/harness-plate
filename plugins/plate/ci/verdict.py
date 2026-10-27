@@ -7,21 +7,29 @@
     build, lint, test: "pass" | "fail" | "none" | "unmeasured"
     coverage: 0~100의 수 | "skipped" | "unmeasured"
     reliability, security, maintainability: "A"~"E" | "unjudged"
+선택 인자: --changed-files <파일>. PR이 바꾼 파일의 경로를 한 줄에 하나씩 적은 파일이다.
+    `.github/workflows/`로 시작하는 줄이 있으면 merge를 request로 내린다. close와 request는
+    그대로다. 인자가 없으면 목록 없이 판정한다.
 
 출력: stdout에 판정 한 줄. 종료 코드는 0이다.
     close    닫기. 빌드·린트·테스트 가운데 "fail"이 있거나 보안이 C 이하다
     merge    자동 머지. 빌드·린트·테스트가 모두 "pass"나 "none", 커버리지가 80 이상이나
-             "skipped", 신뢰성·보안·유지보수성이 모두 "A"다
-    request  머지 요청. 그 밖이다. 모름("unmeasured", "unjudged")은 여기로 온다
+             "skipped", 신뢰성·보안·유지보수성이 모두 "A"이고, 바뀐 파일 목록에 워크플로
+             경로가 없다
+    request  머지 요청. 그 밖이다. 모름("unmeasured", "unjudged")과 워크플로를 바꾼 PR의
+             merge는 여기로 온다
 
 예: echo "$BUNDLE" | python3 verdict.py
+    echo "$BUNDLE" | python3 verdict.py --changed-files changed.txt
 """
 
+import argparse
 import json
 import sys
 
 COMMANDS = ("build", "lint", "test")
 GRADES = ("reliability", "security", "maintainability")
+WORKFLOW_PREFIX = ".github/workflows/"
 
 
 def coverage_ok(value):
@@ -42,8 +50,20 @@ def verdict(bundle):
     return "request"
 
 
+def touches_workflow(paths):
+    return any(path.strip().startswith(WORKFLOW_PREFIX) for path in paths)
+
+
 def main():
-    print(verdict(json.load(sys.stdin)))
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--changed-files")
+    args = parser.parse_args()
+    result = verdict(json.load(sys.stdin))
+    if result == "merge" and args.changed_files is not None:
+        with open(args.changed_files, encoding="utf-8") as listing:
+            if touches_workflow(listing):
+                result = "request"
+    print(result)
     return 0
 
 
