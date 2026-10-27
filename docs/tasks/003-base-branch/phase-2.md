@@ -44,3 +44,32 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 회고 1의 문제가 모두 고쳐졌다.
+  - `mktemp -d`에서 `git init -b main src`(빈 커밋), `git clone --bare src remote.git`, `git clone remote.git c`, 복제본에 `git branch tasks/y`, `main`에 빈 커밋 `plan: add task`, `git switch tasks/y` 뒤 run 1번 3항목의 명령을 돌렸다 → `git remote get-url origin`과 `git rev-parse --verify --quiet refs/remotes/origin/main`이 값을 냄, `git log --oneline refs/remotes/origin/main..main`이 `b3af827 plan: add task`, `git log --oneline tasks/y..main`도 `b3af827 plan: add task`를 내서 본문(`plugins/plate/skills/run/SKILL.md` 70~72줄의 "커밋을 내면 묻지 않고 되돌리지 않는다")대로면 `git branch -f`를 하지 않아 그 커밋은 `main`에 남는다. "되돌려도 tasks 브랜치에 남는다"는 글은 `tasks/<이름>..{기본 브랜치}`가 아무것도 내지 않는 갈래(66~69줄)에만 붙어 있다. 통과
+- task 머리의 완료 조건이 모두 참이다.
+  - 1: 같은 임시 디렉터리에서 새 복제본 `main`에 빈 커밋 `plan: x`, `git switch -c tasks/x`, `git remote get-url origin`, `git rev-parse --verify --quiet refs/remotes/origin/main`, `git log --oneline refs/remotes/origin/main..main`, `git log --oneline tasks/x..main`, `git branch -f main refs/remotes/origin/main`을 적힌 그대로 돌렸다 → 되돌리기 전 1개, tasks에 없는 커밋 0개(묻는 갈래), 되돌린 뒤 0개, `git merge-base main tasks/x`가 `refs/remotes/origin/main`의 끝과 같음(`mergebase-ok`), `git log tasks/x`에 `35eb084 plan: x`, 지금 브랜치 `tasks/x`, 임시 디렉터리 지움(`cleaned`). 통과
+  - 2: `plugins/plate/skills/run/SKILL.md` 498줄 물은 자리 목록 "`실행 방식`, `커밋하지 않은 변경`, `기본 브랜치`, …", 499줄 task에 걸리지 않는 물음 "(실행 방식, 커밋하지 않은 변경, 기본 브랜치, 고칠지)"에 저마다 있다. 통과
+  - 3: run 낱말 "작업 트리의 스킬 줄" → "원격 추적 ref(`origin/{기본 브랜치}`)가 아니라 로컬 기본 브랜치와의 merge-base(`git merge-base {기본 브랜치} HEAD`)". review 31줄 "갈라진 곳" → "`<기본 브랜치>`는 원격 추적 ref(`origin/<기본 브랜치>`)가 아니라 로컬 기본 브랜치다". 통과
+  - 4: `docs/ARCHITECTURE.md` 50줄 "run은 기본 브랜치" 항목 → 앞선 커밋이 모두 `tasks/<이름>`에 있으면 묻고, 없는 커밋이 있으면 묻지 않고 그대로 둔다, fetch 없음, origin·ref 없으면 묻지 않음이 run 본문과 같다. "데이터 흐름" 실행 줄 → 브랜치를 만들거나 바꾼 뒤 되돌릴지 묻고 그다음 실행 방식을 묻는 차례가 run 1번→2번과 같다. `README.md` 10줄 `run` 행 → 시작할 때 되돌릴지와 실행 방식을 묻는다는 요약이 본문과 어긋나지 않는다. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 104 tests in 16.735s`, `OK`. 통과
+
+**남은 것**
+- 이미 있던 tasks 브랜치로 바꿨고 기본 브랜치에 tasks 브랜치에 없는 커밋이 있으면, run은 알리기만 하고 그 커밋을 tasks 브랜치로 가져오지 않는다 → 통과 조건(회고 1의 문제, 완료 조건 1~4)이 보는 동작은 되돌릴 때 커밋이 tasks 브랜치에 남는지이고, 그 커밋을 가져오는 일은 목표와 결정에 없어 걸리지 않는다. 하네스에서 걸린 것
+- 에이전트가 묻고 알리는 부분은 돌리지 않았다 → task 머리의 결정("셸로 재현되는 것만 돌린다")대로 통과 조건의 확인이 셸 명령만 보므로 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 이미 있던 tasks 브랜치로 바꿨고 기본 브랜치에 tasks 브랜치에 없는 커밋(예: 진행 중인 tasks에 task를 더한 계획의 커밋)이 있으면 run은 알리기만 하고 가져오지 않아, tasks 브랜치의 작업 트리에 그 계획이 없을 수 있다. 가져오는 방법(합치기, cherry-pick)은 이 task의 결정에 없다
+- 남은 것: 에이전트가 묻고 알리는 부분(목록을 보여 주는 것, `RUNLOG.md`의 `기본 브랜치` 줄)은 돌리지 않았다
+
+**판정**: 통과
