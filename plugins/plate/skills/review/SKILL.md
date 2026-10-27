@@ -28,7 +28,7 @@ CI의 워크플로가 PR 모드로 부르면 0~9번 대신 "PR 모드" 절을 �
 - **task 폴더**: tasks 안의 task 하나의 폴더(`docs/tasks/NNN-slug/`). 그 안에 task 머리, phase마다의 `phase-N.md` 또는 통과해 이름이 바뀐 `done-phase-N.md`, `retro.md`가 있다.
 - **task 머리**: task 폴더의 `plan.md`. 제목과 네 절(목표, 범위 밖, 완료 조건, 결정)이다.
 - **기본 브랜치**: 원격 `origin`의 HEAD가 가리키는 브랜치(`git symbolic-ref --short refs/remotes/origin/HEAD`에서 `origin/`을 뺀 것). 그것이 없으면 `main`, `main`도 없으면 `master`다.
-- **갈라진 곳**: `git merge-base <기본 브랜치> HEAD`가 가리키는 커밋.
+- **갈라진 곳**: `git merge-base <기본 브랜치> HEAD`가 가리키는 커밋. `<기본 브랜치>`는 원격 추적 ref(`origin/<기본 브랜치>`)가 아니라 로컬 기본 브랜치다. 로컬 기본 브랜치가 원격보다 앞서 있어도 로컬의 것으로 잡는다.
 - **결과물인 마크다운 절**: `docs/ARCHITECTURE.md`의 `## 결과물인 마크다운` 절. 절의 목록 줄(`- `)마다 프로젝트가 결과물로 내는 `.md`(스킬 본문 같은 것)의 경로를 하나씩 적고, 경로에는 `*` 같은 글롭을 쓸 수 있다. 대부분의 프로젝트에는 이 절이 없다. PR 모드는 이 절을 기준 브랜치의 것에서 읽는다("PR 모드" 절).
 - **결과물인 마크다운**: 결과물인 마크다운 절에 적힌 경로에 드는 `.md` 파일. 절이 없으면 결과물인 마크다운도 없다.
 - **바뀐 코드 파일**: 갈라진 곳부터 HEAD까지 더해지거나 바뀐 파일(`git diff --name-only --diff-filter=d <갈라진 곳> HEAD`) 가운데 `.md`가 아니거나 결과물인 마크다운이고, `docs/tasks/` 밖에 있고, 도구가 만든 파일(`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `poetry.lock` 같은 잠금 파일, 빌드 산출물)이 아닌 것. 결과물인 마크다운 절이 없으면 `.md`는 모두 빠진다.

@@ -1,6 +1,6 @@
 ---
 name: run
-description: 계획된 tasks를 task 목록의 차례대로, phase 하나씩 실행한다. 시작할 때 실행 방식(task 하나씩, tasks 일괄)을 묻고, `tasks/<이름>` 브랜치에서 phase마다 새 에이전트에게 수행(`plate:phase`)과 확인(`plate:check`)을 맡기고, 확인이 통과한 phase는 `done-phase-N.md`로 이름을 바꾼다. task의 phase가 모두 통과하면 새 에이전트에게 task 회고(`plate:retro`)를 맡기고, 회고에서 나온 문제는 고칠 phase를 더해 고친다(task 하나씩은 승인받고, tasks 일괄은 묻지 않는다). 막힘, 계획이 틀림, 같은 확인이나 회고의 세 번 실패에서는 어느 방식이든 멈추고 원인과 해결책을 보여 논의한다. 띄운 에이전트마다, 물은 자리마다 `docs/tasks/RUNLOG.md`에 한 줄을 남긴다. 모든 task의 회고가 통과하면 tasks 끝에서 서로 다른 새 에이전트에게 코드 평가(`plate:review`)와 하네스 eval(`plate:eval`)을 맡기고, 전체 보고와 함께 고칠 안(고침 task, GitHub 이슈, `docs/BACKLOG.md`로 미룰 것)을 한 번에 물어 승인받은 대로 잇고, `docs/tasks/`를 비운 뒤 origin이 GitHub이면 tasks 브랜치를 푸시해 기본 브랜치로 가는 PR을 열지(plate의 CI 워크플로가 없으면 코드 평가를 PR 댓글로 단다), 아니면 기본 브랜치로 합칠지 묻는다. 계획을 쓴 뒤에, 또는 "실행해줘", "phase 진행하자", "이어서 하자", "끝까지 돌려줘"라고 할 때 쓴다. 계획이 없는 요청에는 쓰지 않는다.
+description: 계획된 tasks를 task 목록의 차례대로, phase 하나씩 실행한다. 시작할 때 실행 방식(task 하나씩, tasks 일괄)을 묻고, `tasks/<이름>` 브랜치에서(계획의 커밋이 로컬 기본 브랜치에만 있으면 로컬 기본 브랜치를 origin의 것으로 되돌릴지 묻는다) phase마다 새 에이전트에게 수행(`plate:phase`)과 확인(`plate:check`)을 맡기고, 확인이 통과한 phase는 `done-phase-N.md`로 이름을 바꾼다. task의 phase가 모두 통과하면 새 에이전트에게 task 회고(`plate:retro`)를 맡기고, 회고에서 나온 문제는 고칠 phase를 더해 고친다(task 하나씩은 승인받고, tasks 일괄은 묻지 않는다). 막힘, 계획이 틀림, 같은 확인이나 회고의 세 번 실패에서는 어느 방식이든 멈추고 원인과 해결책을 보여 논의한다. 띄운 에이전트마다, 물은 자리마다 `docs/tasks/RUNLOG.md`에 한 줄을 남긴다. 모든 task의 회고가 통과하면 tasks 끝에서 서로 다른 새 에이전트에게 코드 평가(`plate:review`)와 하네스 eval(`plate:eval`)을 맡기고, 전체 보고와 함께 고칠 안(고침 task, GitHub 이슈, `docs/BACKLOG.md`로 미룰 것)을 한 번에 물어 승인받은 대로 잇고, `docs/tasks/`를 비운 뒤 origin이 GitHub이면 tasks 브랜치를 푸시해 기본 브랜치로 가는 PR을 열지(plate의 CI 워크플로가 없으면 코드 평가를 PR 댓글로 단다), 아니면 기본 브랜치로 합칠지 묻는다. 계획을 쓴 뒤에, 또는 "실행해줘", "phase 진행하자", "이어서 하자", "끝까지 돌려줘"라고 할 때 쓴다. 계획이 없는 요청에는 쓰지 않는다.
 ---
 
 # 실행
@@ -44,7 +44,7 @@ description: 계획된 tasks를 task 목록의 차례대로, phase 하나씩 실
 - **고침 task**: tasks 끝에서 고치기로 한 것을 고치려고 같은 tasks에 더한 task. task 머리의 제목이 `# tasks 끝의 문제를 고친다`다.
 - **`docs/BACKLOG.md`**: 미룬 소스 문제를 tasks를 넘어 모으는 문서. `docs/tasks/` 밖에 있어 비워도 남는다.
 - **기본 브랜치**: 원격 `origin`의 HEAD가 가리키는 브랜치(`git symbolic-ref --short refs/remotes/origin/HEAD`에서 `origin/`을 뺀 것). 그것이 없으면 `main`, `main`도 없으면 `master`다.
-- **작업 트리의 스킬 줄**: 맡기는 글의 끝에 붙이는 한 줄 `작업 트리의 {경로}를 읽어 그 절차를 따른다. 불러 온 스킬의 본문과 다르면 이 파일을 따른다.`. `{경로}`는 그 글이 부르는 plate 스킬(`plate:phase`라면 `phase`)의 저장소 안 `SKILL.md` 경로다. 기본 브랜치에서 갈라진 곳부터의 tasks 커밋이 그 파일을 바꿨을 때만 붙인다: `git diff --name-only $(git merge-base {기본 브랜치} HEAD) HEAD`가 낸 경로 가운데, 이름이 `plate`인 `.claude-plugin/plugin.json`을 둔 폴더 아래의 `skills/{스킬 이름}/SKILL.md`가 있으면 그것이 `{경로}`다. 없거나 git 레포가 아니면 붙이지 않는다. 세션에 실린 스킬 본문은 세션을 띄울 때의 것이라, tasks가 고친 스킬은 이름으로만 맡기면 고치기 전의 절차로 돈다.
+- **작업 트리의 스킬 줄**: 맡기는 글의 끝에 붙이는 한 줄 `작업 트리의 {경로}를 읽어 그 절차를 따른다. 불러 온 스킬의 본문과 다르면 이 파일을 따른다.`. `{경로}`는 그 글이 부르는 plate 스킬(`plate:phase`라면 `phase`)의 저장소 안 `SKILL.md` 경로다. 기본 브랜치에서 갈라진 곳부터의 tasks 커밋이 그 파일을 바꿨을 때만 붙인다. 갈라진 곳은 원격 추적 ref(`origin/{기본 브랜치}`)가 아니라 로컬 기본 브랜치와의 merge-base(`git merge-base {기본 브랜치} HEAD`)다: `git diff --name-only $(git merge-base {기본 브랜치} HEAD) HEAD`가 낸 경로 가운데, 이름이 `plate`인 `.claude-plugin/plugin.json`을 둔 폴더 아래의 `skills/{스킬 이름}/SKILL.md`가 있으면 그것이 `{경로}`다. 없거나 git 레포가 아니면 붙이지 않는다. 세션에 실린 스킬 본문은 세션을 띄울 때의 것이라, tasks가 고친 스킬은 이름으로만 맡기면 고치기 전의 절차로 돈다.
 - **GitHub 원격**: URL(`git remote get-url origin`)이 `github.com`의 것인 `origin`.
 - **plate 워크플로**: `.github/workflows/` 아래에 있는, `plate@harness-plate`가 적힌 파일. setup이 쓰는 `.github/workflows/plate-review.yml`이 그것이고, PR마다 코드를 평가해 그 평가서를 PR 댓글로 단다.
 - **맥락 문서**: `AGENTS.md`의 문서 지도에 적힌 문서 가운데 `docs/tasks/` 행을 뺀 것.
@@ -64,6 +64,9 @@ git 레포가 아니면 커밋하지 않는다고 알리고 2번으로 간다. �
 1. **계획의 커밋.** 계획 파일 가운데 한 번도 커밋되지 않은 것이 있으면 그 파일들만 커밋한다. 메시지는 `plan: <이름>`이다(`<이름>`은 tasks 머리의 이름).
 2. **커밋하지 않은 변경.** 남은 첫 phase의 `phase-N.md`와 `docs/tasks/RUNLOG.md`는 세지 않는다. `phase-N.md`는 앞 수행이 커밋하지 않고 남긴 기록이고, 다음 수행이 그 위에 이어 적어 그 phase의 커밋에 넣는다. `RUNLOG.md`는 이 스킬이 뒤의 커밋에 넣는다. 그 밖의 변경이 있으면 파일 목록을 보여 주고 그대로 진행할지 묻는다. 진행하면 그 변경은 건드리지 않고 어느 커밋에도 넣지 않는다. 거절하면 `RUNLOG.md`에 그 물음의 줄만 더하고 끝난다.
 3. **tasks 브랜치.** 지금 브랜치가 기본 브랜치이면 `git switch -c tasks/<이름>`으로 브랜치를 만들어 바꾼다. 그 브랜치가 이미 있으면 `git switch tasks/<이름>`으로 바꾼다. 기본 브랜치가 아니면 만들지 않고 지금 브랜치에서 실행한다. 끝의 평가와 보고까지 가지 않은 tasks가 기본 브랜치에 들어가지 않게 하는 것이다.
+   브랜치를 만들거나 바꾼 뒤에는 로컬 기본 브랜치에 원격보다 앞선 커밋이 있는지 본다. plan은 브랜치를 바꾸지 않아서, 기본 브랜치에서 계획하면 계획의 커밋이 로컬 기본 브랜치에만 들어간다. `git remote get-url origin`이 실패하거나 `git rev-parse --verify --quiet refs/remotes/origin/{기본 브랜치}`가 아무것도 내지 않으면 견줄 것이 없으니 묻지 않는다. 원격을 새로 받지 않는다(`git fetch`를 하지 않는다). 둘 다 있으면 `git log --oneline refs/remotes/origin/{기본 브랜치}..{기본 브랜치}`로 알아본다. 아무것도 내지 않으면 묻지 않는다. 커밋이 나오면 그 목록을 보여 주고, 로컬 기본 브랜치를 `origin/{기본 브랜치}`로 되돌릴지 묻는다. 그 커밋은 이미 `tasks/<이름>`에 들어 있어서 되돌려도 tasks 브랜치에 남는다고 함께 적는다.
+   - 승인하면 `git branch -f {기본 브랜치} refs/remotes/origin/{기본 브랜치}`로 되돌린다. 지금 브랜치는 `tasks/<이름>`이라 작업 트리는 바뀌지 않는다. 그러면 갈라진 곳이 원격 기본 브랜치의 끝이 되어, 계획의 커밋도 tasks의 커밋으로 세어진다.
+   - 거절하면 그대로 두고 잇는다. 갈라진 곳은 로컬 기본 브랜치의 merge-base여서 그 커밋은 tasks의 커밋으로 세어지지 않는다.
 
 ## 2. 실행 방식을 정한다
 
@@ -490,8 +493,8 @@ git 레포가 아니면 커밋하지 않고 지우기만 한다. 그다음 origi
 
 - 에이전트 줄의 토큰, 도구 호출, 시간은 에이전트의 결과와 함께 돌아온 사용량에서 옮긴다. 시간은 초로 적는다. 돌아오지 않은 값은 `모름`으로 적는다.
 - 회고 에이전트의 줄은 phase를 적지 않고 `` `{task 이름}` ``만 적는다. 코드 평가 에이전트와 하네스 eval 에이전트의 줄은 phase를 적지 않고 task 이름 자리에 "없음"을 적는다.
-- 물은 자리는 `실행 방식`, `커밋하지 않은 변경`, `고칠 phase`, `다음 task`, `멈춤`, `고칠지` 가운데 하나다. "멈춘다"에서 물은 것은 계획을 고칠 안의 승인까지 모두 `멈춤`이다.
-- task에 걸리지 않는 물음(실행 방식, 커밋하지 않은 변경, 고칠지)은 task 이름 자리에 "없음"을 적는다.
+- 물은 자리는 `실행 방식`, `커밋하지 않은 변경`, `기본 브랜치`, `고칠 phase`, `다음 task`, `멈춤`, `고칠지` 가운데 하나다. "멈춘다"에서 물은 것은 계획을 고칠 안의 승인까지 모두 `멈춤`이다.
+- task에 걸리지 않는 물음(실행 방식, 커밋하지 않은 변경, 기본 브랜치, 고칠지)은 task 이름 자리에 "없음"을 적는다.
 - `docs/tasks/`를 비운 뒤에 물은 것(PR을 열지, 합칠지, 그 자리의 커밋하지 않은 변경)은 적지 않는다. 그 tasks의 기록은 비운 커밋으로 닫혔고, 하네스 eval도 이미 끝났다.
 - 물은 것과 답은 한 줄로 줄여 적는다. 실행 방식의 답은 `task 하나씩` 또는 `tasks 일괄`로 적는다.
 
