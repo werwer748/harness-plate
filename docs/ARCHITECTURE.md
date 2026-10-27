@@ -56,7 +56,7 @@ docs/                              # 이 레포의 하네스 기록. 위치는 A
 → 맥락(docs/PRD.md, docs/ARCHITECTURE.md, docs/ADR.md, UI 프로젝트면 docs/DESIGN.md)
 → 계획(docs/tasks/에 tasks 머리 plan.md와, task 폴더 NNN-slug/마다 task 머리 plan.md와 phase-N.md를 쓰고 한 커밋으로 넣는다
        → tasks가 진행 중이면 새 요청을 지금 tasks에 task로 더할지 묻는다)
-→ 실행(tasks/<이름> 브랜치를 만들거나 바꾼 뒤, 계획의 커밋이 로컬 기본 브랜치에만 있으면 그 커밋을 보여 주고 로컬 기본 브랜치를 origin의 것으로 되돌릴지 묻는다
+→ 실행(tasks/<이름> 브랜치를 만들거나 바꾼 뒤, 계획의 커밋이 로컬 기본 브랜치에만 있고 그 커밋이 모두 tasks 브랜치에 있으면 그 커밋을 보여 주고 로컬 기본 브랜치를 origin의 것으로 되돌릴지 묻고, tasks 브랜치에 없는 커밋이 있으면 묻지 않고 그대로 둔다고 알린다
        → 실행 방식(task 하나씩, tasks 일괄)을 묻는다
        → phase마다 새 에이전트가 수행해 phase-N.md에 기록을 덧붙이고, 다른 새 에이전트가 통과 조건과 빌드·린트·테스트를 돌려 확인 절을 더한다
        → 확인이 통과하면 phase-N.md를 done-phase-N.md로 바꾼다
