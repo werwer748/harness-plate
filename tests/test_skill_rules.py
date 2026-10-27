@@ -1,6 +1,6 @@
 """release-prep tasks가 고친 스킬 규칙의 글이 본문의 제자리에 남아 있는지 시험한다.
 
-이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41, phase의 #42, eval의 #36) 그 규칙을 이루는
+이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41·#46·#52·#53, phase의 #42, eval의 #36) 그 규칙을 이루는
 글이 그 본문의 그 절에 있는지 본다. 글이 빠지거나 다른 절로 옮겨지면 실패한다.
 모든 스킬의 앞머리가 Agent Skills 규격의 한도(description 1024자, name 64자) 안에 있는지도 본다.
 """
@@ -242,6 +242,21 @@ class PlanRulesTest(unittest.TestCase):
         draft = section(self.text, "6. 초안을 보여 주고 승인받는다")
         self.assertIn("뒤 phase의 실행 조건(허용 목록, 차례)이 앞 phase의 산출물의 동작에 기대는지 본다", draft)
 
+
+    def test_46_rerun_results_compared_by_body_hash(self):
+        body = part(section(self.text, "적는 규칙"), "조건")
+        self.assertIn("돌려 본 결과가 지금 본문의 것인지는 커밋 시각이 아니라 돌릴 때 적은 본문 해시(`git hash-object <경로>`)와 `git rev-parse HEAD:<경로>`로 견준다", body)
+
+    def test_52_earlier_task_changes_named_by_section_and_text(self):
+        body = part(section(self.text, "적는 규칙"), "phase의 파일")
+        self.assertIn("앞 task의 변경에 기대면 이슈 번호만으로 가리키지 않고, 그 파일의 경로와 절 이름과 바뀐 글을 찾을 수 있게 적는다", body)
+
+    def test_53_draft_check_for_run_scenes(self):
+        body = section(self.text, "6. 초안을 보여 주고 승인받는다")
+        self.assertIn("돌려 보는 확인(임시 복제본이나 시험 저장소에서 스킬과 장면을 돌리는 확인)마다 세 가지를 본다", body)
+        self.assertIn("그 차림이 앞 단계(예: 회고 통과, 고칠 것이 나오는 자리)를 지나 기대한 자리에 닿는지", body)
+        self.assertIn("기대가 해결 방식이 아니라 관찰할 결과로 적혔는지", body)
+        self.assertIn("결정과 TODO가 같은 멈출 자리를 말하는지", body)
 
 class PhaseRulesTest(unittest.TestCase):
     def test_42_does_not_read_earlier_phase_records(self):

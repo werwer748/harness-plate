@@ -36,7 +36,7 @@ tests/                             # 단위 테스트(`python3 -m unittest disco
 ├── test_verdict.py                # 판정 스크립트의 테스트
 ├── test_cleanup_skill.py          # 정리 점검 스킬 본문의 꼴(여섯 기준, 맡기는 글, 보고서 양식, 커밋, 묻는 자리, 절대 규칙)의 테스트
 ├── test_manifests.py              # 두 매니페스트의 버전 줄이 같은지의 테스트
-└── test_skill_rules.py            # run·plan·phase·eval 본문의 고친 규칙(시작 권한 물음, RUNLOG 커밋 자리, 계획을 바꾸는 회고의 멈춤, 갈래마다 확인, 앞 phase 산출물에 기대는 조건, 앞 phase 기록 읽지 않음, `남은 것:` 줄, `docs/TOOLS.md` 커밋 규칙이 `RUNLOG.md` 절 한 곳에 있음, 시각·해시로 보는 파일을 고칠 때의 멈춤, git 명령에 명령 치환 없음, 계획 수정마다의 결정 줄, 맡기는 글 다섯의 표지 줄 `부른 쪽: plate:run`)의 글이 제 절에 있는지와 모든 스킬의 앞머리가 Agent Skills 한도(description 1024자, name 64자) 안인지의 테스트
+└── test_skill_rules.py            # run·plan·phase·eval 본문의 고친 규칙(시작 권한 물음, RUNLOG 커밋 자리, 계획을 바꾸는 회고의 멈춤, 갈래마다 확인, 앞 phase 산출물에 기대는 조건, 돌려 본 결과를 본문 해시로 견줌, 앞 task 변경을 절 이름과 바뀐 글로 가리키는 읽을 것, 돌려 보는 확인의 차림·기대·결정과 TODO의 맞물림을 보는 초안 점검, 앞 phase 기록 읽지 않음, `남은 것:` 줄, `docs/TOOLS.md` 커밋 규칙이 `RUNLOG.md` 절 한 곳에 있음, 시각·해시로 보는 파일을 고칠 때의 멈춤, git 명령에 명령 치환 없음, 계획 수정마다의 결정 줄, 맡기는 글 다섯의 표지 줄 `부른 쪽: plate:run`)의 글이 제 절에 있는지와 모든 스킬의 앞머리가 Agent Skills 한도(description 1024자, name 64자) 안인지의 테스트
 docs/                              # 이 레포의 하네스 기록. 위치는 AGENTS.md의 문서 지도를 따른다
 ```
 
