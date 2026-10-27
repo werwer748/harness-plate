@@ -47,3 +47,33 @@
 ## 하네스에서 걸린 것
 - 결정의 장면 R 프롬프트 "run 7번의 맡기는 글에 task 폴더를 넣은 세 줄과 `부른 쪽: plate:run`"은, run 7번의 코드 블록이 이미 `부른 쪽: plate:run`을 셋째 줄로 담고 있어 "세 줄과" 한 줄을 더하면 네 줄로 읽힌다. 코드 블록 그대로의 세 줄(마지막이 `부른 쪽: plate:run`)로 돌렸다
 - 통과 조건의 "돌리기 전과 뒤의 `git status --short`가 같다"는 TODO 1의 체크(이 스킬 2번의 "항목 하나를 끝낼 때마다 `- [x]`로 바꾼다")가 장면 앞에 원본을 바꾸는 것과 맞물린다. 처음 적은 "전"(00:36:37, 빈 출력)은 체크 앞이라, 장면을 띄우기 직전의 것을 "전"으로 적었다
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 4가 참이다
+  - `git show HEAD -- docs/TOOLS.md`로 새 절 "고친 retro·eval·phase를 장면 R·E·P1·P2로 돌려 본 것"을 읽고, 복제본 넷(`/var/folders/0j/cj37rxmj1mj73vhflqpgsxm00000gn/T/tmp.{76H9C4jcJ7,VFG670zFa8,UsX54VhM8I,se95VXuvAu}`)의 `turn<장면>.jsonl` 첫 줄·결과 줄, `start.txt`·`end.txt`, `repo`의 `git log --name-only -1`, R의 `retro.md` 회고 1·`FRICTION.md` 더한 줄, E의 `eval.md` 규칙 준수·사람 개입률·"하네스에서 걸린 것"과 `git log aa3577b..7ea7eef`의 `RUNLOG` 커밋에 직접 대어 봄 → 장면마다 Claude Code 버전(init 줄 `2.1.311`, plate `0.18.0`), 돌린 시각, 세션 id(결과 줄과 같음), 대상 본문 해시, 차림, 기대, 본 결과, 막힌 명령(`permission_denials` 빈 목록)이 있다. R: `84c1f06`이 `retro.md`·`FRICTION.md`만 바꿈, "남은 것" 여섯 줄 모두 "문제 아님", 더한 `문제` 여섯 줄에 그 내용이 없음, `result` 세 줄(`판정: 통과`…)에 `plate:run` 없음. E: `51e104b`가 `eval.md`만 바꿈, 규칙 준수 근거가 `RUNLOG` 커밋을 표 안으로 보고 표에 없는 꼴로 뺀 것은 `584ae16`뿐, 사람 개입률이 "권한 모드를 바꿀지 → 정해 둔 물음", "하네스에서 걸린 것" 세 줄에 `RUNLOG` 행·`권한` 줄 없음, `result` 세 줄에 `plate:run` 없음. P1: `59610b8`에 `hello.txt`·`phase-1.md`, `result`는 `상태: 끝남`부터 다섯 줄뿐. P2: `4fd9c1b`에 같은 두 파일, `result` 다섯 줄 아래 "확인과 그 뒤의 일은 plate의 run 스킬(`plate:run`)을 부르면 이어집니다." 기대와 같다. 통과
+  - `git rev-parse HEAD:plugins/plate/skills/{retro,eval,phase}/SKILL.md` → `f1d13ac4f304a38bfe77b35b176536fa77cb948c`, `9414c9dcbd63ee37bbec018f602f829688cdf404`, `69385efac7a60483bbe40db3ca573da7ca1d90b7`. 절에 적힌 해시와 같다. 통과
+  - 절 머리를 읽음 → 전과 뒤의 `git rev-parse HEAD`가 모두 `34280136ff018c57e3fb17fdd4c03b973217604a`, `git status --short`가 모두 ` M docs/tasks/003-agent-rules/phase-2.md`. 같다. 통과
+- 완료 조건 3이 이 phase의 커밋 뒤에도 참이다
+  - `python3 -m unittest discover -s tests` → `Ran 161 tests`, 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 161 tests in 16.133s`, `OK`. 통과
+
+**남은 것**
+- 원본의 "돌리기 전" `git status --short`를 장면을 띄우기 직전에 재지 않고 00:36:37의 값과 그 뒤 변경(TODO 1 체크)으로 적었다 → 통과 조건 "전과 뒤가 같다"가 보는 동작(장면이 원본을 바꾸지 않음)은 HEAD가 같고 장면 커밋이 모두 복제본에만 있는 것으로 확인돼 걸리지 않는다. 하네스에서 걸린 것
+- 장면 E의 eval이 고치기 전의 `FRICTION.md` 문제 줄과 회고 "문제 아님"의 셈을 정하지 않은 채다 → 장면 E의 기대(`RUNLOG` 행, `권한`)에 걸리지 않는다. 하네스에서 걸린 것
+- 장면 R의 retro가 `문제` 0개로 판정하면서 `FRICTION.md`에 `문제` 여섯 줄을 더했다 → 장면 R의 기대는 "문제 아님" 줄의 내용이 `문제`로 들지 않는 것이고 그 여섯 줄은 확인 절과 계획 수정에서 왔다. 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 통과 조건의 "돌리기 전과 뒤의 `git status --short`가 같다"는 phase 스킬의 TODO 체크가 장면 앞에 원본을 바꾸는 것과 맞물려, "전"을 잰 값이 아닌 추론으로 적게 했다
+- 남은 것: eval 2번이 #49를 고치기 전의 retro가 쓴 `FRICTION.md`(회고에서 "문제 아님"인 줄이 `문제`로 든 것)를 만났을 때 어느 쪽으로 셀지 정하지 않았다
+- 남은 것: retro 5번의 `문제` 갈래는 회고 절의 판정과 별개로 확인 절·기록의 "하네스에서 걸린 것"에서도 모아, 회고 판정 "문제 0개"와 `FRICTION.md`의 `문제` 줄 수가 달라 보인다
+
+**판정**: 통과
