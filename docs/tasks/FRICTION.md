@@ -7,3 +7,4 @@
 - `001-ruleset-probe` 멈춤: phase 2 계획이 틀림(작성자가 유일한 코드 소유자면 워크플로 PR이 토큰으로 머지됨). 사용자 사전 지시로 묻지 않고 해결 에이전트의 추천안(판정 검사를 주 장치로, 장면 2·3 기대 변경)을 채택했다(RUNLOG)
 - `001-ruleset-probe` 스킬 후보: 장면마다와 확인마다 같은 묶음(`gh workflow run` → 실행 결론 → `gh pr view --json state,author,mergedBy` → rule suite 조회)을 손으로 되풀이했다(`done-phase-2.md`의 "한 일"과 확인 1). 시험 저장소에서 PR 하나의 머지 결과와 rule suite를 모아 내는 스킬이 있으면 장면 기록과 확인의 손일이 준다
 - `002-guard-setup` 문제: task 머리 완료 조건 4와 phase 3 통과 조건의 확인이 `docs/ARCHITECTURE.md`를 "17·20·23줄, 49줄, 51줄(계획 커밋 시점 기준)"처럼 줄 번호로 가리켜, 같은 task가 그 문서를 고치는 동안 확인 쪽과 회고가 계획 커밋 `807bfc6`의 파일과 견줘 줄이 같은 항목인지부터 봐야 했다. 계획 스킬(`plate:plan`)의 확인 글이 고쳐질 문서를 줄 번호 대신 항목 이름으로 가리키면 이 손일이 준다(`docs/tasks/002-guard-setup/done-phase-3.md`의 확인 1)
+- `003-release` 없음
