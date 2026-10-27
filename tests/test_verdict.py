@@ -7,6 +7,7 @@ CI의 워크플로가 부르듯 등급 묶음 JSON을 stdin으로 주어 스크�
 import json
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -24,12 +25,18 @@ GOOD = {
 }
 
 
-def verdict(**changes):
+def verdict(changed_files=None, **changes):
+    """changed_files가 경로 목록이면 한 줄에 하나씩 적은 파일을 `--changed-files`로 넘긴다."""
     bundle = dict(GOOD, **changes)
-    done = subprocess.run(
-        [sys.executable, str(SCRIPT)], input=json.dumps(bundle),
-        capture_output=True, text=True,
-    )
+    command = [sys.executable, str(SCRIPT)]
+    with tempfile.TemporaryDirectory() as folder:
+        if changed_files is not None:
+            listing = Path(folder) / "changed.txt"
+            listing.write_text("".join(path + "\n" for path in changed_files))
+            command += ["--changed-files", str(listing)]
+        done = subprocess.run(
+            command, input=json.dumps(bundle), capture_output=True, text=True,
+        )
     if done.returncode != 0:
         raise AssertionError("종료 코드 %d: %s" % (done.returncode, done.stderr))
     return done.stdout
@@ -108,6 +115,30 @@ class CloseTest(unittest.TestCase):
     def test_close_wins_over_unknown(self):
         self.assertEqual(verdict(test="fail", coverage="unmeasured").strip(), "close")
         self.assertEqual(verdict(security="C", reliability="unjudged").strip(), "close")
+
+
+class ChangedFilesTest(unittest.TestCase):
+    WORKFLOW = [".github/workflows/plate-review.yml", "src/app.py"]
+
+    def test_workflow_path_turns_merge_into_request(self):
+        self.assertEqual(verdict(changed_files=self.WORKFLOW).strip(), "request")
+        self.assertEqual(
+            verdict(changed_files=[".github/workflows/other.yaml"]).strip(), "request"
+        )
+
+    def test_workflow_path_keeps_close_and_request(self):
+        self.assertEqual(verdict(changed_files=self.WORKFLOW, test="fail").strip(), "close")
+        self.assertEqual(verdict(changed_files=self.WORKFLOW, security="C").strip(), "close")
+        self.assertEqual(verdict(changed_files=self.WORKFLOW, reliability="B").strip(), "request")
+
+    def test_no_list_or_no_workflow_path_is_unchanged(self):
+        self.assertEqual(verdict().strip(), "merge")
+        self.assertEqual(verdict(changed_files=[]).strip(), "merge")
+        self.assertEqual(
+            verdict(changed_files=["src/app.py", ".github/CODEOWNERS", "docs/.github/workflows/x.yml"]).strip(),
+            "merge",
+        )
+        self.assertEqual(verdict(changed_files=["src/app.py"], test="fail").strip(), "close")
 
 
 if __name__ == "__main__":
