@@ -18,7 +18,7 @@
 1. run의 이슈 다섯이 고쳐졌다: #34(회고의 고침이 계획 파일을 고치게 하면 어느 실행 방식이든 "멈춘다"로 가고 물은 자리는 `멈춤`), #35(모르는 값은 단위 없이 `모름`), #38(고칠 phase의 TODO에 고친 동작을 적은 맥락 문서·README의 줄이 들고, 고침이 계획의 목표·완료 조건을 바꾸면 "멈춘다", 계획 커밋으로 고친 문제는 통과 조건에 따로 적는다), #40(첫 에이전트를 띄우기 전에 plan 모드나 쓰기가 막힐 권한 모드를 알리고 묻는다), #44(회고와 평가 에이전트 뒤의 `RUNLOG.md` 줄이 커밋되어 다음 에이전트가 깨끗한 작업 트리에서 시작한다)
    - 확인: `plugins/plate/skills/run/SKILL.md`의 "1. 시작 조건을 본다", "7. task 회고를 맡긴다", "8. 고칠 phase를 더한다", "tasks 끝", "`RUNLOG.md`" 절을 읽어 다섯 이슈의 해결이 저마다 적혀 있다. 하나라도 없으면 실패
    - 확인: `docs/TOOLS.md`의 run 장면 절을 읽어 장면마다 Claude Code 버전, 돌린 시각, 세션 id, 기대한 결과와 본 결과가 있고, 본 결과가 기대와 같다. 장면은 넷이다: plan 모드에서 run을 부르면 첫 에이전트를 띄우기 전에 묻고 멈춘다(#40), 회고 뒤와 하네스 eval 뒤의 `RUNLOG.md` 줄이 커밋되어 "고칠지"를 묻는 자리에서 `git status --short`가 비었다(#44), 회고의 문제가 task 머리의 완료 조건을 좁혀야 하면 tasks 일괄에서도 "멈춘다"로 가고 답한 뒤 `RUNLOG.md`의 물은 자리가 `멈춤`이다(#34, #38), 고칠 phase의 TODO에 맥락 문서·README의 줄이 들고 계획 커밋으로 고친 문제는 통과 조건에 커밋 해시와 함께 따로 적힌다(#38)
-   - 확인: 장면 B 절에 적힌, 장면을 돌릴 때의 run 본문 해시(`git hash-object plugins/plate/skills/run/SKILL.md`)가 `git rev-parse HEAD:plugins/plate/skills/run/SKILL.md`와 같고, 장면 A·C·D의 돌린 시각이 `dfb0852`(2026-10-27T18:38:03+09:00)보다 늦고, `git diff dfb0852 HEAD -- plugins/plate/skills/run/SKILL.md`를 읽어 `dfb0852` 뒤에 바뀐 글이 `docs/TOOLS.md`를 커밋 자리에 넣는 글뿐이다
+   - 확인: 장면 A~D 절마다 적힌, 장면을 돌릴 때의 run 본문 해시(`git hash-object plugins/plate/skills/run/SKILL.md`)가 `git rev-parse HEAD:plugins/plate/skills/run/SKILL.md`와 같다
    - 돌리지 않음: #35는 에이전트의 사용량이 돌아오지 않는 경우를 장면으로 만들 수 없다
 2. plan과 phase의 이슈 셋이 고쳐졌다: #37(완료 조건이 갈래를 가지면 갈래마다 돌리는 확인을 두고, 요약 줄의 확인에 견줄 갈래를 적고, git 원격이 있는 장면은 푸시 없이 채운다(원격의 내용이 필요하면 `git clone --bare`로 만든 저장소, URL만 보면 `git remote add`로 URL만 둔다). 6번의 점검에도 같은 줄), #41(뒤 phase의 실행 조건이 앞 phase의 산출물에 기대면 그 phase의 TODO 첫 항목이나 결정에 "앞 phase의 산출물에 대어 맞춘다"를 적는다), #42(phase가 앞 phase의 결과가 필요하면 계획의 읽을 것에 적힌 산출물 파일만 읽고, 그 밖의 기록이 필요하면 읽지 않고 "하네스에서 걸린 것"에 적는다)
    - 확인: `plugins/plate/skills/plan/SKILL.md`의 "6. 초안을 보여 주고 승인받는다"와 적는 규칙의 "조건", "TODO" 절, `plugins/plate/skills/phase/SKILL.md`의 "1. 읽는다" 절을 읽어 세 이슈의 해결이 저마다 적혀 있다. 하나라도 없으면 실패
@@ -48,9 +48,11 @@
 - run을 시작하기 전에 사용자가 plan 모드를 끄고 `plugins/plate/skills/` 쓰기가 막히지 않는 권한 모드로 둔다. 이유: `AGENTS.md`의 작업 규칙
 - run 본문을 고치는 고칠 phase가 생겨, 시각 확인을 장면이 본 동작이 바뀐 커밋 기준으로 좁히고 그 동작에 걸리는 장면 B만 다시 돌린다 (001-run-rules phase 4의 멈춤에서 승인)
 - #37의 해결을 `git clone --bare` 하나로 좁히면 URL만 보는 장면(setup의 GitHub 원격)에서 맞는 차림을 막아, 푸시 없이 채우는 두 법으로 넓혔다 (002 phase 2의 멈춤에서 승인)
+- 고침 task가 run 본문을 고쳐, 장면 A~D를 다시 돌리고 시각·diff 확인을 해시 확인으로 바꾼다 (tasks 끝의 "고칠지"에서 승인)
 
 ## task 목록
 - `001-run-rules`: run의 이슈 다섯(#34, #35, #38, #40, #44)이 고쳐지고, 임시 복제본의 네 장면 결과가 `docs/TOOLS.md`에 남는다
 - `002-plan-phase-rules`: plan과 phase의 이슈 셋(#37, #41, #42)이 고쳐지고, 세 장면 결과가 `docs/TOOLS.md`에 남는다
 - `003-eval-review-rules`: eval과 review의 이슈 둘(#36, #43)이 고쳐지거나 이미 고쳐졌음이 확인되고, 두 장면 결과가 `docs/TOOLS.md`에 남는다
 - `004-tests-version`: 버전 줄과 고친 규칙을 시험하는 테스트가 더해지고 BACKLOG 항목이 지워지며, 버전이 0.17.0이 되고 맥락 문서와 README가 맞춰진다
+- `005-fixes`: tasks 끝에서 고치기로 한 것이 고쳐진다
