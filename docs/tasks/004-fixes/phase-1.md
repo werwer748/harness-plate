@@ -37,3 +37,30 @@
 
 ## 하네스에서 걸린 것
 - 완료 조건 2의 `git archive HEAD` 확인은 커밋 전에 도므로 HEAD에 이 phase의 변경이 없다. 이번 변경은 run·retro 본문을 건드리지 않아 결과가 같지만, 같은 확인을 `git stash create` 트리로도 돌려 보탰다
+
+## 확인 1
+
+**통과 조건**
+- task 머리의 완료 조건이 모두 참이다.
+  - 완료 조건 1: `tests/test_skill_rules.py`를 읽음 → 296행의 retro 5번 "멈춤"의 `권한`을 보는 테스트가 `test_50_stop_list_includes_permission`이고, 모듈 docstring 4행에 `retro의 #49·#50·#51`이 있다. 통과
+  - 완료 조건 2, `python3 -m unittest discover -s tests` → `Ran 161 tests`, 마지막 줄 `OK`. 통과
+  - 완료 조건 2, `mktemp -d`에 `git archive HEAD`(`7314cf4`)를 풀고 run 본문의 첫 `부른 쪽: plate:run` 줄(130행)을 지우고 돌림 → `FAIL: test_51_marker_line_ends_every_hand_off_block (test_skill_rules.RunRulesTest) (heading='4. 수행을 맡긴다')`, `FAILED (failures=1)`. 다시 풀어 retro 5번의 #49 해결 글(" 다만 확인 절"부터 "회고 절의 \"문제\"가 갈린다."까지)을 지우고 돌림 → `FAIL: test_49_friction_problem_only_for_remaining_lines_judged_problem (test_skill_rules.RetroRulesTest)`, `FAILED (failures=1)`. 통과
+  - 완료 조건 2, `grep -h '"version"' plugins/plate/.claude-plugin/plugin.json plugins/plate/.codex-plugin/plugin.json` → 두 줄 모두 `"version": "0.18.0",`. 통과
+  - 완료 조건 2, `claude plugin validate .` → 마지막 줄 `✔ Validation passed`. 통과
+  - 완료 조건 2, `docs/PRD.md`의 7(17행), `docs/ARCHITECTURE.md`의 맡기는 글 문단(48행), run 문단(54행), 디렉터리 구조의 `test_skill_rules.py` 줄(39행), `README.md`의 `run` 행(10행)을 따로 읽음 → PRD 7과 run 문단에 해시로 보는 파일을 고칠 때의 멈춤과 계획 수정의 결정 줄이, 맡기는 글 문단에 표지 줄이 적혀 있고, README `run` 행은 해시 멈춤을 적고 나머지는 적지 않을 뿐 어긋나지 않는다. 디렉터리 구조의 줄은 규칙을 이름으로 적어 retro의 `권한` 규칙을 담고 있다. 어긋나는 줄 없음. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 161 tests`, `OK`. 통과
+
+**남은 것**
+- 없음
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
