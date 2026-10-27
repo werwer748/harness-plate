@@ -50,3 +50,31 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- (완료 조건 2) 훅 예외가 시험으로 닫힌다
+  - `python3 -m unittest discover -s tests` → `Ran 104 tests in 17.751s`, 마지막 줄 `OK`. 통과
+  - `tests/test_edit_guard.py` 246~253줄, 279~287줄을 읽음 → 남은 phase 없을 때 처음 쓰기 통과(`PlanFirstTest.test_setup_writes_new_codeowners`의 248줄 Write 통과), 테스트 먼저에서 처음 쓰기 통과(`TestFirstTest.test_setup_writes_new_codeowners_in_test_first_phase`의 282줄), 이미 있으면 막음(252·253줄 PLAN_FIRST, 286·287줄 TEST_FIRST)이 저마다 있다. 통과
+  - 이 phase 기록의 "한 일" 테스트 먼저 항목 → 실패 출력(`FAILED (failures=2)`) 다음에 통과 출력(`OK`)이 있다. 통과
+- (완료 조건 1) 판정 시험이 그대로 통과한다
+  - `python3 -m unittest discover -s tests` → 마지막 줄 `OK`. 통과
+- `docs/ARCHITECTURE.md`가 훅 예외와 맞는다
+  - 20줄, 49줄, 51줄을 읽음 → 20줄은 훅의 역할만 적어 예외와 어긋나지 않는다. 49줄은 "아직 없는 `.github/workflows/plate-review.yml`이나 `.github/CODEOWNERS`를 쓰는 것은 두 막음에서 모두 뺀다", 51줄은 아직 없는 두 파일의 쓰기를 막지 않고 이미 있는 두 파일의 편집은 막는다고 적는다. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 104 tests`, `OK`. 통과
+
+**테스트 먼저 기록**
+- `phase-2.md`의 "한 일" 테스트 먼저 항목 → 실패 출력(`python3 -m unittest tests.test_edit_guard` → `FAILED (failures=2)`)이 먼저, 통과 출력(`OK`)이 그 뒤에 있다. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
