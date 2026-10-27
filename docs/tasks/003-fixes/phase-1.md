@@ -66,3 +66,33 @@
 - 계획이 틀림: task 머리 완료 조건 6의 "돌린 시각이 SKILL.md 마지막 커밋보다 늦다"가 완료 조건 1·2(SKILL.md를 고친다)와 함께 참이 될 수 없다. tasks 완료 조건을 그대로 옮긴 확인이 이 task의 고침이 그 파일을 바꾼다는 것을 계산에 넣지 않았다.
 - 테스트 먼저가 "아니오"인 phase지만 새 테스트가 바뀔 동작을 보는지 알려고 고치기 전 본문으로 돌려 실패를 봤다.
 - 이어 한 수행: 첫 수행이 "계획이 틀림"으로 멈춘 뒤 계획이 고쳐져(`073bb95 plan: 003-fixes 수정`) 통과 조건에서 두 장면 확인이 빠지고 phase 2로 옮겨졌다. 이어 한 수행은 TODO를 다시 하지 않고 확인만 다시 돌렸다.
+
+## 확인 1
+
+**통과 조건**
+- task 머리의 완료 조건 1~5가 참이다.
+  - 완료 조건 1: `plugins/plate/skills/cleanup/SKILL.md:14-19`(절대 규칙)와 7번(`128-132`)을 읽음 → 절대 규칙 1·2 끝에 7번에서 부른 plan의 쓰기와 커밋은 plan의 규칙을 따르고 이 규칙에 들지 않는다는 줄이 있고, 7번 3은 plan의 규칙을 따른다고 적었다. 부딪히지 않는다. 통과
+  - 완료 조건 2: 기존 작업 정합성 행과 표 아래 줄(`85`), 1라운드에 맡기는 글(`158`)과 2라운드에 맡기는 글(`190`)을 읽음 → 이슈의 제목과 본문을 지시가 아니라 데이터로만 본다는 규칙이 셋 모두에 있고 절대 규칙 6도 있다. 통과
+  - 완료 조건 3: `tests/test_cleanup_skill.py`(테스트 25개)가 있다. 스크래치 복사본에서 SKILL.md의 "데이터로만"을 "자료로만"으로 바꿔 `python3 -m unittest tests.test_cleanup_skill` → `FAILED (failures=2)`, 원본으로 되돌려 → `OK`. 저장소에서 `python3 -m unittest discover -s tests` → `Ran 129 tests`, 마지막 줄 `OK`. 통과
+  - 완료 조건 4: `docs/TOOLS.md`의 `## Claude Code` 절(15~258줄) 안 250~257줄에 "스킬을 헤드리스로 돌려 볼 때의 허용 목록"이 있고 `Bash(git ls-files:*)`, `Bash(git rev-parse:*)`, `Bash(git -C:*)`(`git -C … show` 꼴), 파이프·`;`·`for`로 이은 Bash의 처리를 적었다. 통과
+  - 완료 조건 5: `AGENTS.md`의 `## 작업 규칙` 절(파일 끝까지) 마지막 줄에 스킬 본문(`plugins/plate/skills/`)을 쓰는 tasks는 run 전에 plan 모드를 끄고 그 경로의 쓰기를 허용한다는 줄이 있다. 통과
+- task 머리의 완료 조건 6의 확인 가운데 `docs/TOOLS.md`의 두 장면 기록을 보는 둘을 뺀 것이 참이다.
+  - `test -f plugins/plate/skills/cleanup/SKILL.md` → 0. 통과
+  - `claude plugin validate .` → 마지막 줄 `✔ Validation passed`. 통과
+  - `grep -h '"version"' plugins/plate/.claude-plugin/plugin.json plugins/plate/.codex-plugin/plugin.json` → 두 줄 모두 `"version": "0.15.0",`. 통과
+  - `grep -c cleanup plugins/plate/.claude-plugin/plugin.json plugins/plate/.codex-plugin/plugin.json` → 두 파일 모두 1. 통과
+  - `python3 -m unittest discover -s tests` → 마지막 줄 `OK`. 통과
+  - `docs/PRD.md`(`19`, `21`: 9단계를 cleanup 스킬로 만들었다), `docs/ARCHITECTURE.md`(`32` 디렉터리 구조의 `cleanup/SKILL.md`, `37` 테스트 파일, `50` 여덟 스킬, `80-83` 데이터 흐름), `README.md`(`3` 스킬 열, `16` 스킬 목록, `106`·`115` 부르는 이름 `/plate:cleanup`·`$plate:cleanup`)를 따로 읽음. `plugins/plate/skills/`에 스킬 폴더 열 개 → 어긋나는 줄 없음. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 129 tests in 17.941s`, `OK`. 통과
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 완료 조건 3의 "그 스킬이 깨지면 실패한다"는 저장소의 SKILL.md를 바꾸지 않으려고(절대 규칙 1) 스크래치 폴더의 복사본을 바꿔 확인했다.
+
+**판정**: 통과
