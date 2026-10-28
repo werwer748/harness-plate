@@ -5,3 +5,5 @@
 - 물음 | 실행 방식 | 없음 | task 하나씩 또는 tasks 일괄 | 답: tasks 일괄
 - 에이전트 | 수행 | `001-eval-threshold` phase 1 | 토큰 98925 | 도구 호출 15 | 시간 228초
 - 에이전트 | 확인 | `001-eval-threshold` phase 1 | 토큰 61124 | 도구 호출 6 | 시간 82초
+- 에이전트 | 수행 | `001-eval-threshold` phase 2 | 토큰 125668 | 도구 호출 26 | 시간 453초
+- 에이전트 | 확인 | `001-eval-threshold` phase 2 | 토큰 70335 | 도구 호출 9 | 시간 97초
