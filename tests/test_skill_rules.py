@@ -328,6 +328,41 @@ class RunRulesTest(unittest.TestCase):
         self.assertIn("시간 {초}초 | 다시 띄움: {까닭}", runlog)
         self.assertIn("답: 다시 맡긴다", runlog)
 
+    def test_branch_question_when_not_default_or_tasks_branch(self):
+        # 기본 브랜치도 tasks/<이름>도 아니면 바꿀지 묻고, 거절하면 그 줄만 더하고 끝난다(신뢰성-2).
+        body = section(self.text, "1. 시작 조건을 본다")
+        self.assertIn("지금 브랜치가 기본 브랜치도 `tasks/<이름>`도 아니면 지금 브랜치를 보여 주고, `tasks/<이름>`으로 바꿀지 묻고, 거기서 멈춰 답을 기다린다", body)
+        self.assertIn("`RUNLOG.md`에 물은 자리가 `브랜치`인 줄을 더한다", body)
+        self.assertIn("거절하면 실행하지 않고 그 줄만 더하고 끝난다", body)
+        self.assertNotIn("기본 브랜치가 아니면 만들지 않고 지금 브랜치에서 실행한다", body)
+
+    def test_resume_after_clearing_goes_to_pr_or_merge(self):
+        # tasks 머리가 없어도 tasks/<이름>에서 마지막 커밋이 `<이름>: 비움`이면 PR·합침으로 간다(신뢰성-3).
+        body = section(self.text, "0. tasks를 본다")
+        self.assertIn("`git branch --show-current`로 지금 브랜치를 얻는다", body)
+        self.assertIn("`git log -1 --format=%s`로 마지막 커밋의 제목을 얻는다", body)
+        self.assertIn("`git show HEAD^:docs/tasks/plan.md`로 비움 커밋의 부모에 남은 tasks 머리를 읽는다", body)
+        self.assertIn("지금 브랜치가 `tasks/<이름>`이고 마지막 커밋의 제목이 `<이름>: 비움`이면(두 `<이름>`이 같다) 비운 뒤의 재개다", body)
+        self.assertIn('origin이 GitHub 원격이면 "PR을 연다"로, 그 밖이면 "합친다"로 간다', body)
+        self.assertIn("그 비움 커밋의 부모에서", body)
+        self.assertNotIn("$(", body)
+        self.assertIn("0번의 비운 뒤의 재개에서", section(self.text, "PR을 연다"))
+        self.assertIn("0번의 비운 뒤의 재개에서", section(self.text, "합친다"))
+
+    def test_merge_has_own_question_and_switch_failure(self):
+        # "합친다"는 이 자리만의 물음을 직접 적고, `git switch`가 실패하면 합치지 않는다(신뢰성-6).
+        body = section(self.text, "합친다")
+        self.assertNotIn('"1. 시작 조건을 본다"의 물음대로', body)
+        self.assertIn("그 파일 목록을 보여 주고 그대로 합칠지 묻고", body)
+        self.assertIn("이 물음과 답은 `RUNLOG.md`에 적지 않는다", body)
+        self.assertIn("실패하면(커밋하지 않은 변경이 바꿀 파일과 겹친다 같은 것) 합치지 않고, 실패한 명령과 오류를 10번의 보고에 적고 10번으로 간다", body)
+
+    def test_branch_in_question_lists(self):
+        # 새 물은 자리 `브랜치`가 물은 자리 목록과 task에 걸리지 않는 물음 목록에 있다.
+        runlog = section(self.text, "`RUNLOG.md`")
+        self.assertIn("`커밋하지 않은 변경`, `브랜치`, `기본 브랜치`, `고칠 phase`", runlog)
+        self.assertIn("(권한, 실행 방식, 커밋하지 않은 변경, 브랜치, 기본 브랜치, 고칠지)", runlog)
+
     def test_51_marker_line_ends_every_hand_off_block(self):
         for heading in ("4. 수행을 맡긴다", "5. 확인을 맡긴다", "7. task 회고를 맡긴다", "코드 평가를 맡긴다", "하네스 eval을 맡긴다"):
             with self.subTest(heading=heading):
