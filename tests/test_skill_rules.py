@@ -542,8 +542,21 @@ class RunRulesTest(unittest.TestCase):
         self.assertIn("plate 자체의 하네스 고칠 거리는 문턱을 넘은 것만 이슈로 올릴 것에, 넘지 않은 것은 BACKLOG로 미룰 것에 둔다", body)
         self.assertIn("처리가 감수인 하네스 고칠 거리는 갈래와 상관없이 감수할 것에 둔다", body)
         self.assertIn("   - 감수할 것: 처리가 감수인 하네스 고칠 거리의 번호\n", body)
-        self.assertIn("   - BACKLOG로 미룰 것: 소스 문제의 번호와, 문턱을 넘지 않은 plate 자체의 하네스 고칠 거리의 번호\n", body)
+        self.assertIn("   - BACKLOG로 미룰 것: 소스 문제의 번호와, 문턱을 넘지 않은 plate 자체의 하네스 고칠 거리의 번호와, 고침 task에서 뺀 이 프로젝트만의 하네스 고칠 거리의 번호\n", body)
         self.assertNotIn("plate 자체의 하네스 고칠 거리는 모두 이슈로 올릴 것에 두고", self.text)
+        # 문턱을 넘은 감수인 plate 자체의 것은 감수할 것으로 간다(감수가 문턱보다 먼저, 002-fixes).
+        self.assertIn("감수가 문턱보다 먼저다: 처리가 감수인 plate 자체의 것은 문턱을 넘었어도 이슈로 올릴 것에 두지 않는다", body)
+        first = body.index("처리가 감수인 하네스 고칠 거리는 갈래와 상관없이 감수할 것에 둔다")
+        self.assertLess(first, body.index("plate 자체의 하네스 고칠 거리는 문턱을 넘은 것만 이슈로 올릴 것에"))
+
+    def test_project_only_fixes_deferred_to_backlog(self):
+        # 고침 task에서 뺀 이 프로젝트만의 하네스 고칠 거리는 BACKLOG로 미룰 것으로 간다(002-fixes).
+        body = subsection(self.text, "보고하고 묻는다")
+        self.assertIn("고침 task에서 뺀 소스 문제와 이 프로젝트만의 하네스 고칠 거리는 BACKLOG로 미룰 것으로 옮긴다", body)
+        self.assertIn("고침 task에 두었던 이 프로젝트만의 하네스 고칠 거리도 BACKLOG로 미룰 것에 둔다", body)
+        backlog = subsection(self.text, "BACKLOG를 고친다")
+        self.assertIn("미룰 하네스 고칠 거리마다(갈래와 상관없이, 항목의 갈래 칸에 그 갈래를 적는다)", backlog)
+        self.assertIn("갈래: {plate 자체 | 이 프로젝트만}. 처리: {규칙을 더하거나 고친다 | 규칙을 지운다}", backlog)
 
     def test_backlog_three_sections(self):
         # BACKLOG는 소스 문제, 하네스 고칠 거리, 감수한 것의 세 절로 나누고 감수한 것은 세지 않는다(eval-threshold).
