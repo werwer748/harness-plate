@@ -172,15 +172,12 @@ class RunRulesTest(unittest.TestCase):
         self.assertIn("메시지는 `NNN-slug: RUNLOG`다", body)
 
     def test_tools_md_commit_rule_in_one_place(self):
-        # 커밋 자리마다 같은 괄호 글을 되풀이하지 않고 "`RUNLOG.md`" 절 한 곳에 둔다(release-prep 코드 평가 1의 소스 문제 2).
-        rule = "아직 커밋하지 않은 `docs/TOOLS.md`"
-        self.assertEqual(self.text.count(rule), 1)
+        # 사용량 까닭은 docs/TOOLS.md에 적거나 커밋하지 않고 10번의 보고에만 적는다(cleanup 2026-10-28 성능-1·성능-2·유지보수성-10).
+        self.assertNotIn("docs/TOOLS.md", self.text)
         runlog = section(self.text, "`RUNLOG.md`")
-        self.assertIn(rule + "는 이 스킬이 `RUNLOG.md`를 넣는 커밋마다 함께 넣는다", runlog)
-        follow = '(사용량 까닭을 적은 `docs/TOOLS.md`는 "`RUNLOG.md`" 절을 따른다)'
-        for heading in ("6. 통과한 phase의 이름을 바꾼다", "7. task 회고를 맡긴다", "8. 고칠 phase를 더한다", "멈춘다", "코드 평가를 맡긴다", "하네스 eval을 맡긴다", "비운다"):
-            with self.subTest(heading=heading):
-                self.assertIn(follow, subsection(self.text, heading))
+        self.assertIn("돌아오지 않은 까닭(도구가 사용량을 돌려주지 않는다 같은 것)을 알면 10번의 보고에만 적는다", runlog)
+        report = section(self.text, "10. 보고한다")
+        self.assertIn("사용량이 돌아오지 않은 에이전트가 있으면 그 까닭(알면)", report)
 
     def test_44_runlog_commit_after_review_and_eval(self):
         runlog = section(self.text, "`RUNLOG.md`")
@@ -322,7 +319,7 @@ class EvalRulesTest(unittest.TestCase):
         body = section(read("eval"), "3. 기준마다 근거를 적고 등급을 매긴다")
         for message in ("`NNN-slug: RUNLOG`", "`<tasks 이름>: RUNLOG`"):
             with self.subTest(message=message):
-                self.assertIn("| %s | run | `RUNLOG.md`와 사용량 까닭을 적은 `docs/TOOLS.md` |" % message, body)
+                self.assertIn("| %s | run | `RUNLOG.md` |" % message, body)
 
     def test_50_permission_is_a_set_question(self):
         body = section(read("eval"), "낱말")
