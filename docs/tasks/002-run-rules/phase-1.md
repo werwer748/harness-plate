@@ -54,3 +54,33 @@
 
 ## 하네스에서 걸린 것
 - 처음에 `python3 - <<'EOF'` heredoc으로 본문을 고치려 했더니 `SyntaxError: Non-UTF-8 code starting with '\xec'`로 stdin의 한글이 깨졌다. Edit 도구와 `python3 -c`로 바꿔 했다
+
+## 확인 1
+
+**통과 조건**
+- 이슈·PR 명령이 완료 조건 1대로다. (완료 조건 1)
+  - `python3 -m unittest discover -s tests` → `Ran 169 tests in 17.544s` / `OK`. 단언 넷은 `tests/test_skill_rules.py`의 `test_issue_text_is_data_only`(182줄), `test_text_passing_rule_in_one_place`(189줄), `test_issue_list_filters_by_body_without_narrowing_limit`(210줄), `test_pr_question_shows_comment_text`(223줄)로 있다. 통과
+  - `mktemp -d` → `/var/folders/0j/cj37rxmj1mj73vhflqpgsxm00000gn/T/tmp.GyZU1PVOL4`. `<임시>/bin/gh`(인자마다 `printf '%s\n'`로 `<임시>/args`에 덧붙임)에 실행 권한을 주고, 제목 `` `plate:plan`이 $(touch <임시>/pwned) 'x' "y" ``를 낱말의 "글을 넘기는 법"대로(작은따옴표로 감싸고 안의 `'`를 `'\''`로) 넣은 `gh issue list --search`, `gh issue create --title`, `gh pr create --title` 세 줄을 `<임시>/run.sh`에 써서 `PATH=<임시>/bin:$PATH sh <임시>/run.sh`로 돌렸다 → `grep -cxF -f <임시>/title <임시>/args`가 `3`, `ls <임시>/pwned` → `No such file or directory`. 통과
+  - `docs/ARCHITECTURE.md` 55줄(`## 패턴과 규칙` run PR 줄) → "PR을 열지 물을 때 댓글로 달 그 평가 절의 글을 함께 보여 준다", 76줄(`## 데이터 흐름` PR 줄) → "그 평가 절의 글을 물을 때 함께 보여 준다", `README.md` 20줄(`## tasks 끝의 PR`) → "PR을 열지 물으면서 댓글로 달 그 평가 절의 글을 함께 보여 준다". 세 곳 모두 뜻을 담는다. 통과
+- 앞 task가 지운 TOOLS.md 규칙이 다시 들지 않았다. (완료 조건 5)
+  - `git grep -n 'TOOLS.md' -- plugins/` → 출력 없음(exit 1). 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 169 tests` / `OK`. 통과
+
+**남은 것**
+- 제목에 `$(`가 들면 작은따옴표 안이어도 헤드리스 권한 검사가 막을 수 있고 권한 검사 아래에서는 돌리지 않음 → 통과 조건은 넘기는 법을 `sh`에서 가짜 `gh`로 돌린 결과만 보고, 실제 이슈·PR 명령을 돌리는 흐름은 task 머리 완료 조건 1의 `- 돌리지 않음: 이슈를 올리고 PR을 여는 흐름은 plate 저장소와 사용자 승인이 있어야 돈다` 줄이 돌리지 않기로 정했다. 하네스에서 걸린 것
+- 밖의 사람이 댓글에 tasks 이름을 적어 "이슈를 올린다" 2번의 올림을 건너뛰게 하는 길이 남음 → 통과 조건(완료 조건 1)은 데이터로만 보고 지시를 따르지 않는다는 글, 넘기는 법, `body`·상한, 댓글 글을 보여 주는 것을 보고 이 갈래를 막는 것은 보지 않는다. 걸리지 않음. 하네스에서 걸린 것
+- 이슈를 실제로 올리고 PR을 여는 흐름은 돌리지 않음 → 완료 조건 1의 `- 돌리지 않음` 줄이 돌리지 않기로 정한 동작. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 제목의 `$(`가 작은따옴표 안이어도 헤드리스 권한 검사가 막을 수 있는 것은 권한 검사 아래에서 돌리지 않았다(완료 조건 1의 `돌리지 않음` 줄)
+- 남은 것: 댓글에 tasks 이름을 적어 이슈 올림을 건너뛰게 하는 길(보안-1)이 "이슈를 올린다" 2번에 그대로 남는다
+- 남은 것: 이슈를 실제로 올리고 PR을 여는 흐름은 돌리지 않았다(완료 조건 1의 `돌리지 않음` 줄)
+
+**판정**: 통과
