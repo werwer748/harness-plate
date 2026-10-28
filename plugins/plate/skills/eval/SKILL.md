@@ -133,11 +133,11 @@ description: 모든 task가 끝난 tasks에서 하네스가 어떻게 돌았는�
 | `NNN-slug: phase N 확인` | check | 그 `phase-N.md`만 |
 | `NNN-slug: phase N 통과` | run | 그 `phase-N.md`를 `done-phase-N.md`로 바꾼 이름 바꾸기와 `RUNLOG.md` |
 | `plan: NNN-slug 수정` | run | 더한 `phase-M.md`, 고친 계획 파일(tasks 머리, task 머리, `phase-N.md`의 계획 다섯 항목), `RUNLOG.md` |
-| `NNN-slug: RUNLOG` | run | `RUNLOG.md`와 사용량 까닭을 적은 `docs/TOOLS.md` |
+| `NNN-slug: RUNLOG` | run | `RUNLOG.md` |
 | `NNN-slug: 회고` | retro | 그 task의 `retro.md`와 `FRICTION.md`만 |
 | `<tasks 이름>: 코드 평가` | review | `review.md`만 |
 | `<tasks 이름>: 하네스 eval` | eval | `eval.md`만 |
-| `<tasks 이름>: RUNLOG` | run | `RUNLOG.md`와 사용량 까닭을 적은 `docs/TOOLS.md` |
+| `<tasks 이름>: RUNLOG` | run | `RUNLOG.md` |
 
 - `done-phase-N.md`마다 기록 다섯 절과 확인 절의 판정이, `retro.md`마다 회고 절의 판정이 있는지 본다.
 - 회고 절의 문제 가운데 기준이 "범위"(범위 밖이나 다른 task의 일)와 "계획"(테스트 먼저의 순서)인 것도 근거로 쓴다.
