@@ -1,7 +1,7 @@
 """release-prep tasks가 고친 스킬 규칙의 글이 본문의 제자리에 남아 있는지 시험한다.
 
-이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41·#46·#52·#53·#55·#56·#57·#65, phase의 #42·#51, check의 #51,
-retro의 #49·#50·#51, review의 #51, eval의 #36·#50·#51) 그 규칙을 이루는
+이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41·#46·#52·#53·#55·#56·#57·#65·#68, phase의 #42·#51·#69, check의 #51·#69,
+retro의 #49·#50·#51·#69, review의 #51·#70, eval의 #36·#50·#51) 그 규칙을 이루는
 글이 그 본문의 그 절에 있는지 본다. 글이 빠지거나 다른 절로 옮겨지면 실패한다.
 모든 스킬의 앞머리가 Agent Skills 규격의 한도(description 1024자, name 64자) 안에 있는지도 본다.
 """
@@ -600,6 +600,22 @@ class PlanRulesTest(unittest.TestCase):
         draft = section(self.text, "6. 초안을 보여 주고 승인받는다")
         self.assertIn("값을 뽑아 견주는 확인에 뽑는 명령과 견주는 법이 있는지 본다", draft)
 
+    def test_68_check_commands_run_as_written(self):
+        old = "완료 조건과 통과 조건에 적는 확인 명령은 미리 돌려 보지 않고 적는다"
+        self.assertNotIn(old, self.text)
+        rules = section(self.text, "절대 규칙")
+        self.assertIn("완료 조건과 통과 조건의 확인 명령은 읽기만 하는 것만 6번의 점검에서 돌려 적힌 그대로 도는지 본다", rules)
+        draft = section(self.text, "6. 초안을 보여 주고 승인받는다")
+        for key in ("읽기만 하는 확인 명령(파일이나 저장소를 바꾸지 않는 것)을 돌려 적힌 그대로 도는지 본다",
+                    "결과값은 견주지 않는다",
+                    "쓰는 명령은 돌리지 않고 같은 꼴을 글로 본다"):
+            with self.subTest(key=key):
+                self.assertIn(key, draft)
+        body = part(section(self.text, "적는 규칙"), "조건")
+        line = [l for l in body.split("\n") if l.startswith("- 확인은 돌릴 명령과 기대 결과를 우선한다.")]
+        self.assertEqual(len(line), 1)
+        self.assertIn("확인 명령은 적힌 그대로 돌게 적는다", line[0])
+
     def test_no_adding_after_evaluation_started(self):
         # 평가가 시작된 tasks에는 task를 더하지 않는다(cleanup 2026-10-28 신뢰성-4).
         body = section(self.text, "1. 진행 중인 tasks가 있는지 본다")
@@ -692,6 +708,25 @@ class PhaseRulesTest(unittest.TestCase):
         self.assertIn("앞 phase의 결과가 필요하면 계획의 읽을 것에 적힌 산출물 파일만 읽는다", body)
         self.assertIn("필요하면 읽지 않고, 무엇이 왜 필요했는지를", body)
 
+    def test_69_fix_check_command_and_record(self):
+        body = section(read("phase"), "3. 통과 조건의 확인을 모두 돌린다")
+        for key in ("대상과 패턴과 기대를 바꾸지 않는 고침만 해 다시 돌린다",
+                    '고친 명령과 까닭을 "계획과 달라진 점"과 "하네스에서 걸린 것"에 적는다',
+                    '대상이나 패턴이나 기대를 바꿔야 돌면 상태는 "계획이 틀림"이다'):
+            with self.subTest(key=key):
+                self.assertIn(key, body)
+
+
+class CheckRulesTest(unittest.TestCase):
+    def test_69_run_check_as_written(self):
+        body = section(read("check"), "2. 통과 조건의 확인을 모두 돌린다")
+        for key in ("확인은 적힌 그대로 먼저 돌린다",
+                    "대상과 패턴과 기대를 바꾸지 않는 고침만 해 다시 돌린다",
+                    '적힌 명령, 고친 명령, 까닭을 "하네스에서 걸린 것"에 적는다',
+                    "대상이나 패턴이나 기대를 바꿔야 돌면 그 확인은 실패다"):
+            with self.subTest(key=key):
+                self.assertIn(key, body)
+
 
 REPORT_SECTIONS = (
     ("phase", "6. 다섯 줄을 돌려준다"),
@@ -723,6 +758,38 @@ class RetroRulesTest(unittest.TestCase):
     def test_50_stop_list_includes_permission(self):
         body = section(read("retro"), "5. tasks 끝에 볼 것을 모은다")
         self.assertIn("물은 자리가 `멈춤`이 아닌 줄(권한, 실행 방식,", body)
+
+    def test_69_run_check_as_written(self):
+        body = section(read("retro"), "2. 완료 조건의 확인을 모두 돌린다")
+        for key in ("확인은 적힌 그대로 먼저 돌린다",
+                    "대상과 패턴과 기대를 바꾸지 않는 고침만 해 다시 돌린다",
+                    '적힌 명령, 고친 명령, 까닭을 "확인"의 결과에 적고 5번의 문제로 모은다',
+                    "대상이나 패턴이나 기대를 바꿔야 돌면 그 확인은 실패다"):
+            with self.subTest(key=key):
+                self.assertIn(key, body)
+
+
+class ReviewRulesTest(unittest.TestCase):
+    def test_70_test_files_do_not_pick_default_table(self):
+        text = read("review")
+        words = section(text, "낱말")
+        self.assertIn("- **테스트 파일**: `.md`가 아닌 파일 가운데 `tests/`, `test/`, `__tests__/` 아래에 있거나 "
+                      "이름이 `test_*`, `*_test.*`, `*.test.*`, `*.spec.*` 꼴인 것", words)
+        new = "결과물인 마크다운, 실행 경로 없는 파일, 테스트 파일뿐이면"
+        old = "결과물인 마크다운과 실행 경로 없는 파일뿐이면"
+        for heading in ("4. 판단한다", "5. 등급을 매긴다", "PR 모드"):
+            with self.subTest(heading=heading):
+                body = section(text, heading)
+                self.assertIn(new, body)
+                self.assertNotIn(old, body)
+        self.assertNotIn(old, text)
+        grading = section(text, "5. 등급을 매긴다")
+        for key in ("테스트 파일은 바뀐 동작이 아니라 그 근거라 표를 고를 때 세지 않는다",
+                    "테스트 적절성의 근거 첫 줄에 어느 표로 매겼는지 적는다"):
+            with self.subTest(key=key):
+                self.assertIn(key, grading)
+        template = section(text, "기록의 양식")
+        self.assertIn("  - 근거: {기본 등급표 | 결과물인 마크다운만 바뀐 경우의 표}로 매김", template)
 
 
 class EvalRulesTest(unittest.TestCase):
