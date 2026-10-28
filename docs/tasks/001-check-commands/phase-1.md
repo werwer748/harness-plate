@@ -96,3 +96,34 @@
 ## 하네스에서 걸린 것
 - 이 phase가 고친 phase 본문이 지금 이 수행을 이끄는 스킬 본문이기도 하다. 수행은 불려 온 때의 본문(고치기 전)대로 했다
 - 이 저장소 셸이 zsh라 `echo ====`가 `=` 확장으로 `=== not found` 오류를 냈다(헤드리스 시험 출력 뒤 구분 줄). 시험 자체에는 영향이 없었다
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 1이 참이다
+  - phase의 글 셋을 `grep -cF -e '<글>' plugins/plate/skills/phase/SKILL.md`로, check의 글 넷을 `grep -cF -e '<글>' plugins/plate/skills/check/SKILL.md`로, retro의 글 넷을 `grep -cF -e '<글>' plugins/plate/skills/retro/SKILL.md`로 돌림 → 열한 번 모두 `1`. 통과
+  - 이 phase "한 일"의 헤드리스 시험 `## 확인 1` 절을 읽음 → 조건 1의 줄은 통과, "하네스에서 걸린 것"에 적힌 명령 `grep -F '- abc' f.txt`와 고친 명령 `grep -F -e '- abc' f.txt`가 함께 있음, 조건 2의 줄은 실패, 판정은 실패. 적힌 해시 `24447065aed4abec74deb384330d05f80ab79ee8`와 지금 `git hash-object plugins/plate/skills/check/SKILL.md` → `24447065aed4abec74deb384330d05f80ab79ee8`로 같음. 통과
+- 테스트가 모두 통과하고, 고친 글이 빠지면 실패한다
+  - `python3 -m unittest discover -s tests` → `Ran 196 tests`, 마지막 줄 `OK`. 통과
+  - 세 시험을 저마다 `mktemp -d`의 새 폴더에 `cp -R plugins tests`로 만든 사본에서 글 수를 `grep -cF -e`로 보고 그 글을 빈 글로 바꿔 `python3 -m unittest discover -s tests`를 돌림 → phase: 글 수 1, `FAIL: test_69_fix_check_command_and_record (test_skill_rules.PhaseRulesTest) (key=…)`. check: 글 수 1, `FAIL: test_69_run_check_as_written (test_skill_rules.CheckRulesTest) (key=…)`. retro: 글 수 1, `FAIL: test_69_run_check_as_written (test_skill_rules.RetroRulesTest) (key=…)`. 셋 모두 `FAILED (failures=1)`. 통과
+- 문서가 맞는다
+  - `grep -F -e '적힌 그대로 돌지 않는 확인 명령' docs/ARCHITECTURE.md`가 낸 줄 → `test_skill_rules.py`를 담음(`grep -c test_skill_rules.py`로 `1`). `sed -n '1,8p' tests/test_skill_rules.py` → `phase의 #42·#51·#69, check의 #51·#69,`와 `retro의 #49·#50·#51·#69,`가 있음. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 196 tests`, `OK`. 통과
+
+**남은 것**
+- phase와 retro의 고침 규칙은 헤드리스로 돌려 보지 않았다 → 돌려 보지 않은 위험이고, task 머리 완료 조건 1의 `- 돌리지 않음: phase와 retro의 고침 규칙은 헤드리스로 돌리지 않는다. 사용자가 check·review만 돌리기로 정했다` 줄이 돌리지 않기로 정한 동작이다. 하네스에서 걸린 것
+- check의 헤드리스 시험은 `-e`를 붙이는 꼴 하나만 봤고 따옴표가 어긋난 명령이나 "대상이나 패턴이나 기대를 바꿔야 돌면 실패"의 갈래는 돌려 보지 않았다 → 돌려 보지 않은 위험이나, 통과 조건이 보는 동작(헤드리스 시험에서 `-` 패턴을 `-e`나 `--`로 고쳐 돌려 통과로 판정하고 기록하는 것, 없는 파일의 조건을 실패로 판정하는 것)에 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: phase와 retro의 고침 규칙은 헤드리스로 돌려 보지 않았다(task 머리 완료 조건 1의 `돌리지 않음` 줄이 정한 것)
+- 남은 것: check의 헤드리스 시험은 `-e`를 붙이는 꼴 하나만 봤고, 따옴표가 어긋난 명령과 "대상이나 패턴이나 기대를 바꿔야 돌면 실패"의 갈래는 돌려 보지 않았다
+- 확인을 맡은 이 check 본문이 이 phase가 고친 본문이기도 하다. 확인은 작업 트리의 고친 본문대로 했다
+
+**판정**: 통과
