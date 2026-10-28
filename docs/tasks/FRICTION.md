@@ -1,0 +1,10 @@
+# FRICTION
+
+- `001-eval-threshold` 문제: phase 2 수행이 시험 저장소의 확인 절과 RUNLOG 꼴을 맞추려고 앞 phase 기록 `done-phase-1.md`의 머리와 절 제목을 `grep -n`으로 봤다. phase 스킬 1번(앞 phase의 기록은 읽지 않는다)과 어긋난다. 계획(phase-2의 읽을 것)이 시험 저장소에 차릴 기록의 꼴을 가져올 곳(check·retro·review·run 본문의 양식)을 적지 않았다
+- `001-eval-threshold` 문제: task 머리 완료 조건 1과 phase-2 통과 조건이 양식의 `   - 처리: …` 줄을 `grep -cF`로 `1`이라 했는데, 결정은 두 갈래 모두에 처리를 적게 해 양식의 두 항목에 같은 줄을 둘 수 없었다. 수행이 이 프로젝트만 항목의 처리 줄 꼴을 바꿔 맞췄다. plan 스킬의 초안 점검(확인과 결정의 맞물림)이 개수 확인과 결정의 충돌을 잡지 못했다
+- `001-eval-threshold` 문제: 계획의 TODO가 결정에 맞추려면 함께 고칠 본문 줄을 빠뜨려 수행이 계획 밖에서 더했다. phase 1은 run의 고침 task 꼴 두 줄과 BACKLOG 운영 줄 셋, phase 2는 eval 앞머리 description, 적는 규칙 한 줄, 감수와 같은 뜻의 정의, 테스트 docstring의 `#74`. 그 결과 phase 3의 TODO "docstring에 `#74`가 더해진다"는 이미 참이라 빈 일이 됐다(plan 스킬의 TODO가 바뀌는 규칙과 같은 대상의 기존 줄을 찾는 규칙)
+- `001-eval-threshold` 문제: phase 3 수행이 완료 조건 5의 네 시험을 적힌 `mktemp -d`와 `cp -R` 대신 Python `tempfile.mkdtemp()`와 `shutil.copytree`로 돌렸다(`done-phase-3.md` "계획과 달라진 점"). phase 스킬이 허용하는 고침(대상·패턴·기대를 바꾸지 않는 옵션·따옴표 고침) 밖에서 확인의 차림을 바꿨다. 확인 1은 적힌 차림으로 다시 돌려 통과했다
+- `001-eval-threshold` 스킬 후보: "새 사본(`mktemp -d`에 `plugins`, `tests` 복사)에서 고친 글이 한 번 있는지 보고 빈 글로 바꿔 테스트를 돌려 그 테스트의 `FAIL:` 줄을 보는" 시험이 phase 1·2·3의 수행과 확인, 회고에서 매번 손으로 짠 스크립트로 되풀이됐다. 글·파일·기대 테스트 이름을 받아 돌리는 스크립트나 스킬로 두면 매번의 스크립트 작성과 차림 어긋남(phase 3의 `tempfile`)이 줄어든다
+- `001-eval-threshold` 스킬 후보: 완료 조건의 글 목록마다 `grep -cF -e`로 개수를 세는 확인(새 글 여덟·열셋, 옛 글, 절 머리)이 phase 1·2·3의 수행과 확인, 회고에서 매번 되풀이됐다. 글과 기대 개수의 목록을 받아 한 번에 세는 도구로 두면 손으로 옮겨 적는 목록과 빠뜨림이 줄어든다
+- `001-eval-threshold` 경계 밖: run 본문은 `gh` 실패로 올리지 못한 하네스 고칠 거리를 BACKLOG에 두지 않고, 문턱을 BACKLOG로 넘은 항목이면 "이슈로 올린 … 항목은 지운다"에도 들지 않아 그 밖의 항목으로 "다시 나오지 않은 tasks"가 하나 늘어난다. ADR-025는 ADR-020의 `gh` 실패 처리를 그대로 두었지만, 다시 나왔는지를 BACKLOG로만 보기로 한 문턱이 이 경우 틀린 셈을 하므로 올리지 못한 것을 하네스 고칠 거리 절에 두는 것을 약속에 넣을지 볼 까닭이 있다 (`plugins/plate/skills/run/SKILL.md` "BACKLOG를 고친다")
+- `001-eval-threshold` 경계 밖: BACKLOG 양식의 하네스 고칠 거리 항목은 `갈래: {plate 자체 | 이 프로젝트만}`을 두지만, 고칠 안의 BACKLOG로 미룰 것은 plate 자체의 것만 받고 고침 task에서 뺀 이 프로젝트만의 하네스 고칠 거리를 옮기는 줄이 없어 이 프로젝트만 항목이 그 절에 들 길이 없다. 결정은 이 프로젝트만의 것에 문턱을 두지 않는다고만 정해, 뺀 것을 BACKLOG로 미룰지 약속에 넣을지 볼 까닭이 있다 (`plugins/plate/skills/run/SKILL.md` "보고하고 묻는다", "BACKLOG를 고친다")
