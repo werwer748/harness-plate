@@ -45,3 +45,28 @@
 
 ## 하네스에서 걸린 것
 없음
+
+## 확인 1
+
+**통과 조건**
+- 더하는 경우가 완료 조건 1대로다. (완료 조건 1)
+  - `python3 -m unittest discover -s tests` → `Ran 183 tests in 17.162s` / `OK`. `python3 -m unittest -v tests.test_skill_rules`에 `test_57_quote_earlier_task_text_as_changed ... ok`, `test_adding_reads_earlier_task_heads ... ok`, `test_no_adding_after_evaluation_started ... ok`가 있고, 두 새 테스트는 1번 절에서 `review.md`·`eval.md` 갈래와 "task로 더할지 묻지 않고 아무것도 쓰지 않고 끝난다", task 머리를 읽는 글, "내용은 읽지 않는다" 없음을 단언한다. 통과
+  - `docs/ARCHITECTURE.md` `## 데이터 흐름`의 계획 단계를 읽음 → "tasks가 진행 중이면 새 요청을 지금 tasks에 task로 더할지 묻고, 더하면 이미 있는 task 머리를 읽는다"와 "docs/tasks/review.md나 eval.md가 있어 tasks 끝의 평가가 시작된 tasks면 더할지 묻지 않고 더하지 않는다고 알리고 끝난다" 두 갈래가 있다. 통과
+- 앞 task가 이룬 tasks 완료 조건 3이 그대로다. (완료 조건 4)
+  - `git grep -n 'TOOLS.md' -- plugins/` → 출력 없음(종료 코드 1). 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 183 tests` / `OK`. 통과
+
+**남은 것**
+없음
+
+**실패**
+없음
+
+**하네스에서 걸린 것**
+없음
+
+**판정**: 통과
