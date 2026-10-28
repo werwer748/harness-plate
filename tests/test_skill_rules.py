@@ -257,6 +257,77 @@ class RunRulesTest(unittest.TestCase):
         self.assertIn("커밋하기 전에 이번 수정의 결정 줄이 task 머리(tasks 머리를 고쳤으면 tasks 머리에도)에 있는지 보고", body)
         self.assertLess(body.index("커밋하기 전에 이번 수정의 결정 줄이"), body.index("고친 계획 파일과 `RUNLOG.md`만 커밋한다"))
 
+    def test_state_tables_row_order(self):
+        # 3번의 두 표와 tasks 끝 표의 (상태, 갈 곳) 행 차례를 지킨다(cleanup 2026-10-28 신뢰성-8).
+        def rows(body, header):
+            table = body[body.index(header):].split("\n\n")[0].split("\n")[2:]
+            out = []
+            for line in table:
+                cells = [cell.strip() for cell in line.strip().strip("|").split(" | ")]
+                out.append((cells[0], cells[-1]))
+            return out
+
+        expected = {
+            ("3. 갈 곳을 정한다", "| 남은 첫 phase의 상태 | 갈 곳 |"): [
+                ("기록 절(`## 한 일`)이 없거나", "4번"),
+                ("확인 절이 없다", "5번"),
+                ('판정이 "통과"다', "6번"),
+                ("`NNN-slug: phase N 고침`이다", "5번"),
+                ("다시 맡기기로 한 답", "4번"),
+                ("확인 절이 셋 이상이다", '"멈춘다"'),
+                ('마지막 확인 절의 판정이 "실패"다', "4번"),
+            ],
+            ("3. 갈 곳을 정한다", "| 지금 task의 상태 | 갈 곳 |"): [
+                ("`retro.md`가 없다", "7번"),
+                ("`done-phase-M.md`가 있다", "7번"),
+                ("다시 맡기기로 한 답", "8번"),
+                ("회고 절이 셋 이상이다", '"멈춘다"'),
+                ("그 밖", "8번"),
+            ],
+            ("tasks 끝", "| tasks의 상태 | 갈 곳 |"): [
+                ("`docs/tasks/review.md`가 없다", "코드 평가를 맡긴다"),
+                ("`docs/tasks/eval.md`가 없다", "하네스 eval을 맡긴다"),
+                ("고침 task가 있다", "비운다"),
+                ("그 밖", "보고하고 묻는다"),
+            ],
+        }
+        for (heading, header), want in expected.items():
+            with self.subTest(table=header):
+                got = rows(section(self.text, heading), header)
+                self.assertEqual([dest for _, dest in got], [dest for _, dest in want])
+                for (state, _), (key, _) in zip(got, want):
+                    self.assertIn(key, state)
+                    if key == "확인 절이 셋 이상이다" or key == "회고 절이 셋 이상이다":
+                        self.assertNotIn("다시 맡기기로 한 답", state)
+
+    def test_three_failure_resume_goes_to_fix_phase_for_retro(self):
+        # 회고가 세 번 실패해 멈춘 뒤 다시 맡기면 8번으로 간다(신뢰성-1).
+        stop = section(self.text, "멈춘다")
+        self.assertIn("회고면 8번", stop)
+        self.assertNotIn("회고면 7번", stop)
+        self.assertIn("다시 맡기기로 한 답의 `멈춤` 줄에 그 자리를 적는다", stop)
+
+    def test_state_reading_and_stop_line_rows(self):
+        # 3번이 상태를 줄 머리 패턴으로 읽고, 다시 맡긴 `멈춤` 줄을 보고 "멈춘다"를 한 번 건너뛴다(성능-3, 신뢰성-7).
+        body = section(self.text, "3. 갈 곳을 정한다")
+        self.assertIn("**상태를 읽는 법.**", body)
+        self.assertIn("`phase-N.md`와 `retro.md`를 통째로 읽지 않고", body)
+        self.assertIn("코드 블록(줄 머리의 백틱 셋 이상으로 열고 같은 줄로 닫는 것) 안의 줄은 건너뛴다", body)
+        self.assertIn("awk -v h='확인'", body)
+        self.assertIn('$0 ~ ("^## " h " [0-9]+$")', body)
+        self.assertIn("grep '^- 물음 | 멈춤 | `NNN-slug` phase N 확인 ' docs/tasks/RUNLOG.md | tail -n 1", body)
+        self.assertIn("grep '^- 물음 | 멈춤 | `NNN-slug` 회고 ' docs/tasks/RUNLOG.md | tail -n 1", body)
+        self.assertIn("그 phase의 마지막 `멈춤` 줄이 지금과 같은 확인 절 수에서 다시 맡기기로 한 답", body)
+        self.assertIn("그 task의 마지막 `멈춤` 줄이 지금과 같은 회고 절 수에서 다시 맡기기로 한 답", body)
+        self.assertIn('"멈춘다" 행을 건너뛰는 것은 같은 수에서 한 번뿐이다', body)
+
+    def test_runlog_reason_for_respawn(self):
+        # 확인이나 회고 없이 같은 역할을 다시 띄우면 그 까닭을 에이전트 줄 끝에 덧붙인다(기존 작업 정합성-4, #61).
+        runlog = section(self.text, "`RUNLOG.md`")
+        self.assertIn("확인이나 회고를 거치지 않고 같은 phase의 수행(또는 같은 역할)을 다시 띄우면 그 에이전트 줄 끝에 `| 다시 띄움: {까닭}`을 덧붙인다", runlog)
+        self.assertIn("시간 {초}초 | 다시 띄움: {까닭}", runlog)
+        self.assertIn("답: 다시 맡긴다", runlog)
+
     def test_51_marker_line_ends_every_hand_off_block(self):
         for heading in ("4. 수행을 맡긴다", "5. 확인을 맡긴다", "7. task 회고를 맡긴다", "코드 평가를 맡긴다", "하네스 eval을 맡긴다"):
             with self.subTest(heading=heading):
