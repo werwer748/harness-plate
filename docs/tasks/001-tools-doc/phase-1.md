@@ -59,3 +59,32 @@
 
 ## 하네스에서 걸린 것
 - `docs/ARCHITECTURE.md`의 `test_skill_rules.py` 줄에 처음 "run 본문에 `docs/TOOLS.md`가 없고 사용량 까닭을…"이라고 적었더니 통과 조건의 grep(`사용량.*TOOLS\.md|TOOLS\.md.*사용량`)이 그 설명 줄에 걸렸다. 설명을 "맥락 문서 커밋 규칙이 없고"로 바꿔 피했다. 통과 조건의 grep이 규칙의 부재를 설명하는 줄까지 잡는다.
+
+## 확인 1
+
+**통과 조건**
+- run과 eval 본문에 `docs/TOOLS.md`가 없다. (완료 조건 1)
+  - `git grep -n 'TOOLS.md' -- plugins/plate/skills/run plugins/plate/skills/eval` → 출력 없음(종료 코드 1). 통과
+- run `RUNLOG.md` 절이 사용량이 돌아오지 않은 까닭을 10번의 보고에 적게 한다.
+  - `plugins/plate/skills/run/SKILL.md`의 `## \`RUNLOG.md\`` 절(505줄~) 518줄 → "돌아오지 않은 까닭(도구가 사용량을 돌려주지 않는다 같은 것)을 알면 10번의 보고에만 적는다."가 있다. `## 10. 보고한다`(238줄~) 247줄 → "사용량이 돌아오지 않은 에이전트가 있으면 그 까닭(알면)"이 그대로 있다. 통과
+- 테스트가 통과하고 바뀐 두 테스트가 새 규칙을 본다.
+  - `python3 -m unittest discover -s tests` → `Ran 164 tests in 17.348s` / `OK`. 통과
+  - `tests/test_skill_rules.py` 174줄 `test_tools_md_commit_rule_in_one_place` → `self.assertNotIn("docs/TOOLS.md", self.text)`로 run 본문 전체를 단언한다. 318줄 `test_50_runlog_commits_in_rule_table` → `"| %s | run | \`RUNLOG.md\` |" % message`로 두 행을 단언한다(eval 본문 136·140줄이 이 꼴이다). 통과
+- 맥락 문서에 run이 사용량 까닭을 TOOLS.md에 적는다는 줄이 없다. (완료 조건 4)
+  - `git grep -nE '사용량.*TOOLS\.md|TOOLS\.md.*사용량' -- docs/PRD.md docs/ARCHITECTURE.md docs/ADR.md README.md AGENTS.md` → 출력 없음(종료 코드 1). 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 164 tests` / `OK`. 통과
+
+**남은 것**
+- 없음
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
