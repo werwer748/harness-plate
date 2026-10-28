@@ -1,6 +1,6 @@
 """release-prep tasks가 고친 스킬 규칙의 글이 본문의 제자리에 남아 있는지 시험한다.
 
-이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41·#46·#52·#53·#55·#56·#57, phase의 #42·#51, check의 #51,
+이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41·#46·#52·#53·#55·#56·#57·#65, phase의 #42·#51, check의 #51,
 retro의 #49·#50·#51, review의 #51, eval의 #36·#50·#51) 그 규칙을 이루는
 글이 그 본문의 그 절에 있는지 본다. 글이 빠지거나 다른 절로 옮겨지면 실패한다.
 모든 스킬의 앞머리가 Agent Skills 규격의 한도(description 1024자, name 64자) 안에 있는지도 본다.
@@ -592,6 +592,13 @@ class PlanRulesTest(unittest.TestCase):
         self.assertIn("앞 task가 바꿀 글을 인용하면 바뀐 뒤의 글 그대로 적고", body)
         draft = section(self.text, "6. 초안을 보여 주고 승인받는다")
         self.assertIn("task 사이에 같은 글을 바꾸거나 인용하는 곳이 맞물리는지 본다", draft)
+
+    def test_65_comparison_checks_name_extract_command(self):
+        body = part(section(self.text, "적는 규칙"), "조건")
+        self.assertIn("값을 뽑아 견주는 확인은 뽑는 명령(또는 패턴)과 견주는 법을 적는다", body)
+        self.assertIn("적을 수 없으면 읽어서 견줄 자리를 적는다", body)
+        draft = section(self.text, "6. 초안을 보여 주고 승인받는다")
+        self.assertIn("값을 뽑아 견주는 확인에 뽑는 명령과 견주는 법이 있는지 본다", draft)
 
     def test_no_adding_after_evaluation_started(self):
         # 평가가 시작된 tasks에는 task를 더하지 않는다(cleanup 2026-10-28 신뢰성-4).
