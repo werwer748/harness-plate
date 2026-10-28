@@ -1,7 +1,7 @@
 """release-prep tasks가 고친 스킬 규칙의 글이 본문의 제자리에 남아 있는지 시험한다.
 
-이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41·#46·#52·#53·#55·#56·#57·#65, phase의 #42·#51, check의 #51,
-retro의 #49·#50·#51, review의 #51, eval의 #36·#50·#51) 그 규칙을 이루는
+이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41·#46·#52·#53·#55·#56·#57·#65, phase의 #42·#51·#69, check의 #51·#69,
+retro의 #49·#50·#51·#69, review의 #51, eval의 #36·#50·#51) 그 규칙을 이루는
 글이 그 본문의 그 절에 있는지 본다. 글이 빠지거나 다른 절로 옮겨지면 실패한다.
 모든 스킬의 앞머리가 Agent Skills 규격의 한도(description 1024자, name 64자) 안에 있는지도 본다.
 """
@@ -692,6 +692,25 @@ class PhaseRulesTest(unittest.TestCase):
         self.assertIn("앞 phase의 결과가 필요하면 계획의 읽을 것에 적힌 산출물 파일만 읽는다", body)
         self.assertIn("필요하면 읽지 않고, 무엇이 왜 필요했는지를", body)
 
+    def test_69_fix_check_command_and_record(self):
+        body = section(read("phase"), "3. 통과 조건의 확인을 모두 돌린다")
+        for key in ("대상과 패턴과 기대를 바꾸지 않는 고침만 해 다시 돌린다",
+                    '고친 명령과 까닭을 "계획과 달라진 점"과 "하네스에서 걸린 것"에 적는다',
+                    '대상이나 패턴이나 기대를 바꿔야 돌면 상태는 "계획이 틀림"이다'):
+            with self.subTest(key=key):
+                self.assertIn(key, body)
+
+
+class CheckRulesTest(unittest.TestCase):
+    def test_69_run_check_as_written(self):
+        body = section(read("check"), "2. 통과 조건의 확인을 모두 돌린다")
+        for key in ("확인은 적힌 그대로 먼저 돌린다",
+                    "대상과 패턴과 기대를 바꾸지 않는 고침만 해 다시 돌린다",
+                    '적힌 명령, 고친 명령, 까닭을 "하네스에서 걸린 것"에 적는다',
+                    "대상이나 패턴이나 기대를 바꿔야 돌면 그 확인은 실패다"):
+            with self.subTest(key=key):
+                self.assertIn(key, body)
+
 
 REPORT_SECTIONS = (
     ("phase", "6. 다섯 줄을 돌려준다"),
@@ -723,6 +742,15 @@ class RetroRulesTest(unittest.TestCase):
     def test_50_stop_list_includes_permission(self):
         body = section(read("retro"), "5. tasks 끝에 볼 것을 모은다")
         self.assertIn("물은 자리가 `멈춤`이 아닌 줄(권한, 실행 방식,", body)
+
+    def test_69_run_check_as_written(self):
+        body = section(read("retro"), "2. 완료 조건의 확인을 모두 돌린다")
+        for key in ("확인은 적힌 그대로 먼저 돌린다",
+                    "대상과 패턴과 기대를 바꾸지 않는 고침만 해 다시 돌린다",
+                    '적힌 명령, 고친 명령, 까닭을 "확인"의 결과에 적고 5번의 문제로 모은다',
+                    "대상이나 패턴이나 기대를 바꿔야 돌면 그 확인은 실패다"):
+            with self.subTest(key=key):
+                self.assertIn(key, body)
 
 
 class EvalRulesTest(unittest.TestCase):
