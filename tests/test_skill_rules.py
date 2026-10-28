@@ -372,6 +372,59 @@ class RunRulesTest(unittest.TestCase):
         self.assertIn("`고칠 문제:` 줄은", section(self.text, "4. 수행을 맡긴다"))
         self.assertIn("**표지 줄**: 맡기는 글 코드 블록의 마지막 줄 `부른 쪽: plate:run`", section(self.text, "낱말"))
 
+    def test_worktree_skill_line_branches_and_no_old_body(self):
+        # 작업 트리의 스킬 줄은 marketplace 매니페스트의 source 한 곳만 고르고, 없으면 plugin.json 규칙대로 고르며,
+        # 붙이면 첫 줄을 빼 이름으로 옛 본문을 부르지 않는다(cleanup 2026-10-28 보안-3, 성능-4).
+        terms = section(self.text, "낱말")
+        self.assertIn("`작업 트리의 {경로}를 읽어 그 절차를 따른다. 이름으로 스킬을 불러 그 본문을 싣지 않는다.`", terms)
+        self.assertIn("**marketplace 매니페스트가 있을 때.** 저장소 뿌리의 `.claude-plugin/marketplace.json`을", terms)
+        self.assertIn("`name`이 `plate`인 것에 `source`가 있으면", terms)
+        self.assertIn("`skills/{스킬 이름}/SKILL.md` 하나만 본다", terms)
+        self.assertIn("**매니페스트가 없을 때.**", terms)
+        self.assertIn("이름이 `plate`인 `.claude-plugin/plugin.json`을 둔 폴더 아래의 `skills/{스킬 이름}/SKILL.md`가 있으면 그것이 `{경로}`다", terms)
+        self.assertIn("맡길 때마다 아래 명령을 다시 낸다", terms)
+        self.assertIn("붙일 때는 맡기는 글의 첫 줄(`plate의 … 스킬(…)을 불러 그 절차를 따른다.`)을 빼고", terms)
+        self.assertNotIn("불러 온 스킬의 본문과 다르면 이 파일을 따른다", self.text)
+        for heading in ("4. 수행을 맡긴다", "5. 확인을 맡긴다", "7. task 회고를 맡긴다", "코드 평가를 맡긴다", "하네스 eval을 맡긴다"):
+            with self.subTest(heading=heading):
+                self.assertIn('맡길 때마다 낱말의 "작업 트리의 스킬 줄"대로', subsection(self.text, heading))
+                self.assertIn("글의 첫 줄을 빼고 표지 줄 뒤에 작업 트리의 스킬 줄을 붙인다", subsection(self.text, heading))
+
+    def test_fix_phase_finds_guarding_tests(self):
+        # 고칠 phase는 문제의 글을 테스트 폴더에서 찾아 걸리는 테스트를 읽을 것과 TODO에 넣는다(기존 작업 정합성-3, #60).
+        body = section(self.text, "8. 고칠 phase를 더한다")
+        self.assertIn("고칠 글을 지키는 테스트도 그 TODO에 넣는다", body)
+        self.assertIn("테스트 폴더(`tests/`, `test/`, `__tests__/`)와 테스트 파일에서 찾는다", body)
+        self.assertIn("걸리는 테스트 파일의 경로를 읽을 것과 그 TODO의 파일 목록에 두고", body)
+        self.assertIn("- {문제의 글로 테스트 폴더에서 찾아 걸린 테스트 파일의 경로}", body)
+        self.assertIn("그 글로 찾아 걸린 테스트 파일의 경로})", body)
+        fixes = part(subsection(self.text, "고침 task를 더한다"), "고침 task의 꼴")
+        self.assertIn("문제의 글로 테스트 폴더에서 찾아 걸린 테스트)은 8번의 고칠 phase와 같은 규칙으로 정한다", fixes)
+
+    def test_fix_task_copies_condition_text(self):
+        # 고침 task의 마지막 완료 조건은 가리킨 tasks 완료 조건의 글과 확인을 함께 옮긴다(기존 작업 정합성-5).
+        fixes = subsection(self.text, "고침 task를 더한다")
+        self.assertIn("tasks 머리에 적힌 그 조건의 글과 확인을 함께 그대로 옮긴다", part(fixes, "고침 task의 꼴"))
+        self.assertIn("   - tasks 완료 조건 {번호}: {tasks 머리에 적힌 그 조건의 글을 그대로 옮긴다}\n     - 확인:", fixes)
+
+    def test_template_reading_rule_in_one_place(self):
+        # 양식을 읽는 법은 낱말에 한 번 있고, 양식이 있는 다섯 자리가 그 낱말을 가리킨다(유지보수성-12).
+        self.assertEqual(self.text.count("블록을 여닫는 줄은 옮기지 않는다"), 1)
+        self.assertIn("- **양식을 읽는 법**:", section(self.text, "낱말"))
+        self.assertIn("블록을 여닫는 줄은 옮기지 않는다", section(self.text, "낱말"))
+        pointer = '낱말의 "양식을 읽는 법"대로 옮긴다'
+        places = (
+            section(self.text, "8. 고칠 phase를 더한다"),
+            subsection(self.text, "BACKLOG를 고친다"),
+            subsection(self.text, "고침 task를 더한다"),
+            section(self.text, "PR을 연다"),
+            section(self.text, "`RUNLOG.md`"),
+        )
+        for body in places:
+            with self.subTest(body=body[:40]):
+                self.assertIn(pointer, body)
+        self.assertEqual(self.text.count(pointer), 5)
+
 class PlanRulesTest(unittest.TestCase):
     def setUp(self):
         self.text = read("plan")
