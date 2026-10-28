@@ -17,7 +17,7 @@
 
 ## tasks 끝의 PR
 
-`run`은 tasks 끝에서 `docs/tasks/`를 비운 뒤 origin이 GitHub이면 `tasks/<이름>` 브랜치를 푸시해 기본 브랜치로 가는 PR을 열지 묻는다. PR 본문에는 tasks의 요청과 목표, 전체 보고(코드 평가와 하네스 eval의 등급)를 넣는다. plate 워크플로가 없으면 `docs/tasks/review.md`의 마지막 평가 절을 PR 댓글로 달고 사람이 머지한다. `run`은 PR을 머지하거나 닫지 않는다. origin이 없거나 GitHub의 것이 아니면 기본 브랜치로 합칠지 묻는다.
+`run`은 tasks 끝에서 `docs/tasks/`를 비운 뒤 origin이 GitHub이면 `tasks/<이름>` 브랜치를 푸시해 기본 브랜치로 가는 PR을 열지 묻는다. PR 본문에는 tasks의 요청과 목표, 전체 보고(코드 평가와 하네스 eval의 등급)를 넣는다. plate 워크플로가 없으면 `docs/tasks/review.md`의 마지막 평가 절을 PR 댓글로 달고 사람이 머지한다. 이때 PR을 열지 물으면서 댓글로 달 그 평가 절의 글을 함께 보여 준다. `run`은 PR을 머지하거나 닫지 않는다. origin이 없거나 GitHub의 것이 아니면 기본 브랜치로 합칠지 묻는다.
 
 ## CI 워크플로
 
