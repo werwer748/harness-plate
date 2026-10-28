@@ -45,3 +45,32 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 회고 1의 문제가 모두 고쳐졌다.
+  - `plugins/plate/skills/run/SKILL.md` 380~392줄("BACKLOG를 고친다")을 읽음 → 387줄에 `- 고침 task가 고치기로 한 이 프로젝트만의 하네스 고칠 거리와 같은 뜻의 항목은 지운다. 고침 task가 고친다.`가 있어, 그 항목은 390줄의 "그 밖의 항목"으로 세어지지 않는다. `docs/PRD.md` 18줄, `docs/ARCHITECTURE.md` 76줄, `docs/ADR.md` 54줄을 읽음 → 새 줄과 어긋나는 글이 없다. 통과
+  - `python3 -m unittest discover -s tests` → `Ran 203 tests`, `OK`. 새 사본(`tempfile.mkdtemp()`에 `plugins`, `tests` 복사)에서 새 글 `고침 task가 고치기로 한 이 프로젝트만의 하네스 고칠 거리와 같은 뜻의 항목은 지운다`(count= 1)를 빈 글로 바꾸고 돌림 → `FAIL: test_backlog_three_sections (test_skill_rules.RunRulesTest` 있음. 통과
+- task 머리의 완료 조건이 모두 참이다.
+  - 완료 조건 1: `plugins/plate/skills/run/SKILL.md` 351·358·359줄과 384~391줄을 읽음 → BACKLOG로 미룰 것에 `고침 task에서 뺀 이 프로젝트만의 하네스 고칠 거리의 번호`, 고칠 곳을 말할 때 `고침 task에서 뺀 소스 문제와 이 프로젝트만의 하네스 고칠 거리는 BACKLOG로 미룰 것으로 옮긴다`, 아무것도 고치지 않겠다는 답에 `고침 task에 두었던 이 프로젝트만의 하네스 고칠 거리도 BACKLOG로 미룰 것에 둔다`, `미룰 하네스 고칠 거리마다(갈래와 상관없이, 항목의 갈래 칸에 그 갈래를 적는다)`가 있어 `갈래: 이 프로젝트만` 항목을 채울 길이 있다. 통과
+  - 완료 조건 2: 같은 파일 354줄(처음 안 문단)을 읽음 → `감수가 문턱보다 먼저다: 처리가 감수인 plate 자체의 것은 문턱을 넘었어도 이슈로 올릴 것에 두지 않는다`와 `처리가 감수가 아닌 것 가운데 plate 자체의 …`로 갈 자리가 감수할 것 하나다. 통과
+  - 완료 조건 3(tasks 완료 조건 3): 새 글 열셋 저마다 `grep -cF -e '<글>' plugins/plate/skills/run/SKILL.md` → 모두 `1`. 세 절 머리 `grep -cxF -e '<줄>'` → 저마다 `1`. 옛 글 셋 `grep -cF -e` → 모두 `0`. `grep -cE '^   - BACKLOG로 미룰 것: 소스 문제의 번호$' plugins/plate/skills/run/SKILL.md` → `0`. 통과
+  - 완료 조건 3(tasks 완료 조건 5): `python3 -m unittest discover -s tests` → 마지막 줄 `OK`. 네 시험을 저마다 새 사본(`tempfile.mkdtemp()`에 작업 트리의 `plugins`, `tests` 복사)에서 돌림 → 글마다 count= 1, 빈 글로 바꾼 뒤 `FAIL: test_threshold_and_disposition (test_skill_rules.EvalRulesTest`, `FAIL: test_74_untested_lines_not_failures (test_skill_rules.EvalRulesTest`, `FAIL: test_first_proposal_uses_threshold (test_skill_rules.RunRulesTest`, `FAIL: test_backlog_three_sections (test_skill_rules.RunRulesTest`가 저마다 있음. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 203 tests`, `OK`. 통과
+
+**남은 것**
+- 바뀐 run 본문의 BACKLOG 고치기 동작은 헤드리스로 돌려 보지 않았다 → 통과 조건은 본문의 글을 읽고 테스트를 돌려 보며 run의 실제 동작을 보지 않으므로 걸리지 않는다(tasks 머리의 `- 돌리지 않음: run의 tasks 끝은 사용자의 답과 `gh`가 있어야 돌고 …`도 그 동작을 돌리지 않기로 정했다). 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 바뀐 run 본문의 BACKLOG 고치기 동작은 헤드리스로 돌려 보지 않았다(tasks 머리의 `돌리지 않음` 줄이 정한 동작)
+- 네 시험의 사본은 `mktemp -d`/`cp -R` 대신 Python `tempfile.mkdtemp()`/`shutil.copytree`로 만들었다. 대상(작업 트리의 `plugins`, `tests`), 패턴, 기대는 같다
+
+**판정**: 통과
