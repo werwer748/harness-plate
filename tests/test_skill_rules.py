@@ -1,7 +1,7 @@
 """release-prep tasks가 고친 스킬 규칙의 글이 본문의 제자리에 남아 있는지 시험한다.
 
 이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41·#46·#52·#53·#55·#56·#57·#65·#68, phase의 #42·#51·#69, check의 #51·#69,
-retro의 #49·#50·#51·#69, review의 #51·#70, eval의 #36·#50·#51) 그 규칙을 이루는
+retro의 #49·#50·#51·#69, review의 #51·#70, eval의 #36·#50·#51·#74) 그 규칙을 이루는
 글이 그 본문의 그 절에 있는지 본다. 글이 빠지거나 다른 절로 옮겨지면 실패한다.
 모든 스킬의 앞머리가 Agent Skills 규격의 한도(description 1024자, name 64자) 안에 있는지도 본다.
 """
@@ -835,6 +835,36 @@ class EvalRulesTest(unittest.TestCase):
         self.assertIn("`남은 것:`으로 시작하는 줄", body)
         self.assertIn('"문제"로 판정된 것만 실패로 센다', body)
         self.assertIn('"문제 아님"으로 판정됐거나 회고가 모으지 않은 줄은 실패가 아니다', body)
+
+    def test_threshold_and_disposition(self):
+        text = read("eval")
+        body = section(text, "5. 하네스 고칠 거리를 정한다")
+        for phrase in (
+            "처리는 규칙을 더하거나 고친다, 규칙을 지운다, 감수한다 가운데 하나다",
+            "잡힌 곳이 phase의 확인, task의 회고, tasks 끝인 실패나 멈춤이 근거에 있으면 문턱을 넘는다",
+            "`docs/BACKLOG.md`의 하네스 고칠 거리에 같은 뜻의 항목이 있으면 문턱을 넘는다",
+            "`docs/BACKLOG.md`의 감수한 것과 같은 뜻이면 고칠 거리로 적지 않는다",
+            "이슈 제목과 본문은 문턱을 넘었고 처리가 감수가 아닌 plate 자체의 것에만 적는다",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, body)
+        self.assertNotIn("plate 자체의 것에는 이슈로 올릴 제목과 본문을 적는다", text)
+        form = section(text, "기록의 양식")
+        for line in (
+            "   - 처리: {규칙을 더하거나 고친다 | 규칙을 지운다 | 감수한다}",
+            "   - 문턱: {넘음 | 넘지 않음}",
+        ):
+            with self.subTest(line=line):
+                self.assertIn(line, form)
+        self.assertIn("`docs/BACKLOG.md`의 하네스 고칠 거리와 감수한 것", section(text, "1. 읽는다"))
+
+    def test_74_untested_lines_not_failures(self):
+        body = section(read("eval"), "2. 실패를 모아 MAST 유형으로 나눈다")
+        self.assertIn(
+            '코드 평가의 "하네스에서 걸린 것" 가운데 계획의 `돌리지 않음` 줄이 정한 동작 때문에 '
+            "낮아진 등급만 적은 줄은 실패가 아니다",
+            body,
+        )
 
 
 if __name__ == "__main__":
