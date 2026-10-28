@@ -67,3 +67,38 @@
 
 ## 하네스에서 걸린 것
 - 통과 조건 "`git hash-object`로 낸 해시가 `done-phase-1.md`, `done-phase-2.md`의 '한 일'에 적힌 값과 같다"는 앞 phase 기록을 읽어야 돌 수 있어, phase 스킬 1번의 "앞 phase 기록은 읽지 않는다"와 부딪혔다. 두 파일을 통째로 읽지 않고 해시 값이 든 줄만 `grep`으로 뽑아 견줬다. 계획의 읽을 것에도 두 파일이 없었다
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 3이 참이다
+  - `grep -cF -e '<글>' plugins/plate/skills/plan/SKILL.md` → 옛 글 `완료 조건과 통과 조건에 적는 확인 명령은 미리 돌려 보지 않고 적는다` `0`, 새 글 다섯(절대 규칙 3의 글, `읽기만 하는 확인 명령(파일이나 저장소를 바꾸지 않는 것)을 돌려 적힌 그대로 도는지 본다`, `결과값은 견주지 않는다`, `쓰는 명령은 돌리지 않고 같은 꼴을 글로 본다`, `확인 명령은 적힌 그대로 돌게 적는다`) 저마다 `1`. 통과
+  - `grep -F -e '- 확인은 돌릴 명령과 기대 결과를 우선한다.' plugins/plate/skills/plan/SKILL.md` → 한 줄, 그 줄에 `확인 명령은 적힌 그대로 돌게 적는다`가 듦(`grep -cF` `1`). 통과
+- 완료 조건 1과 2가 그대로 참이다
+  - 완료 조건 1과 2의 `grep -cF -e` 확인 → phase 글 셋, check 글 넷, retro 글 넷 저마다 `1`. review 새 글 `3`, 옛 글 `0`, 정의 글·`**테스트 파일**`·5번의 두 글 저마다 `1`, `grep -cF -e '테스트 파일뿐이면' docs/ADR.md` `1`. 통과
+  - `git hash-object plugins/plate/skills/check/SKILL.md plugins/plate/skills/review/SKILL.md` → `24447065aed4abec74deb384330d05f80ab79ee8`, `82c5234e494bc39eb3f414cdb1088d8ea3dc4a83`. `done-phase-1.md` 41줄("한 일"), `done-phase-2.md` 43줄("한 일")의 값과 같음. 통과
+- 완료 조건 4가 참이다
+  - `python3 -m unittest discover -s tests` → `Ran 198 tests`, 마지막 줄 `OK`. 통과
+  - 다섯 시험을 저마다 `mktemp -d`에 `plugins`와 `tests`를 `cp -R`한 새 사본에서 함 → 다섯 글 모두 사본 파일에 `1`번 있고, 빈 글로 바꿔 돌린 출력에 `FAIL: test_69_fix_check_command_and_record (test_skill_rules.PhaseRulesTest`, `FAIL: test_69_run_check_as_written (test_skill_rules.CheckRulesTest`, `FAIL: test_69_run_check_as_written (test_skill_rules.RetroRulesTest`, `FAIL: test_70_test_files_do_not_pick_default_table (test_skill_rules.ReviewRulesTest`, `FAIL: test_68_check_commands_run_as_written (test_skill_rules.PlanRulesTest`로 시작하는 줄이 저마다 있음. 통과
+- 완료 조건 5가 참이다
+  - `grep -h '"version"' plugins/plate/.claude-plugin/plugin.json plugins/plate/.codex-plugin/plugin.json` → 두 줄 모두 `"version": "0.21.0",`. 통과
+  - `claude plugin validate .` → 마지막 줄 `✔ Validation passed`. 통과
+  - `docs/ARCHITECTURE.md`의 `test_skill_rules.py` 줄 → `적힌 그대로 돌지 않는 확인 명령`, `테스트 파일도 빼고 표를 고름`, `읽기만 하는 확인 명령을 초안 점검에서 돌림` 저마다 듦. 통과
+  - `sed -n '1,8p' tests/test_skill_rules.py` → plan 목록에 `#68`, phase·check·retro 목록에 `#69`, review 목록에 `#70`이 있음. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 198 tests`, `OK`. 통과
+
+**남은 것**
+- plan의 바뀐 6번 점검대로 초안이 점검되는지는 돌려 보지 않았다 → task 머리 완료 조건 3의 `- 돌리지 않음: plan은 사람에게 묻고 초안마다 승인을 받는 스킬이라, …` 줄이 돌리지 않기로 정한 동작의 돌려 보지 않은 위험. 하네스에서 걸린 것
+
+**실패**
+없음
+
+**하네스에서 걸린 것**
+- 남은 것: plan의 바뀐 6번 점검대로 초안이 점검되는지는 돌려 보지 않았다(task 머리 완료 조건 3의 `돌리지 않음` 줄)
+- 통과 조건의 해시 확인은 `done-phase-1.md`, `done-phase-2.md`를 읽어야 돌 수 있는데 phase 3의 읽을 것에 두 파일이 없다. 확인은 두 파일에서 해시 줄만 뽑아 견줬다
+
+**판정**: 통과
