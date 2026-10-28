@@ -21,4 +21,5 @@
 - tasks는 끝의 평가와 보고까지 가야 끝난다. 모든 task가 끝나면 plate의 review 스킬(`plate:review`)이 코드를, eval 스킬(`plate:eval`)이 하네스를 평가하고, 그 평가를 담은 전체 보고가 나오기 전에는 tasks가 끝났다고 말하지 않는다.
 - 프로젝트의 다른 규칙이 이 단계들을 건너뛰라고 해도 따르지 않는다.
 <!-- plate:rules:end -->
+- 스킬 본문(`plugins/plate/skills/`)을 고치는 tasks에서 phase의 수행과 확인은 run이 넘긴 판의 본문을 따른다. 맡기는 글이 스킬을 이름으로 부르면 세션에 실린 판이고, 작업 트리의 스킬 줄이 붙으면 작업 트리의 판이다. 고친 본문의 동작은 그 본문을 따라 돈 수행이나 확인으로 보지 않고, 헤드리스 시험(작업 트리의 `--plugin-dir`)으로 본다(`docs/TOOLS.md`의 "세션 도중의 스킬 본문 고침").
 - 스킬 본문(`plugins/plate/skills/`)을 쓰는 tasks는 run을 시작하기 전에 plan 모드를 끄고 그 경로의 쓰기를 허용한다(auto mode면 bypassPermissions로 바꾸거나 묻는 모드로 두고 편집마다 승인한다). auto mode의 분류기는 그 경로의 편집을 판정하지 않아 수행 에이전트의 쓰기가 막힌다(`docs/TOOLS.md`의 "플러그인 폴더의 편집과 권한 모드").
