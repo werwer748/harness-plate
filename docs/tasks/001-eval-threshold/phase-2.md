@@ -66,3 +66,33 @@
 ## 하네스에서 걸린 것
 - 시험 저장소의 확인 절과 RUNLOG 꼴을 맞추려고 `docs/tasks/001-eval-threshold/done-phase-1.md`의 머리 다섯 줄과 절 제목 줄(`grep -n`)을 봤다. phase 스킬 1번은 앞 phase의 기록을 읽지 않게 한다. 꼴은 check·retro·review·run 본문의 양식에서 다시 가져왔다
 - phase-2의 통과 조건(처리 줄 `grep -cF`가 `1`)과 결정(두 갈래 모두 처리를 적는다)이 양식에서 두 항목에 같은 줄을 둘 수 없게 해, 이 프로젝트만 항목의 처리 줄 꼴을 바꿨다
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 1과 2가 참이다.
+  - `grep -cF -e '<글>' plugins/plate/skills/eval/SKILL.md`를 새 글 여덟(1번의 BACKLOG 글, 5번의 다섯 글, 양식의 `   - 처리: …`, `   - 문턱: …`)과 2번의 #74 글마다 → 모두 `1`. 옛 글 `plate 자체의 것에는 이슈로 올릴 제목과 본문을 적는다` → `0`. 통과
+  - 시험 저장소 `…/scratchpad/evaltest.pKl7`의 `docs/tasks/eval.md`(커밋 `22593d3 greet: 하네스 eval`, `eval.md` 하나만)를 직접 읽음 → 고칠 거리 1(나)은 `문턱: 넘음`과 이슈 제목, 2(가)는 `문턱: 넘음`과 이슈 제목, 3(다)은 `문턱: 넘지 않음`이고 이슈 제목 없음, (라)는 고칠 거리에 없고 "하네스에서 걸린 것"에 감수한 것과 같은 뜻이라 적지 않았다고 적힘, (마)는 "실패" 1~4에 없음, 고칠 거리 넷 모두 `처리:` 줄 있음. `git hash-object plugins/plate/skills/eval/SKILL.md` → `6d5fdd8ca384116079edbd4d261c0cc7829ad092`, 기록의 값과 같다. 통과
+- 완료 조건 3이 그대로 참이다.
+  - 완료 조건 3의 새 글 열셋 `grep -cF -e '<글>' plugins/plate/skills/run/SKILL.md` → 모두 `1`. 세 절 머리 `grep -cxF -e '<줄>'` → 모두 `1`. 옛 글 셋 `grep -cF -e` → 모두 `0`. `grep -cE '^   - BACKLOG로 미룰 것: 소스 문제의 번호$' plugins/plate/skills/run/SKILL.md` → `0`. 통과
+- 모든 테스트가 통과하고, 고친 eval 글이 빠지면 그 테스트가 실패한다.
+  - `python3 -m unittest discover -s tests` → 202 tests, 마지막 줄 `OK`. 통과
+  - 새 사본마다(`mktemp -d`에 `plugins`, `tests`를 `cp -R`) 글이 사본에 `1`번 있음을 보고 빈 글로 바꿔 `python3 -m unittest discover -s tests` → 문턱 글: `FAIL: test_threshold_and_disposition (test_skill_rules.EvalRulesTest) (phrase='잡힌 곳이 …')`. #74 글: `FAIL: test_74_untested_lines_not_failures (test_skill_rules.EvalRulesTest)`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → 202 tests, `OK`. 통과
+
+**남은 것**
+- (라)를 걸러 낸 것은 BACKLOG의 글과 거의 같은 꼴에서만 봤다 → 통과 조건은 이 시험 차림의 (라)가 고칠 거리에 없는지만 보고, 그것은 참이다. 글이 많이 다른 같은 뜻의 것은 통과 조건이 보는 동작에 걸리지 않는다. 하네스에서 걸린 것
+- 시험 저장소 `review.md`의 (마) 줄과 테스트 적절성 근거가 서로 맞지 않았다 → 통과 조건의 "(마)는 '실패'에 없다"는 참이고, 시험 차림의 흠이라 통과 조건이 보는 eval 본문의 동작에 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+없음
+
+**하네스에서 걸린 것**
+- 남은 것: (라)의 같은 뜻 가르기는 BACKLOG와 거의 같은 글 한 꼴에서만 시험했다. 글이 많이 다른 같은 뜻의 것은 돌려 보지 않았다
+- 남은 것: 시험 저장소 `review.md`에서 (마)의 줄(`돌리지 않음` 탓)과 테스트 적절성 근거(`greet.py:3` 인자 없는 갈래)가 맞지 않았다. (마)가 순수하게 `돌리지 않음`만 적은 줄인 차림에서는 돌려 보지 않았다
+
+**판정**: 통과
