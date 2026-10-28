@@ -540,6 +540,34 @@ class PlanRulesTest(unittest.TestCase):
         self.assertIn("블록을 여닫는 줄은 옮기지 않는다", words)
         self.assertIn('낱말의 "양식을 읽는 법"대로 옮긴다', section(self.text, "계획 파일의 양식"))
 
+    def test_rule_todo_finds_existing_lines_in_skills_and_code(self):
+        # 규칙을 바꾸는 TODO는 같은 대상을 다루는 스킬 본문과 코드의 기존 줄도 찾는다(cleanup 2026-10-28 기존 작업 정합성-1, #59).
+        body = part(section(self.text, "적는 규칙"), "TODO")
+        self.assertIn("같은 대상(명령, 낱말)을 다루는 스킬 본문과 코드의 기존 줄도 계획하며 찾아 읽을 것에 넣고", body)
+        self.assertIn("그 줄들과 새 규칙이 같은 것을 시키는지 보는 확인을 완료 조건에 둔다", body)
+
+    def test_command_examples_count_as_behavior(self):
+        # 본문에 넣는 명령 예도 동작이라 돌리는 확인을 두거나 예를 뺀다(cleanup 2026-10-28 기존 작업 정합성-2, #62).
+        body = part(section(self.text, "적는 규칙"), "조건")
+        self.assertIn("본문에 넣는 명령 예도 동작으로 친다", body)
+        self.assertIn("마다 시험 저장소에서 돌리는 확인을 두거나, 예를 뺀다", body)
+        self.assertIn("plan은 그 확인을 미리 돌리지 않는다", body)
+
+    def test_shared_definitions_match(self):
+        # run과 plan에 복사된 같은 정의 셋이 어긋나지 않는다(cleanup 2026-10-28 유지보수성-6).
+        run = read("run")
+        lines = []
+        for text in (self.text, run):
+            found = [l for l in section(text, "낱말").split("\n") if l.startswith("- **테스트가 있는 프로젝트**:")]
+            self.assertEqual(len(found), 1)
+            lines.append(found[0])
+        self.assertEqual(lines[0], lines[1])
+        for key in ("코드 파일(`.md`가 아닌 파일)의 동작을 바꾸",
+                    "`docs/tasks/` 바로 아래 폴더 이름의 앞 세 자리 숫자 가운데 가장 큰 것의 다음"):
+            with self.subTest(key=key):
+                self.assertIn(key, self.text)
+                self.assertIn(key, run)
+
 class PhaseRulesTest(unittest.TestCase):
     def test_42_does_not_read_earlier_phase_records(self):
         body = section(read("phase"), "1. 읽는다")
