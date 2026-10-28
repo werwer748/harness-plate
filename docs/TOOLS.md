@@ -25,6 +25,7 @@ Codex → Grok Build 순으로 넓히는 일은 v1.0 뒤에 한다(ADR-018).
 - 에이전트는 프로젝트 폴더 밖의 파일을 읽거나 쓰지 못한다(플러그인의 `SKILL.md`를 경로로 여는 것도). 다른 스킬의 본문은 이름으로 불러야 받는다. WebFetch는 헤드리스에서 막힌다(2.1.296~2.1.300).
 - stream-json의 init 줄(스킬 목록, `permissionMode`)은 훅 줄들 뒤에 나온다. acceptEdits의 헤드리스 세션은 스킬에게 지금 모드를 알려 주지 않는다(2.1.300~2.1.311).
 - 세션 기록은 `${CLAUDE_CONFIG_DIR:-~/.claude}/projects/<작업 폴더 경로의 /와 .을 -로 바꾼 이름>/<세션 id>.jsonl`이다(2.1.311).
+- 한글 본문을 `python3 -` heredoc으로 고치면 `SyntaxError: Non-UTF-8 code`로 깨질 수 있다. Edit 도구나 `python3 -c`, 파일로 쓴 스크립트를 쓴다. 늘 깨지지는 않아 같은 꼴이 돈 때도 있다(2.1.312).
 - `git clone <원본>`은 원본의 지금 브랜치를 `origin/HEAD`로 둔다. 복제본에서 기본 브랜치를 보는 스킬을 돌리려면 `git remote set-head origin main`을 한다(2026-10-27).
 
 **서브에이전트, 권한, worktree** (2.1.296~2.1.302)

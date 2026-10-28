@@ -6,7 +6,13 @@ retro의 #49·#50·#51, review의 #51, eval의 #36·#50·#51) 그 규칙을 이�
 모든 스킬의 앞머리가 Agent Skills 규격의 한도(description 1024자, name 64자) 안에 있는지도 본다.
 """
 
+import json
+import os
 import re
+import shlex
+import subprocess
+import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -320,6 +326,111 @@ class RunRulesTest(unittest.TestCase):
         self.assertIn("그 phase의 마지막 `멈춤` 줄이 지금과 같은 확인 절 수에서 다시 맡기기로 한 답", body)
         self.assertIn("그 task의 마지막 `멈춤` 줄이 지금과 같은 회고 절 수에서 다시 맡기기로 한 답", body)
         self.assertIn('"멈춘다" 행을 건너뛰는 것은 같은 수에서 한 번뿐이다', body)
+
+    def test_state_reading_awk_runs_on_trap_files(self):
+        # 3번 "상태를 읽는 법"의 awk 명령을 본문에서 뽑아 시험 파일에 돌린다(review 평가 1의 소스 문제 1).
+        body = section(self.text, "3. 갈 곳을 정한다")
+        command = re.search(r"^(awk -v h='확인' .*) (docs/tasks/NNN-slug/phase-N\.md)$", body, re.M)
+        self.assertIsNotNone(command, "3번에 awk 명령 줄이 없다")
+        awk = command.group(1)
+        trap = "\n".join([
+            "````markdown",
+            "```",
+            "## 확인 1",
+            "**판정**: 통과",
+            "- [ ] 블록 속 TODO",
+            "````",
+        ])
+        cases = {
+            "phase_with_traps": ("확인", "\n".join([
+                "**TODO**",
+                "- [x] 끝낸 것",
+                "- [ ] TODO 속 `## 확인 1`을 고친다",
+                "- [ ] 둘째",
+                trap,
+                "## 한 일",
+                "- [ ] 기록 절 뒤의 체크 상자는 세지 않는다",
+                trap,
+                "## 확인 1",
+                "**판정**: 실패",
+                "## 확인 2",
+                "**판정**: 통과",
+                "```",
+                "**판정**: 실패",
+                "```",
+                "",
+            ]), "기록 절 1, 체크 안 된 TODO 2, 확인 절 2, 마지막 판정 **판정**: 통과"),
+            "last_section_without_verdict": ("확인", "\n".join([
+                "- [ ] 남은 것",
+                "## 한 일",
+                "## 확인 1",
+                "**판정**: 통과",
+                "## 확인 2",
+                "```",
+                "**판정**: 통과",
+                "```",
+                "",
+            ]), "기록 절 1, 체크 안 된 TODO 1, 확인 절 2, 마지막 판정 없음"),
+            "retro": ("회고", "\n".join([
+                "# 회고",
+                trap,
+                "## 회고 1",
+                "**판정**: 통과",
+                "",
+            ]), "기록 절 0, 체크 안 된 TODO 0, 회고 절 1, 마지막 판정 **판정**: 통과"),
+        }
+        with tempfile.TemporaryDirectory() as folder:
+            for name, (h, content, expected) in cases.items():
+                with self.subTest(case=name):
+                    path = Path(folder) / (name + ".md")
+                    path.write_text(content, encoding="utf-8")
+                    line = awk.replace("-v h='확인'", "-v h='%s'" % h) + " " + shlex.quote(str(path))
+                    done = subprocess.run(["sh", "-c", line], capture_output=True, text=True, encoding="utf-8")
+                    self.assertEqual(done.returncode, 0, done.stderr)
+                    self.assertEqual(done.stdout, expected + "\n")
+
+    def test_text_passing_rule_survives_fake_gh(self):
+        # "글을 넘기는 법"대로 넣은 제목이 가짜 gh에 한 인자로 그대로 닿고 치환이 돌지 않는다(review 평가 1의 소스 문제 1).
+        terms = section(self.text, "낱말")
+        rule = re.search(r"글 안의 작은따옴표는 저마다 `([^`]+)`로 바꾼다\(제목 `([^`]+)`는 `([^`]+)`\)", terms)
+        self.assertIsNotNone(rule, '"글을 넘기는 법"에 바꾸는 글과 예가 없다')
+        replacement, example, quoted = rule.groups()
+
+        def quote(value):
+            return "'" + value.replace("'", replacement) + "'"
+
+        self.assertEqual(quote(example), quoted)
+        templates = re.findall(r"`(gh (?:issue|pr) [^`]*'\{[^}]+\}'[^`]*)`", self.text)
+        self.assertGreaterEqual(len(templates), 3)
+        title = "`plate:plan`이 $(touch pwned) `touch pwned2` 'x' \"y\" it's \\n $HOME"
+        with tempfile.TemporaryDirectory() as folder:
+            base = Path(folder)
+            bin_dir = base / "bin"
+            bin_dir.mkdir()
+            out = base / "args.json"
+            fake = bin_dir / "gh"
+            fake.write_text(
+                "#!%s\nimport json, sys\njson.dump(sys.argv[1:], open(%r, 'w', encoding='utf-8'))\n"
+                % (sys.executable, str(out)),
+                encoding="utf-8",
+            )
+            fake.chmod(0o755)
+            body_file = base / "body.md"
+            body_file.write_text("본문", encoding="utf-8")
+            env = dict(os.environ, PATH=str(bin_dir) + os.pathsep + os.environ.get("PATH", ""))
+            for template in templates:
+                with self.subTest(template=template):
+                    line = re.sub(r"'\{[^}]+\}'", lambda _: quote(title), template)
+                    line = line.replace("{본문 파일}", shlex.quote(str(body_file)))
+                    line = re.sub(r"\{[^}]+\}", "x", line).replace("<이름>", "x")
+                    if out.exists():
+                        out.unlink()
+                    done = subprocess.run(["sh", "-c", line], cwd=folder, env=env, capture_output=True, text=True, encoding="utf-8")
+                    self.assertEqual(done.returncode, 0, done.stderr)
+                    args = json.loads(out.read_text(encoding="utf-8"))
+                    self.assertEqual(args.count(title), 1, args)
+                    self.assertFalse((base / "pwned").exists())
+                    self.assertFalse((base / "pwned2").exists())
 
     def test_runlog_reason_for_respawn(self):
         # 확인이나 회고 없이 같은 역할을 다시 띄우면 그 까닭을 에이전트 줄 끝에 덧붙인다(기존 작업 정합성-4, #61).
