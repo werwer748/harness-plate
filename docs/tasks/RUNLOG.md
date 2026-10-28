@@ -7,3 +7,5 @@
 - 에이전트 | 확인 | `001-eval-threshold` phase 1 | 토큰 61124 | 도구 호출 6 | 시간 82초
 - 에이전트 | 수행 | `001-eval-threshold` phase 2 | 토큰 125668 | 도구 호출 26 | 시간 453초
 - 에이전트 | 확인 | `001-eval-threshold` phase 2 | 토큰 70335 | 도구 호출 9 | 시간 97초
+- 에이전트 | 수행 | `001-eval-threshold` phase 3 | 토큰 73244 | 도구 호출 12 | 시간 162초
+- 에이전트 | 확인 | `001-eval-threshold` phase 3 | 토큰 64380 | 도구 호출 7 | 시간 128초
