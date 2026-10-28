@@ -503,6 +503,43 @@ class PlanRulesTest(unittest.TestCase):
         self.assertIn("맥락 문서에는 다음 계획이 알아야 할 도구 동작", body)
         self.assertIn("만 한 줄로 더한다", body)
 
+    def test_draft_list_split_before_and_after(self):
+        # 6번 목록은 초안 전의 점검과 초안 뒤의 규칙으로 나뉘고, 앞 목록 머리에 머리말이 한 번 있다(cleanup 2026-10-28 유지보수성-2).
+        body = section(self.text, "6. 초안을 보여 주고 승인받는다")
+        head = "초안을 보여 주기 전에 아래를 본다."
+        tail = "초안을 보여 준 뒤에는 아래를 따른다."
+        self.assertEqual(body.count(head), 1)
+        self.assertEqual(body.count(tail), 1)
+        before = body[body.index(head) + len(head):body.index(tail)]
+        after = body[body.index(tail):]
+        self.assertNotIn("초안을 보여 주기 전에", before)
+        self.assertIn("갈래마다 돌리는 확인이 있는지 본다", before)
+        for line in ("- 승인을 미리 받았어도 초안을 적은 답글에서 멈춘다", "- 고칠 곳을 말하면 고쳐서 다시 보여 준다",
+                     "- 답이 승인인지 분명하지 않으면", "- **마지막 task의 초안까지 승인받기 전에는 7번으로 가지 않는다.**"):
+            with self.subTest(line=line):
+                self.assertIn(line, after)
+                self.assertNotIn(line, before)
+
+    def test_no_other_part_in_writing_rules(self):
+        # "그 밖" 절은 앞 단계와 같아 지웠고, 2번은 지도에 적힌 위치의 문서를 읽는다(cleanup 2026-10-28 유지보수성-4).
+        self.assertNotIn("**그 밖**", self.text)
+        self.assertIn("문서 지도에 적힌 위치의 맥락 문서를 모두 읽는다", section(self.text, "2. 맥락 문서를 읽는다"))
+
+    def test_remaining_results_item_points_to_worktree_item(self):
+        # 남은 결과 항목은 작업 트리 항목의 설명을 되풀이하지 않고 가리킨다(cleanup 2026-10-28 유지보수성-5).
+        body = part(section(self.text, "적는 규칙"), "조건")
+        self.assertNotIn("아래 규칙대로 통과 조건은 커밋 전의 작업 트리에서 돌아", body)
+        self.assertIn("통과 조건이 작업 트리에서 돈다는 다음 항목에 있다", body)
+        self.assertIn("커밋 시각으로는 결과가 본문보다 늘 앞서고", body)
+
+    def test_template_reading_rule_in_one_place(self):
+        # 양식을 읽는 법은 run과 같은 이름의 낱말에 한 번 있고, 양식 절이 그 낱말을 가리킨다(cleanup 2026-10-28 유지보수성-12).
+        self.assertEqual(self.text.count("블록을 여닫는 줄은 옮기지 않는다"), 1)
+        words = section(self.text, "낱말")
+        self.assertIn("- **양식을 읽는 법**:", words)
+        self.assertIn("블록을 여닫는 줄은 옮기지 않는다", words)
+        self.assertIn('낱말의 "양식을 읽는 법"대로 옮긴다', section(self.text, "계획 파일의 양식"))
+
 class PhaseRulesTest(unittest.TestCase):
     def test_42_does_not_read_earlier_phase_records(self):
         body = section(read("phase"), "1. 읽는다")
