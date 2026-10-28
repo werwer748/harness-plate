@@ -68,3 +68,37 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 브랜치와 재개가 완료 조건 3대로다. (완료 조건 3)
+  - `python3 -m unittest discover -s tests` → `Ran 177 tests`, `OK`. `-v`로 `test_branch_question_when_not_default_or_tasks_branch`, `test_resume_after_clearing_goes_to_pr_or_merge`, `test_merge_has_own_question_and_switch_failure`, `test_branch_in_question_lists`가 `ok`. 통과
+  - `mktemp -d`의 `<임시>/g`에 `git init -b main`, `docs/tasks/plan.md`(`# 시험 tasks`, `**이름**: demo`) 커밋, `git switch -c tasks/demo`, `git rm` 뒤 `demo: 비움` 커밋. 0번에 적힌 세 명령(`git branch --show-current`, `git log -1 --format=%s`, `git show HEAD^:docs/tasks/plan.md`) → `tasks/demo`, `demo: 비움`, 첫 줄 `# 시험 tasks`. 빈 커밋 `demo: RUNLOG` 뒤 다시 → `tasks/demo`, `demo: RUNLOG`(비움이 아니다). 통과
+  - 다섯 곳을 읽음 → ARCHITECTURE `## 패턴과 규칙` run 줄(55행: 브랜치 물음과 비운 뒤 PR·합침), `## 데이터 흐름` 실행 단계 브랜치 줄(65행: 브랜치 물음, 79행: 재개), README 스킬 표 `run` 행(두 갈래), README `## tasks 끝의 PR`(두 갈래), PRD 핵심 기능 8의 PR 문장(두 갈래). 통과
+- 앞 phase가 이룬 규칙이 그대로다. (완료 조건 1, 2, 5)
+  - `python3 -m unittest discover -s tests` → `OK`. 완료 조건 1의 `test_issue_text_is_data_only`, `test_text_passing_rule_in_one_place`, `test_issue_list_filters_by_body_without_narrowing_limit`, `test_pr_question_shows_comment_text`와 완료 조건 2의 `test_state_tables_row_order`, `test_three_failure_resume_goes_to_fix_phase_for_retro`, `test_state_reading_and_stop_line_rows`, `test_runlog_reason_for_respawn`이 `ok`. 통과
+  - `<임시>/bin/gh`(인자를 한 줄씩 `<임시>/args`에 덧붙임, 실행 권한)를 두고, 제목을 낱말의 "글을 넘기는 법"대로(작은따옴표로 감싸고 안의 `'`를 `'\''`로) 넣은 `gh issue list --search`, `gh issue create --title`, `gh pr create --title` 세 줄을 `<임시>/run.sh`에 써서 `PATH=<임시>/bin:$PATH sh <임시>/run.sh` → `grep -cxFf <임시>/title <임시>/args`가 `3`, `ls <임시>/pwned`가 `No such file or directory`. 통과
+  - `git grep -n 'TOOLS.md' -- plugins/` → 출력 없음(종료 1). 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 177 tests`, `OK`. 통과
+
+**남은 것**
+- 0번의 재개 갈래는 비움 커밋이 마지막 커밋일 때만 탄다 → 통과 조건(완료 조건 3의 git 장면)이 `demo: RUNLOG` 뒤에는 재개하지 않기를 기대하므로 정한 동작이고 결함이 아니다. 하네스에서 걸린 것
+- 이미 PR을 연 브랜치로 다시 부르면 `gh pr create`가 실패한다 → task 머리의 범위 밖이고 통과 조건이 보는 동작(가르는 git 명령, 제목 넘기는 법)에 걸리지 않는다. 하네스에서 걸린 것
+- 1번에서 승인하면 `git switch -c`가 기본 브랜치가 아닌 지금 브랜치의 끝에서 갈라져 그 커밋도 tasks 브랜치에 든다 → 통과 조건은 본문 글(테스트)과 맥락 문서만 보고 브랜치 물음의 흐름은 완료 조건 3의 `돌리지 않음` 줄이 돌리지 않기로 정했다. 걸리지 않는다. 하네스에서 걸린 것
+- eval 본문 `낱말`의 "정해 둔 물음" 목록에 `브랜치`가 없다 → task 머리 범위 밖이고 통과 조건에 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 0번의 재개 갈래는 비운 뒤 사람이 그 브랜치에 커밋을 더하면 타지 않고 "계획이 없다"로 끝난다
+- 남은 것: 재개에서 이미 PR을 연 브랜치로 다시 부르면 `gh pr create`가 실패해 보고에만 적힌다(task 머리 범위 밖)
+- 남은 것: 1번 브랜치 물음을 승인해 `tasks/<이름>`을 새로 만들면 기본 브랜치가 아닌 지금 브랜치의 끝에서 갈라져 그 브랜치의 커밋이 tasks 브랜치와 끝의 PR에 든다
+- 남은 것: eval 본문 `낱말`의 "정해 둔 물음" 목록에 `브랜치`가 없다(eval은 run의 목록을 따른다고 적혀 있어 범위 밖대로 두었다)
+
+**판정**: 통과
