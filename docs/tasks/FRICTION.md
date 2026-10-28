@@ -1,0 +1,8 @@
+# FRICTION
+
+- `001-check-commands` 문제: phase 3의 통과 조건 "`git hash-object` 해시가 `done-phase-1.md`, `done-phase-2.md`의 '한 일'에 적힌 값과 같다"가 앞 phase 기록을 읽어야 돌아, plate:phase 1번의 "앞 phase의 기록은 읽지 않는다"와 부딪혔고 phase 3의 읽을 것에도 두 파일이 없었다. 수행과 확인 모두 두 파일에서 해시 줄만 `grep`으로 뽑아 견줬다. plate:plan이 앞 phase 기록에 기대는 통과 조건을 쓰지 않게(해시를 산출물 파일에 두거나 그 확인을 task 회고로 넘기게) 볼 거리다
+- `001-check-commands` 문제: phase 2 TODO의 review 헤드리스 시험 차림이 task 머리(`docs/tasks/NNN-slug/plan.md`)와 문서 지도의 `docs/tasks/` 행을 빠뜨려, 수행이 review 1번이 읽는 task 머리를 더 두고 "계획과 달라진 점"에 적었다. plate:plan 6번의 돌려 보는 확인의 차림 점검이 부를 스킬이 읽는 파일을 차림에 다 두었는지까지는 보지 않는다
+- `001-check-commands` 문제: phase 1과 phase 1 확인이 고친 phase·check 본문이 그 수행·확인을 이끄는 본문이기도 했다. 수행은 불려 온 때의 옛 본문대로, 확인은 작업 트리의 고친 본문대로 했다. 스킬 본문을 고치는 tasks에서 어느 판의 본문으로 수행·확인하는지 plate:run이 정해 두지 않았다
+- `001-check-commands` 문제: 이 저장소의 셸이 zsh라 phase 1 수행(그리고 이 회고)의 `echo ====` 구분 줄이 `=` 확장으로 `not found` 오류를 냈다. 판정에는 영향이 없었다. `docs/TOOLS.md`에 셸의 `=` 확장을 적어 둘지 볼 거리다
+- `001-check-commands` 스킬 후보: 고친 글이 빠지면 실패하는지 보는 시험(`mktemp -d`에 `plugins`·`tests` 복사, 글 수 확인, 글을 빈 글로 바꿈, `python3 -m unittest discover -s tests`의 `FAIL:` 줄 확인)을 phase 1·2·3의 수행과 확인이 저마다 손으로 짜 돌렸다(phase 1 수행은 Python 스크립트, 나머지는 셸). 글·파일·테스트 이름을 받아 돌리는 스크립트나 스킬이면 매번 짜는 일과 방식의 갈림이 준다
+- `001-check-commands` 스킬 후보: 스킬을 헤드리스로 돌려 보는 시험 저장소 차림(`mktemp -d`, `git init`, 최소 `AGENTS.md`·`docs/ARCHITECTURE.md`·tasks 머리·task 머리, `claude -p … --plugin-dir … --permission-mode bypassPermissions`, 본문 해시 기록)을 phase 1(check)과 phase 2(review 두 갈래)가 따로 짰다. 차림 틀을 두면 phase 2처럼 차림에서 빠진 파일이 줄어든다
