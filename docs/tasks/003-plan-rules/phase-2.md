@@ -51,3 +51,30 @@
 
 ## 하네스에서 걸린 것
 없음
+
+## 확인 1
+
+**통과 조건**
+- 6번 목록과 적는 규칙이 완료 조건 2대로다. (완료 조건 2)
+  - `python3 -m unittest discover -s tests` → `Ran 187 tests` … `OK`. `python3 -m unittest -v tests.test_skill_rules`에서 네 단언의 `test_draft_list_split_before_and_after`, `test_no_other_part_in_writing_rules`, `test_remaining_results_item_points_to_worktree_item`, `test_template_reading_rule_in_one_place`(PlanRulesTest)와 `test_37_draft_check`, `test_41_conditions_from_earlier_phase_output`, `test_46_rerun_results_compared_by_body_hash`, `test_53_draft_check_for_run_scenes`, `test_55_checks_run_on_uncommitted_worktree`, `test_57_quote_earlier_task_text_as_changed`가 모두 `ok`. 통과
+  - plan `## 2. 맥락 문서를 읽는다`(55줄) → 첫 문단 "문서 지도에 적힌 위치의 맥락 문서를 모두 읽는다. 지도에 행이 더해져 있으면 그 문서도 읽는다."가 그대로 있다. 통과
+- 앞 phase가 이룬 더하는 경우의 규칙이 그대로다. (완료 조건 1)
+  - 같은 `python3 -m unittest discover -s tests` → `OK`. `test_no_adding_after_evaluation_started`, `test_adding_reads_earlier_task_heads`, `test_57_quote_earlier_task_text_as_changed`가 `ok`. 통과
+- 앞 task가 이룬 tasks 완료 조건 3이 그대로다. (완료 조건 4)
+  - `git grep -n 'TOOLS.md' -- plugins/` → 출력 없음(종료 코드 1). 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 187 tests`, `OK`. 통과
+
+**남은 것**
+없음
+
+**실패**
+없음
+
+**하네스에서 걸린 것**
+없음
+
+**판정**: 통과
