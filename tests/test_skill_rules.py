@@ -1,7 +1,7 @@
 """release-prep tasks가 고친 스킬 규칙의 글이 본문의 제자리에 남아 있는지 시험한다.
 
 이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41·#46·#52·#53·#55·#56·#57·#65, phase의 #42·#51·#69, check의 #51·#69,
-retro의 #49·#50·#51·#69, review의 #51, eval의 #36·#50·#51) 그 규칙을 이루는
+retro의 #49·#50·#51·#69, review의 #51·#70, eval의 #36·#50·#51) 그 규칙을 이루는
 글이 그 본문의 그 절에 있는지 본다. 글이 빠지거나 다른 절로 옮겨지면 실패한다.
 모든 스킬의 앞머리가 Agent Skills 규격의 한도(description 1024자, name 64자) 안에 있는지도 본다.
 """
@@ -751,6 +751,29 @@ class RetroRulesTest(unittest.TestCase):
                     "대상이나 패턴이나 기대를 바꿔야 돌면 그 확인은 실패다"):
             with self.subTest(key=key):
                 self.assertIn(key, body)
+
+
+class ReviewRulesTest(unittest.TestCase):
+    def test_70_test_files_do_not_pick_default_table(self):
+        text = read("review")
+        words = section(text, "낱말")
+        self.assertIn("- **테스트 파일**: `.md`가 아닌 파일 가운데 `tests/`, `test/`, `__tests__/` 아래에 있거나 "
+                      "이름이 `test_*`, `*_test.*`, `*.test.*`, `*.spec.*` 꼴인 것", words)
+        new = "결과물인 마크다운, 실행 경로 없는 파일, 테스트 파일뿐이면"
+        old = "결과물인 마크다운과 실행 경로 없는 파일뿐이면"
+        for heading in ("4. 판단한다", "5. 등급을 매긴다", "PR 모드"):
+            with self.subTest(heading=heading):
+                body = section(text, heading)
+                self.assertIn(new, body)
+                self.assertNotIn(old, body)
+        self.assertNotIn(old, text)
+        grading = section(text, "5. 등급을 매긴다")
+        for key in ("테스트 파일은 바뀐 동작이 아니라 그 근거라 표를 고를 때 세지 않는다",
+                    "테스트 적절성의 근거 첫 줄에 어느 표로 매겼는지 적는다"):
+            with self.subTest(key=key):
+                self.assertIn(key, grading)
+        template = section(text, "기록의 양식")
+        self.assertIn("  - 근거: {기본 등급표 | 결과물인 마크다운만 바뀐 경우의 표}로 매김", template)
 
 
 class EvalRulesTest(unittest.TestCase):
