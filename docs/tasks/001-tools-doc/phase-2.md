@@ -62,3 +62,34 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- TOOLS.md가 줄고 가리키는 절과 ruleset 명령이 남고 시험 실행 기록이 없다. (완료 조건 2)
+  - `wc -c < docs/TOOLS.md` → `14287`. 15360 이하. 통과
+  - 네 절 이름마다 `grep -c '<절 이름>' docs/TOOLS.md` → `1`, `1`, `1`, `1`. 통과
+  - `grep -c 'rulesets --input -' docs/TOOLS.md` → `1`, `grep -c '"enforcement"' docs/TOOLS.md` → `1`. 통과
+  - `grep -cE '/var/folders/|tmp\.[A-Za-z0-9]{6,}|장면 [A-Z]' docs/TOOLS.md` → `0`. 통과
+- plan과 ARCHITECTURE가 시험 실행 기록을 맥락 문서에 적지 않게 한다. (완료 조건 3)
+  - `python3 -m unittest discover -s tests` → `Ran 165 tests`, `OK`. `tests/test_skill_rules.py:278` `PlanRulesTest.test_run_results_stay_in_phase_record`가 `part(section(self.text, "적는 규칙"), "조건")`에서 규칙의 글 네 조각을 단언하고, 따로 돌려 `OK`. 통과
+  - `docs/ARCHITECTURE.md` `## 패턴과 규칙`의 TOOLS.md 줄을 읽음 → "도구마다 다른 동작과 확인을 멈춘 지점은 `docs/TOOLS.md`에 적는다(ADR-018). 시험 실행 기록은 적지 않는다. …" 둘 다 있다. 통과
+- 앞 phase가 고친 규칙이 그대로다. (완료 조건 1, 4)
+  - `git grep -n 'TOOLS.md' -- plugins/` → 출력 없음(종료 코드 1). 통과
+  - `git grep -nE '사용량.*TOOLS\.md|TOOLS\.md.*사용량' -- docs/PRD.md docs/ARCHITECTURE.md docs/ADR.md README.md AGENTS.md` → 출력 없음(종료 코드 1). 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 165 tests`, `OK`. 통과
+
+**남은 것**
+- 없음
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
