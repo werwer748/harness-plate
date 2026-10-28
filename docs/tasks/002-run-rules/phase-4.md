@@ -61,3 +61,32 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 맡기는 글과 고칠 꼴이 완료 조건 4대로다. (완료 조건 4)
+  - `python3 -m unittest discover -s tests` → `Ran 181 tests` `OK`. `-v`로 `test_worktree_skill_line_branches_and_no_old_body`, `test_fix_phase_finds_guarding_tests`, `test_fix_task_copies_condition_text`, `test_template_reading_rule_in_one_place`, `test_51_marker_line_ends_every_hand_off_block`, `test_51_direct_report_only_without_marker (CallerMarkerTest)`가 모두 `ok`. 네 테스트를 읽음: 낱말의 매니페스트 갈래와 없을 때의 갈래, 첫 줄을 빼는 붙이는 법과 다섯 맡기는 자리의 규칙 글, 8번의 테스트 폴더 찾기, 고침 task의 조건 글 옮기기, "블록을 여닫는 줄은 옮기지 않는다" 한 번과 다섯 자리의 가리키는 줄을 단언한다. 통과
+  - `mktemp -d`(`/var/folders/0j/cj37rxmj1mj73vhflqpgsxm00000gn/T/tmp.u2QUWWGqaR`)의 `m`에 `git init`, 빈 첫 커밋, 둘째 커밋에 `.claude-plugin/marketplace.json`(`plate`, `./plugins/plate`)과 두 사본(둘 다 `plugin.json` 이름 `plate`). 낱말대로 매니페스트의 `source`에서 `plugins/plate/skills/phase/SKILL.md`만 `git diff --name-only {첫 커밋} HEAD` 출력에서 찾음 → 그 경로 하나(diff에는 `vendor/copy/skills/phase/SKILL.md`도 있으나 고르지 않음). `git rm -r .claude-plugin vendor/copy`로 셋째 커밋 뒤 매니페스트가 없을 때의 갈래(이름 `plate`인 `plugin.json`을 둔 폴더)로 다시 고름 → `plugins/plate/skills/phase/SKILL.md`. 통과
+  - `docs/ARCHITECTURE.md` 48줄을 읽음 → "marketplace 매니페스트의 `source` 아래의 `skills/{스킬 이름}/SKILL.md` 한 곳으로 좁히고"와 "이름으로 옛 본문을 부르지 않는다"가 둘 다 있다. 통과
+- 앞 phase가 이룬 규칙이 그대로다. (완료 조건 1, 2, 3)
+  - `python3 -m unittest discover -s tests` → `OK`. 완료 조건 1(`test_issue_text_is_data_only`, `test_text_passing_rule_in_one_place`, `test_issue_list_filters_by_body_without_narrowing_limit`, `test_pr_question_shows_comment_text`), 2(`test_state_tables_row_order`, `test_three_failure_resume_goes_to_fix_phase_for_retro`, `test_state_reading_and_stop_line_rows`, `test_runlog_reason_for_respawn`), 3(`test_branch_question_when_not_default_or_tasks_branch`, `test_resume_after_clearing_goes_to_pr_or_merge`, `test_merge_has_own_question_and_switch_failure`, `test_branch_in_question_lists`)가 모두 `ok`. 통과
+- 앞 task가 이룬 tasks 완료 조건 1과 3이 그대로다. (완료 조건 5)
+  - `git grep -n 'TOOLS.md' -- plugins/` → 출력 없음(종료 코드 1). 통과
+  - `git grep -nE '사용량.*TOOLS\.md|TOOLS\.md.*사용량' -- docs/PRD.md docs/ARCHITECTURE.md docs/ADR.md README.md AGENTS.md` → 출력 없음(종료 코드 1). 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 181 tests` `OK`. 통과
+
+**남은 것**
+- 에이전트에게 실제로 맡기는 흐름(첫 줄을 빼고 붙인 글로 띄운 에이전트가 이름으로 스킬을 부르지 않는지)은 돌리지 않았다 → 돌려 보지 않은 위험이고, task 머리 완료 조건 4의 `- 돌리지 않음: 에이전트에게 맡기는 흐름과 고칠 phase·고침 task를 쓰는 흐름은 회고와 tasks 끝의 평가가 있어야 돈다`가 돌리지 않기로 정한 동작이다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 에이전트에게 실제로 맡기는 흐름은 돌리지 않았다(task 머리 완료 조건 4의 `돌리지 않음` 줄)
+
+**판정**: 통과
