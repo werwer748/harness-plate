@@ -1,7 +1,7 @@
 """release-prep tasks가 고친 스킬 규칙의 글이 본문의 제자리에 남아 있는지 시험한다.
 
 이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41·#46·#52·#53·#55·#56·#57·#65·#68, phase의 #42·#51·#69, check의 #51·#69,
-retro의 #49·#50·#51·#69, review의 #51·#70, eval의 #36·#50·#51) 그 규칙을 이루는
+retro의 #49·#50·#51·#69, review의 #51·#70, eval의 #36·#50·#51·#74) 그 규칙을 이루는
 글이 그 본문의 그 절에 있는지 본다. 글이 빠지거나 다른 절로 옮겨지면 실패한다.
 모든 스킬의 앞머리가 Agent Skills 규격의 한도(description 1024자, name 64자) 안에 있는지도 본다.
 """
@@ -536,6 +536,47 @@ class RunRulesTest(unittest.TestCase):
                 self.assertIn(pointer, body)
         self.assertEqual(self.text.count(pointer), 5)
 
+    def test_first_proposal_uses_threshold(self):
+        # 처음 안은 plate 자체의 고칠 거리를 문턱으로 가르고, 감수인 것은 감수할 것에 둔다(eval-threshold, ADR-025).
+        body = subsection(self.text, "보고하고 묻는다")
+        self.assertIn("plate 자체의 하네스 고칠 거리는 문턱을 넘은 것만 이슈로 올릴 것에, 넘지 않은 것은 BACKLOG로 미룰 것에 둔다", body)
+        self.assertIn("처리가 감수인 하네스 고칠 거리는 갈래와 상관없이 감수할 것에 둔다", body)
+        self.assertIn("   - 감수할 것: 처리가 감수인 하네스 고칠 거리의 번호\n", body)
+        self.assertIn("   - BACKLOG로 미룰 것: 소스 문제의 번호와, 문턱을 넘지 않은 plate 자체의 하네스 고칠 거리의 번호와, 고침 task에서 뺀 이 프로젝트만의 하네스 고칠 거리의 번호\n", body)
+        self.assertNotIn("plate 자체의 하네스 고칠 거리는 모두 이슈로 올릴 것에 두고", self.text)
+        # 문턱을 넘은 감수인 plate 자체의 것은 감수할 것으로 간다(감수가 문턱보다 먼저, 002-fixes).
+        self.assertIn("감수가 문턱보다 먼저다: 처리가 감수인 plate 자체의 것은 문턱을 넘었어도 이슈로 올릴 것에 두지 않는다", body)
+        first = body.index("처리가 감수인 하네스 고칠 거리는 갈래와 상관없이 감수할 것에 둔다")
+        self.assertLess(first, body.index("plate 자체의 하네스 고칠 거리는 문턱을 넘은 것만 이슈로 올릴 것에"))
+
+    def test_project_only_fixes_deferred_to_backlog(self):
+        # 고침 task에서 뺀 이 프로젝트만의 하네스 고칠 거리는 BACKLOG로 미룰 것으로 간다(002-fixes).
+        body = subsection(self.text, "보고하고 묻는다")
+        self.assertIn("고침 task에서 뺀 소스 문제와 이 프로젝트만의 하네스 고칠 거리는 BACKLOG로 미룰 것으로 옮긴다", body)
+        self.assertIn("고침 task에 두었던 이 프로젝트만의 하네스 고칠 거리도 BACKLOG로 미룰 것에 둔다", body)
+        backlog = subsection(self.text, "BACKLOG를 고친다")
+        self.assertIn("미룰 하네스 고칠 거리마다(갈래와 상관없이, 항목의 갈래 칸에 그 갈래를 적는다)", backlog)
+        self.assertIn("갈래: {plate 자체 | 이 프로젝트만}. 처리: {규칙을 더하거나 고친다 | 규칙을 지운다}", backlog)
+
+    def test_backlog_three_sections(self):
+        # BACKLOG는 소스 문제, 하네스 고칠 거리, 감수한 것의 세 절로 나누고 감수한 것은 세지 않는다(eval-threshold).
+        body = subsection(self.text, "BACKLOG를 고친다")
+        for text in (
+            "미룰 하네스 고칠 거리마다",
+            "이슈로 올린 하네스 고칠 거리와 같은 뜻의 항목은 지운다",
+            "고침 task가 고치기로 한 이 프로젝트만의 하네스 고칠 거리와 같은 뜻의 항목은 지운다",
+            "감수할 것마다 감수한 것 절에 항목을 더한다",
+            "감수한 것 절의 항목은 다시 나오지 않은 tasks를 세지 않고 지우지 않는다",
+            "| `docs/BACKLOG.md` | 미룬 소스 문제와 하네스 고칠 거리, 감수한 것과 그것이 나온 tasks | tasks를 계획하거나 tasks 끝에서 고칠지 정할 때 |",
+        ):
+            with self.subTest(text=text):
+                self.assertIn(text, body)
+        lines = body.split("\n")
+        for head in ("## 소스 문제", "## 하네스 고칠 거리", "## 감수한 것"):
+            with self.subTest(head=head):
+                self.assertIn(head, lines)
+        self.assertNotIn("| `docs/BACKLOG.md` | 미룬 소스 문제와 그것이 나온 tasks |", self.text)
+
 class PlanRulesTest(unittest.TestCase):
     def setUp(self):
         self.text = read("plan")
@@ -808,6 +849,36 @@ class EvalRulesTest(unittest.TestCase):
         self.assertIn("`남은 것:`으로 시작하는 줄", body)
         self.assertIn('"문제"로 판정된 것만 실패로 센다', body)
         self.assertIn('"문제 아님"으로 판정됐거나 회고가 모으지 않은 줄은 실패가 아니다', body)
+
+    def test_threshold_and_disposition(self):
+        text = read("eval")
+        body = section(text, "5. 하네스 고칠 거리를 정한다")
+        for phrase in (
+            "처리는 규칙을 더하거나 고친다, 규칙을 지운다, 감수한다 가운데 하나다",
+            "잡힌 곳이 phase의 확인, task의 회고, tasks 끝인 실패나 멈춤이 근거에 있으면 문턱을 넘는다",
+            "`docs/BACKLOG.md`의 하네스 고칠 거리에 같은 뜻의 항목이 있으면 문턱을 넘는다",
+            "`docs/BACKLOG.md`의 감수한 것과 같은 뜻이면 고칠 거리로 적지 않는다",
+            "이슈 제목과 본문은 문턱을 넘었고 처리가 감수가 아닌 plate 자체의 것에만 적는다",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, body)
+        self.assertNotIn("plate 자체의 것에는 이슈로 올릴 제목과 본문을 적는다", text)
+        form = section(text, "기록의 양식")
+        for line in (
+            "   - 처리: {규칙을 더하거나 고친다 | 규칙을 지운다 | 감수한다}",
+            "   - 문턱: {넘음 | 넘지 않음}",
+        ):
+            with self.subTest(line=line):
+                self.assertIn(line, form)
+        self.assertIn("`docs/BACKLOG.md`의 하네스 고칠 거리와 감수한 것", section(text, "1. 읽는다"))
+
+    def test_74_untested_lines_not_failures(self):
+        body = section(read("eval"), "2. 실패를 모아 MAST 유형으로 나눈다")
+        self.assertIn(
+            '코드 평가의 "하네스에서 걸린 것" 가운데 계획의 `돌리지 않음` 줄이 정한 동작 때문에 '
+            "낮아진 등급만 적은 줄은 실패가 아니다",
+            body,
+        )
 
 
 if __name__ == "__main__":
