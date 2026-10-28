@@ -53,3 +53,35 @@
 
 ## 하네스에서 걸린 것
 - heredoc 줄의 확인한 버전을 적으려고, 읽을 것에 없는 `docs/tasks/002-run-rules/done-phase-1.md`의 해당 줄을 `grep`으로 한 줄 보고 그 커밋 시각을 `git log`로 봤다. 다른 task의 기록이라 앞 phase 기록 읽지 않음 규칙에는 들지 않지만, 계획의 읽을 것에 버전의 출처가 없었다
+
+## 확인 1
+
+**통과 조건**
+- task 머리의 완료 조건이 모두 참이다.
+  - 완료 조건 1: `python3 -m unittest tests.test_skill_rules -k awk_runs -k fake_gh -v` → 두 테스트 `ok`, `Ran 2 tests`, `OK`. `python3 -m unittest discover -s tests` → `Ran 192 tests`, `OK`. 스크래치 폴더에 `tests/`, `plugins/`, `docs/` 등을 베낀 사본 셋에서 run 본문을 바꿔 `python3 -m unittest tests.test_skill_rules`: m1(`f != "" { next }` → `f != "" { }`) → `test_state_reading_awk_runs_on_trap_files` 세 case 실패, `FAILED (failures=3)`. m2(`$0 ~ ("^## " h " [0-9]+$")` → `$0 ~ ("## " h " [0-9]+")`) → `test_state_reading_awk_runs_on_trap_files`(phase_with_traps)와 `test_state_reading_and_stop_line_rows` 실패, `FAILED (failures=2)`. m3(`'\''`와 예 `'it'\''s'`를 `\'`와 `'it\'s'`로) → `test_text_passing_rule_survives_fake_gh` 세 template과 `test_text_passing_rule_in_one_place` 실패, `FAILED (failures=4)`. 통과
+  - 완료 조건 2: `grep -c 'Non-UTF-8' docs/TOOLS.md` → 1, `wc -c < docs/TOOLS.md` → 14527(≤ 15360). 통과
+  - 완료 조건 3 / tasks 완료 조건 1: `python3 -m unittest discover -s tests` → `OK`. 통과
+  - 완료 조건 3 / tasks 완료 조건 2: `wc -c < docs/TOOLS.md` → 14527. 네 절 이름마다 `grep -c` → 1, 1, 1, 1. `grep -cE '/var/folders/|tmp\.[A-Za-z0-9]{6,}|장면 [A-Z]' docs/TOOLS.md` → 0. 통과
+  - 완료 조건 3 / tasks 완료 조건 3: `git grep -n 'TOOLS.md' -- plugins/` → 출력 없음(종료 1). `git grep -nE '사용량.*TOOLS\.md|TOOLS\.md.*사용량' -- docs/PRD.md docs/ARCHITECTURE.md docs/ADR.md README.md AGENTS.md` → 출력 없음(종료 1). 통과
+  - 완료 조건 3 / tasks 완료 조건 4: `grep -c '처리: plan으로 넘김' docs/cleanup/2026-10-28.md` → 29. 보고서의 `- **{기준}-N**` 머리 아래 `처리: plan으로 넘김`이 붙은 번호 29개(중복 없음)와 세 task 머리(`001-tools-doc`, `002-run-rules`, `003-plan-rules`)의 `## 완료 조건`에서 모은 발견 번호 29개가 같다(차집합 없음). 세 `retro.md`의 마지막 회고 절 `## 회고 1`의 판정 → 셋 다 `**판정**: 통과`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 192 tests in 17.172s`, `OK`. 통과
+
+**남은 것**
+- `test_text_passing_rule_survives_fake_gh`는 `--body-file` 넘기기와 임시 파일 지우기를 돌려 보지 않는다 → 완료 조건 1이 보는 것은 제목·검색어의 작은따옴표 넘기기이고 본문 넘기기는 보지 않아 걸리지 않는다. 하네스에서 걸린 것
+- `awk` 테스트를 BSD awk에서만 돌려 봤다 → 완료 조건 1의 확인은 이 환경에서 테스트를 돌려 `OK`인지와 바꾼 사본에서 실패하는지이고, 다른 awk 구현은 보지 않아 걸리지 않는다. 하네스에서 걸린 것
+- heredoc 줄의 2.1.312가 깨졌을 때의 버전인지 확인하지 못했다 → 완료 조건 2의 확인(`grep -c`, `wc -c`)이 보는 동작에 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: `test_text_passing_rule_survives_fake_gh`는 본문·댓글의 `--body-file` 넘기기와 임시 파일 지우기를 돌려 보지 않는다
+- 남은 것: `awk` 테스트는 macOS의 BSD awk에서만 돌려 봤고 gawk·mawk에서의 동작은 보지 않았다
+- 남은 것: `docs/TOOLS.md`의 heredoc 줄의 2.1.312는 이 세션의 버전이고, `002-run-rules` phase 1에서 깨졌을 때의 버전인지는 확인하지 못했다(이 세션에서는 재현되지 않았다)
+- 완료 조건 1의 "바꾼 사본에서 실패한다"는 확인이 명령으로 적혀 있지 않아, 확인하는 쪽이 바꿀 글과 사본의 꼴을 스스로 정해야 했다
+
+**판정**: 통과
