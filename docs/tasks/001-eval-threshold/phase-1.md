@@ -55,3 +55,33 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 3이 참이다.
+  - `grep -cF -e '<글>' plugins/plate/skills/run/SKILL.md`를 완료 조건 3의 새 글 열셋(고칠 안의 두 줄, 처음 안의 두 글, 고칠 곳의 두 글, 보고의 글, "BACKLOG를 고친다"의 네 글, 낱말의 글, 문서 지도 행)마다 → 모두 `1`. 통과
+  - `grep -cxF -e '## 소스 문제'`, `-e '## 하네스 고칠 거리'`, `-e '## 감수한 것'` (`plugins/plate/skills/run/SKILL.md`) → 저마다 `1`. 통과
+  - 옛 글 셋 `grep -cF -e` → 모두 `0`, `grep -cE '^   - BACKLOG로 미룰 것: 소스 문제의 번호$' plugins/plate/skills/run/SKILL.md` → `0`. 통과
+- 모든 테스트가 통과하고, 고친 run 글이 빠지면 그 테스트가 실패한다.
+  - `python3 -m unittest discover -s tests` → `Ran 200 tests` / `OK`. 통과
+  - 새 사본(`mktemp -d`에 `plugins`, `tests`를 `cp -R`)에서 `plate 자체의 하네스 고칠 거리는 문턱을 넘은 것만 이슈로 올릴 것에, 넘지 않은 것은 BACKLOG로 미룰 것에 둔다`(사본에 `1`번)를 빈 글로 바꾸고 `python3 -m unittest discover -s tests` → `FAIL: test_first_proposal_uses_threshold (test_skill_rules.RunRulesTest)`, `FAILED (failures=1)`. 통과
+  - 다른 새 사본에서 `감수할 것마다 감수한 것 절에 항목을 더한다`(사본에 `1`번)를 빈 글로 바꾸고 `python3 -m unittest discover -s tests` → `FAIL: test_backlog_three_sections (test_skill_rules.RunRulesTest) (text='감수할 것마다 감수한 것 절에 항목을 더한다')`, `FAILED (failures=1)`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 200 tests` / `OK`. 통과
+
+**남은 것**
+- 이슈를 올리지 못한(`gh` 실패) 하네스 고칠 거리가 BACKLOG에서 어떻게 되는지 본문이 정하지 않는다 → 통과 조건(완료 조건 3의 글 확인과 테스트)은 `gh` 실패 때의 동작을 보지 않는다. 하네스에서 걸린 것
+- 고친 run 본문의 동작은 헤드리스로 돌려 보지 않았다 → 완료 조건 3의 `- 돌리지 않음: run의 tasks 끝은 사용자의 답과 `gh`가 있어야 돌고 여러 턴을 이어야 닿는다. 사용자가 eval만 돌리기로 정했다`가 돌리지 않기로 정한 동작이다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 이슈를 올리지 못한(`gh` 실패) 하네스 고칠 거리가 BACKLOG에서 어떻게 되는지 run 본문이 정하지 않는다. "이슈로 올린 … 항목은 지운다"만 있어 올리지 못한 것은 10번의 보고에만 남는다 (`plugins/plate/skills/run/SKILL.md`)
+- 남은 것: 고친 run 본문의 동작은 헤드리스로 돌려 보지 않았다(완료 조건 3의 `돌리지 않음`)
+
+**판정**: 통과
