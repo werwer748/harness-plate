@@ -50,3 +50,32 @@
 
 ## 하네스에서 걸린 것
 없음
+
+## 확인 1
+
+**통과 조건**
+- 넓힌 규칙과 정의 테스트가 완료 조건 3대로다. (완료 조건 3)
+  - `python3 -m unittest discover -s tests` → `Ran 190 tests` `OK`. `tests/test_skill_rules.py`의 `PlanRulesTest`에 `test_rule_todo_finds_existing_lines_in_skills_and_code`(543줄, **TODO**에 스킬 본문과 코드의 기존 줄을 찾는 글), `test_command_examples_count_as_behavior`(549줄, **조건**에 명령 예를 동작으로 치는 글), `test_shared_definitions_match`(556줄, 두 본문 `## 낱말`의 `**테스트가 있는 프로젝트**` 줄이 글자까지 같고 두 핵심 글이 두 본문에 다 있음)가 있다. 통과
+  - `mktemp -d`의 `<임시>`에 `cp -R`로 작업 트리를 `<임시>/repo`에 베끼고, 사본 run 본문 57줄(`## 낱말`의 `**테스트가 있는 프로젝트**` 줄)의 `` `__tests__/` ``를 `` `spec/` ``로 바꿔(한 줄) `python3 -m unittest tests.test_skill_rules` → `FAIL: test_shared_definitions_match (tests.test_skill_rules.PlanRulesTest)`, `Ran 59 tests`, `FAILED (failures=1)`. 통과
+- 앞 phase가 이룬 규칙이 그대로다. 이 phase가 **조건**과 **TODO**를 고치기 때문이다. (완료 조건 1, 2)
+  - `python3 -m unittest discover -s tests` → `OK`. 완료 조건 1의 `test_no_adding_after_evaluation_started`, `test_adding_reads_earlier_task_heads`, `test_57_quote_earlier_task_text_as_changed`, 완료 조건 2의 `test_draft_list_split_before_and_after`, `test_no_other_part_in_writing_rules`, `test_remaining_results_item_points_to_worktree_item`, `test_template_reading_rule_in_one_place`가 `PlanRulesTest`에 있고 함께 통과했다. 통과
+- 앞 task가 이룬 tasks 완료 조건 1과 3이 그대로다. (완료 조건 4)
+  - `git grep -n 'TOOLS.md' -- plugins/` → 출력 없음(종료 코드 1). 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 190 tests` `OK`. 통과
+
+**남은 것**
+- `test_shared_definitions_match`는 핵심 글 밖의 문장(예: 폴더가 없으면 `001`)이 한쪽에서만 바뀌면 잡지 못한다 → 통과 조건(완료 조건 3)은 테스트 먼저의 기준과 task 폴더 번호에 대해 "핵심 글이 두 본문에 다 있다"만 보므로 통과 조건이 보는 동작에 걸리지 않는다. 하네스에서 걸린 것
+- 넓힌 두 규칙대로 plan이 읽을 것과 확인을 쓰는지 돌려 보지 않았다 → task 머리 완료 조건 3의 `- 돌리지 않음: plan은 사용자에게 묻고 승인받아야 계획을 쓰는 스킬이라, 넓힌 규칙대로 읽을 것과 확인을 쓰는지 임시 폴더에서 돌릴 수 없다`가 돌리지 않기로 정한 동작이다. 하네스에서 걸린 것
+
+**실패**
+없음
+
+**하네스에서 걸린 것**
+- 남은 것: `test_shared_definitions_match`는 테스트 먼저의 기준과 task 폴더 번호의 핵심 글 밖의 문장이 한쪽에서만 바뀌면 잡지 못한다
+- 남은 것: 넓힌 두 규칙대로 plan이 읽을 것과 확인을 쓰는지 돌려 보지 않았다(완료 조건 3의 `돌리지 않음` 줄)
+
+**판정**: 통과
