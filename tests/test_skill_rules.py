@@ -1,6 +1,6 @@
 """release-prep tasks가 고친 스킬 규칙의 글이 본문의 제자리에 남아 있는지 시험한다.
 
-이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41·#46·#52·#53·#55·#56·#57·#65, phase의 #42·#51·#69, check의 #51·#69,
+이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41·#46·#52·#53·#55·#56·#57·#65·#68, phase의 #42·#51·#69, check의 #51·#69,
 retro의 #49·#50·#51·#69, review의 #51·#70, eval의 #36·#50·#51) 그 규칙을 이루는
 글이 그 본문의 그 절에 있는지 본다. 글이 빠지거나 다른 절로 옮겨지면 실패한다.
 모든 스킬의 앞머리가 Agent Skills 규격의 한도(description 1024자, name 64자) 안에 있는지도 본다.
@@ -599,6 +599,22 @@ class PlanRulesTest(unittest.TestCase):
         self.assertIn("적을 수 없으면 읽어서 견줄 자리를 적는다", body)
         draft = section(self.text, "6. 초안을 보여 주고 승인받는다")
         self.assertIn("값을 뽑아 견주는 확인에 뽑는 명령과 견주는 법이 있는지 본다", draft)
+
+    def test_68_check_commands_run_as_written(self):
+        old = "완료 조건과 통과 조건에 적는 확인 명령은 미리 돌려 보지 않고 적는다"
+        self.assertNotIn(old, self.text)
+        rules = section(self.text, "절대 규칙")
+        self.assertIn("완료 조건과 통과 조건의 확인 명령은 읽기만 하는 것만 6번의 점검에서 돌려 적힌 그대로 도는지 본다", rules)
+        draft = section(self.text, "6. 초안을 보여 주고 승인받는다")
+        for key in ("읽기만 하는 확인 명령(파일이나 저장소를 바꾸지 않는 것)을 돌려 적힌 그대로 도는지 본다",
+                    "결과값은 견주지 않는다",
+                    "쓰는 명령은 돌리지 않고 같은 꼴을 글로 본다"):
+            with self.subTest(key=key):
+                self.assertIn(key, draft)
+        body = part(section(self.text, "적는 규칙"), "조건")
+        line = [l for l in body.split("\n") if l.startswith("- 확인은 돌릴 명령과 기대 결과를 우선한다.")]
+        self.assertEqual(len(line), 1)
+        self.assertIn("확인 명령은 적힌 그대로 돌게 적는다", line[0])
 
     def test_no_adding_after_evaluation_started(self):
         # 평가가 시작된 tasks에는 task를 더하지 않는다(cleanup 2026-10-28 신뢰성-4).
