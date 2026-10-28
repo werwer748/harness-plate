@@ -9,7 +9,7 @@
 | `docs/ARCHITECTURE.md` | 기술 스택, 구조, 데이터 흐름 | 파일 위치나 모듈 경계를 판단할 때 |
 | `docs/ADR.md` | 이미 내린 결정과 이유 | 기술 선택을 바꾸거나 새로 할 때 |
 | `docs/TOOLS.md` | 도구별로 확인해 둔 사실과 확인을 멈춘 지점 | 다른 도구로 넓히거나 도구마다 다른 동작을 판단할 때 |
-| `docs/BACKLOG.md` | 미룬 소스 문제와 그것이 나온 tasks | tasks를 계획하거나 tasks 끝에서 고칠지 정할 때 |
+| `docs/BACKLOG.md` | 미룬 소스 문제와 하네스 고칠 거리, 감수한 것과 그것이 나온 tasks | tasks를 계획하거나 tasks 끝에서 고칠지 정할 때 |
 | `docs/cleanup/` | 정리 점검 보고서(날짜마다 하나), 기준별 발견과 미룬 것 | 정리 tasks를 계획하거나 지난 점검과 견줄 때 |
 | `docs/tasks/` | 진행 중인 tasks 하나의 기록: tasks 머리 `plan.md`, `FRICTION.md`, `RUNLOG.md`, `review.md`, `eval.md`, task 폴더 `NNN-slug/`마다 task 머리 `plan.md`, `phase-N.md`(통과하면 `done-phase-N.md`), `retro.md`. tasks가 끝나면 비운다 | 그 tasks를 이어 가거나 근거를 볼 때 |
 <!-- plate:docs-map:end -->
