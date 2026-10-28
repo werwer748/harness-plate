@@ -536,6 +536,33 @@ class RunRulesTest(unittest.TestCase):
                 self.assertIn(pointer, body)
         self.assertEqual(self.text.count(pointer), 5)
 
+    def test_first_proposal_uses_threshold(self):
+        # 처음 안은 plate 자체의 고칠 거리를 문턱으로 가르고, 감수인 것은 감수할 것에 둔다(eval-threshold, ADR-025).
+        body = subsection(self.text, "보고하고 묻는다")
+        self.assertIn("plate 자체의 하네스 고칠 거리는 문턱을 넘은 것만 이슈로 올릴 것에, 넘지 않은 것은 BACKLOG로 미룰 것에 둔다", body)
+        self.assertIn("처리가 감수인 하네스 고칠 거리는 갈래와 상관없이 감수할 것에 둔다", body)
+        self.assertIn("   - 감수할 것: 처리가 감수인 하네스 고칠 거리의 번호\n", body)
+        self.assertIn("   - BACKLOG로 미룰 것: 소스 문제의 번호와, 문턱을 넘지 않은 plate 자체의 하네스 고칠 거리의 번호\n", body)
+        self.assertNotIn("plate 자체의 하네스 고칠 거리는 모두 이슈로 올릴 것에 두고", self.text)
+
+    def test_backlog_three_sections(self):
+        # BACKLOG는 소스 문제, 하네스 고칠 거리, 감수한 것의 세 절로 나누고 감수한 것은 세지 않는다(eval-threshold).
+        body = subsection(self.text, "BACKLOG를 고친다")
+        for text in (
+            "미룰 하네스 고칠 거리마다",
+            "이슈로 올린 하네스 고칠 거리와 같은 뜻의 항목은 지운다",
+            "감수할 것마다 감수한 것 절에 항목을 더한다",
+            "감수한 것 절의 항목은 다시 나오지 않은 tasks를 세지 않고 지우지 않는다",
+            "| `docs/BACKLOG.md` | 미룬 소스 문제와 하네스 고칠 거리, 감수한 것과 그것이 나온 tasks | tasks를 계획하거나 tasks 끝에서 고칠지 정할 때 |",
+        ):
+            with self.subTest(text=text):
+                self.assertIn(text, body)
+        lines = body.split("\n")
+        for head in ("## 소스 문제", "## 하네스 고칠 거리", "## 감수한 것"):
+            with self.subTest(head=head):
+                self.assertIn(head, lines)
+        self.assertNotIn("| `docs/BACKLOG.md` | 미룬 소스 문제와 그것이 나온 tasks |", self.text)
+
 class PlanRulesTest(unittest.TestCase):
     def setUp(self):
         self.text = read("plan")
