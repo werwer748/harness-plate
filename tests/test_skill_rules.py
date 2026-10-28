@@ -275,6 +275,14 @@ class PlanRulesTest(unittest.TestCase):
         draft = section(self.text, "6. 초안을 보여 주고 승인받는다")
         self.assertIn("task 사이에 같은 글을 바꾸거나 인용하는 곳이 맞물리는지 본다", draft)
 
+    def test_run_results_stay_in_phase_record(self):
+        # 시험 실행 기록은 phase 기록에만 두고 맥락 문서에는 도구 동작만 한 줄로 더한다(cleanup 2026-10-28 성능-1·성능-2).
+        body = part(section(self.text, "적는 규칙"), "조건")
+        self.assertIn("돌려 본 확인의 결과(차림, 출력, 본문 해시)는 그 phase의 기록에만 남긴다", body)
+        self.assertIn("맥락 문서에 옮겨 적는 TODO나 조건을 두지 않는다", body)
+        self.assertIn("맥락 문서에는 다음 계획이 알아야 할 도구 동작", body)
+        self.assertIn("만 한 줄로 더한다", body)
+
 class PhaseRulesTest(unittest.TestCase):
     def test_42_does_not_read_earlier_phase_records(self):
         body = section(read("phase"), "1. 읽는다")
