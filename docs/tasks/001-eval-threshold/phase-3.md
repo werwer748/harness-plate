@@ -68,3 +68,32 @@
 
 ## 하네스에서 걸린 것
 - TODO의 "테스트 모듈 docstring의 eval 목록에 `#74`가 더해진다"는 이미 참이었다(앞 phase가 더한 것으로 보이나 앞 phase 기록은 읽지 않아 확인하지 않았다)
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 4, 5, 6이 참이다.
+  - 완료 조건 4: `grep -cF -e '### ADR-025' docs/ADR.md` → `1`, `grep -cF -e 'ADR-025로 바뀜' docs/ADR.md` → `1`; PRD 옛 글 `grep -cF -e` → `0`, 새 글 → `1`; ARCHITECTURE 옛 글 → `0`, 새 글 → `1`; `AGENTS.md`의 새 문서 지도 행 `grep -cF -e` → `1`, 옛 행 → `0`; `grep -cxF -e '## 감수한 것' docs/BACKLOG.md` → `1`, `## 소스 문제` → `1`, `## 하네스 고칠 거리` → `1`; `grep 'test_skill_rules.py' docs/ARCHITECTURE.md | grep -cF -e '…'`로 `eval 고칠 거리의 처리와 문턱` → `1`, `run 처음 안의 문턱과 BACKLOG 세 절` → `1`; `sed -n '1,8p' tests/test_skill_rules.py`에 `eval의 #36·#50·#51·#74`가 있다. 통과
+  - 완료 조건 5: `python3 -m unittest discover -s tests` → `Ran 202 tests`, 마지막 줄 `OK`. 통과
+  - 완료 조건 5의 네 시험(시험마다 `mktemp -d`에 `cp -R plugins tests`, 글을 빈 글로 바꾸고 사본에서 `python3 -m unittest discover -s tests`): 네 글 모두 사본에 `count=1`, 출력에 저마다 `FAIL: test_threshold_and_disposition (test_skill_rules.EvalRulesTest`, `FAIL: test_74_untested_lines_not_failures (test_skill_rules.EvalRulesTest`, `FAIL: test_first_proposal_uses_threshold (test_skill_rules.RunRulesTest`, `FAIL: test_backlog_three_sections (test_skill_rules.RunRulesTest`가 있고 마지막 줄 `FAILED (failures=1)`. 통과
+  - 완료 조건 6: `grep -h '"version"' plugins/plate/.claude-plugin/plugin.json plugins/plate/.codex-plugin/plugin.json` → 두 줄 모두 `"version": "0.22.0",`; `claude plugin validate .` → 마지막 줄 `✔ Validation passed`. 통과
+- 완료 조건 1, 2, 3의 글이 그대로 있다.
+  - 완료 조건 1: 새 글 여덟마다 `grep -cF -e '<글>' plugins/plate/skills/eval/SKILL.md` → 모두 `1`, 옛 글 → `0`. 통과
+  - 완료 조건 2: `grep -cF -e '<글>' plugins/plate/skills/eval/SKILL.md` → `1`. 통과
+  - 완료 조건 3: 새 글 열셋마다 `grep -cF -e '<글>' plugins/plate/skills/run/SKILL.md` → 모두 `1`; 세 절 머리 `grep -cxF -e` → 저마다 `1`; 옛 글 셋 `grep -cF -e` → 모두 `0`; `grep -cE '^   - BACKLOG로 미룰 것: 소스 문제의 번호$' plugins/plate/skills/run/SKILL.md` → `0`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 202 tests`, `OK`. 통과
+
+**남은 것**
+- 없음
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
