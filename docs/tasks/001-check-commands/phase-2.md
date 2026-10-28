@@ -79,3 +79,33 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 2가 참이다
+  - `grep -cF -e '결과물인 마크다운, 실행 경로 없는 파일, 테스트 파일뿐이면' plugins/plate/skills/review/SKILL.md` → `3`, `grep -cF -e '결과물인 마크다운과 실행 경로 없는 파일뿐이면' plugins/plate/skills/review/SKILL.md` → `0`, `grep -cF -e` 정의 글(`` `.md`가 아닌 파일 가운데 `tests/`, `test/`, `__tests__/` 아래에 있거나 이름이 `test_*`, `*_test.*`, `*.test.*`, `*.spec.*` 꼴인 것 ``) → `1`, `**테스트 파일**` → `1`, `테스트 파일은 바뀐 동작이 아니라 그 근거라 표를 고를 때 세지 않는다` → `1`, `테스트 적절성의 근거 첫 줄에 어느 표로 매겼는지 적는다` → `1`, `grep -cF -e '테스트 파일뿐이면' docs/ADR.md` → `1`. 통과
+  - "한 일"의 두 갈래를 읽음 → 갈래 1의 근거 첫 줄이 "결과물인 마크다운만 바뀐 경우의 표로 매김"이고 등급 D(A 아님), 갈래 2의 근거 첫 줄이 "기본 등급표로 매김". 두 시험 저장소(`/var/folders/0j/cj37rxmj1mj73vhflqpgsxm00000gn/T/tmp.xbyXsh0faD`, `…/tmp.YQxWAydJFq`)의 `docs/tasks/review.md`에도 같은 첫 줄이 있다. 적힌 해시 `82c5234e494bc39eb3f414cdb1088d8ea3dc4a83`가 `git hash-object plugins/plate/skills/review/SKILL.md`의 값과 같다. 통과
+- 테스트가 모두 통과하고, 고친 글이 빠지면 실패한다
+  - `python3 -m unittest discover -s tests` → `Ran 197 tests`, 마지막 줄 `OK`. 통과
+  - 새 사본(`mktemp -d`의 `/var/folders/0j/cj37rxmj1mj73vhflqpgsxm00000gn/T/tmp.CE3i0ol6Ku`에 `plugins`, `tests`를 `cp -R`)에서 `grep -cF -e '테스트 파일은 바뀐 동작이 아니라 그 근거라 표를 고를 때 세지 않는다' plugins/plate/skills/review/SKILL.md` → `1`, 빈 글로 바꾸고 `python3 -m unittest discover -s tests` → `FAIL: test_70_test_files_do_not_pick_default_table (test_skill_rules.ReviewRulesTest) (key='테스트 파일은 바뀐 동작이 아니라 그 근거라 표를 고를 때 세지 않는다')`, `FAILED (failures=1)`. 통과
+- 문서가 맞는다
+  - `grep -F -e '테스트 파일도 빼고 표를 고름' docs/ARCHITECTURE.md` → 한 줄, 그 줄에 `test_skill_rules.py`가 든다. `sed -n '1,8p' tests/test_skill_rules.py` → 4번째 줄에 `review의 #51·#70`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 197 tests`, `OK`. 통과
+
+**남은 것**
+- 갈래 2의 게이트가 실패(새 문제 1개)다. 시험 저장소의 코드에서 나온 것이고 보지 않았다 → 통과 조건이 보는 동작(테스트 적절성의 표 고르기와 근거 첫 줄)에 걸리지 않는다. 하네스에서 걸린 것
+- 테스트 파일의 판별은 경로·이름 꼴로만 해 `tests/` 아래의 도우미(`conftest.py`, 픽스처 모듈)도 테스트 파일로 센다 → 통과 조건은 계획이 정한 정의 글(run의 것과 같다)이 있는지와 두 갈래의 표 고르기를 보고, 도우미만 바뀐 꼴은 보지 않는다. 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 갈래 2 시험 저장소의 게이트 실패(새 문제 1개)는 보지 않았다. 표 고르기와 상관없다
+- 남은 것: 테스트 파일의 정의가 경로·이름 꼴뿐이라 `tests/` 아래의 도우미(`conftest.py`, 픽스처 모듈)만 바뀌어도 결과물인 마크다운만 바뀐 경우의 표로 간다. 정의는 계획의 결정대로 run·plan의 것과 같다
+
+**판정**: 통과
