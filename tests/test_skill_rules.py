@@ -246,7 +246,9 @@ class PlanRulesTest(unittest.TestCase):
 
     def test_46_rerun_results_compared_by_body_hash(self):
         body = part(section(self.text, "적는 규칙"), "조건")
-        self.assertIn("돌려 본 결과가 지금 본문의 것인지는 커밋 시각이 아니라 돌릴 때 적은 본문 해시(`git hash-object <경로>`)와 `git rev-parse HEAD:<경로>`로 견준다", body)
+        self.assertIn("돌려 본 결과가 지금 본문의 것인지는 커밋 시각이 아니라 돌릴 때 적은 본문 해시(`git hash-object <경로>`)와 확인할 때 작업 트리에서 다시 낸 `git hash-object <경로>`로 견준다", body)
+        self.assertIn("`HEAD:<경로>`와 견주지 않는다", body)
+        self.assertNotIn("git rev-parse HEAD:", body)
 
     def test_52_earlier_task_changes_named_by_section_and_text(self):
         body = part(section(self.text, "적는 규칙"), "phase의 파일")
