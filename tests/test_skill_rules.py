@@ -1,6 +1,6 @@
 """release-prep tasks가 고친 스킬 규칙의 글이 본문의 제자리에 남아 있는지 시험한다.
 
-이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41·#46·#52·#53, phase의 #42·#51, check의 #51,
+이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41·#46·#52·#53·#55·#56·#57, phase의 #42·#51, check의 #51,
 retro의 #49·#50·#51, review의 #51, eval의 #36·#50·#51) 그 규칙을 이루는
 글이 그 본문의 그 절에 있는지 본다. 글이 빠지거나 다른 절로 옮겨지면 실패한다.
 모든 스킬의 앞머리가 Agent Skills 규격의 한도(description 1024자, name 64자) 안에 있는지도 본다.
@@ -246,7 +246,9 @@ class PlanRulesTest(unittest.TestCase):
 
     def test_46_rerun_results_compared_by_body_hash(self):
         body = part(section(self.text, "적는 규칙"), "조건")
-        self.assertIn("돌려 본 결과가 지금 본문의 것인지는 커밋 시각이 아니라 돌릴 때 적은 본문 해시(`git hash-object <경로>`)와 `git rev-parse HEAD:<경로>`로 견준다", body)
+        self.assertIn("돌려 본 결과가 지금 본문의 것인지는 커밋 시각이 아니라 돌릴 때 적은 본문 해시(`git hash-object <경로>`)와 확인할 때 작업 트리에서 다시 낸 `git hash-object <경로>`로 견준다", body)
+        self.assertIn("`HEAD:<경로>`와 견주지 않는다", body)
+        self.assertNotIn("git rev-parse HEAD:", body)
 
     def test_52_earlier_task_changes_named_by_section_and_text(self):
         body = part(section(self.text, "적는 규칙"), "phase의 파일")
@@ -258,6 +260,23 @@ class PlanRulesTest(unittest.TestCase):
         self.assertIn("그 차림이 앞 단계(예: 회고 통과, 고칠 것이 나오는 자리)를 지나 기대한 자리에 닿는지", body)
         self.assertIn("기대가 해결 방식이 아니라 관찰할 결과로 적혔는지", body)
         self.assertIn("결정과 TODO가 같은 멈출 자리를 말하는지", body)
+
+    def test_55_checks_run_on_uncommitted_worktree(self):
+        body = part(section(self.text, "적는 규칙"), "조건")
+        self.assertIn("phase의 통과 조건은 커밋 전의 작업 트리에서 돈다", body)
+        draft = section(self.text, "6. 초안을 보여 주고 승인받는다")
+        self.assertIn("수행이 돌릴 확인에 `HEAD`가 있는지 본다", draft)
+
+    def test_56_mutation_checks_quote_text_and_name_test(self):
+        body = part(section(self.text, "적는 규칙"), "조건")
+        self.assertIn("지울 글을 본문에 있는 그대로 인용하고", body)
+        self.assertIn("실패할 테스트 이름을 기대로 적는다", body)
+
+    def test_57_quote_earlier_task_text_as_changed(self):
+        body = part(section(self.text, "적는 규칙"), "결정")
+        self.assertIn("앞 task가 바꿀 글을 인용하면 바뀐 뒤의 글 그대로 적고", body)
+        draft = section(self.text, "6. 초안을 보여 주고 승인받는다")
+        self.assertIn("task 사이에 같은 글을 바꾸거나 인용하는 곳이 맞물리는지 본다", draft)
 
 class PhaseRulesTest(unittest.TestCase):
     def test_42_does_not_read_earlier_phase_records(self):
