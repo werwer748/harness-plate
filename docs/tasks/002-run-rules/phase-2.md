@@ -68,3 +68,33 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 상태 판정과 재개가 완료 조건 2대로다. (완료 조건 2)
+  - `python3 -m unittest discover -s tests` → `Ran 173 tests … OK`. `-v`에서 `test_state_tables_row_order`, `test_three_failure_resume_goes_to_fix_phase_for_retro`, `test_state_reading_and_stop_line_rows`, `test_runlog_reason_for_respawn`이 `ok`. 통과
+  - `mktemp -d`의 `<임시>/repo`에 `cp -R`로 베끼고, 사본 run 본문 3번 첫 표의 `| 확인 절이 없다 | 5번 |` 행과 `| 마지막 확인 절의 판정이 "통과"다 | 6번 |` 행의 자리를 바꿔 `python3 -m unittest tests.test_skill_rules` → `FAIL: test_state_tables_row_order (… table='| 남은 첫 phase의 상태 | 갈 곳 |')`, `FAILED (failures=1)`. 통과
+  - `<임시>/fx`에 (가)~(마) 시험 파일을 두고(라의 코드 블록은 백틱 넷으로 열고 닫음), run 본문 3번의 `awk -v h='확인'` 줄을 본문에서 뽑아 경로만 바꾸고(`retro.md`는 `h='회고'`), `멈춤` 줄 grep(`` `001-a` phase 2 확인 ``)과 함께 `<임시>/run.sh`에 써서 `sh <임시>/run.sh` → (가) `확인 절 0, 마지막 판정 없음`, (나) `확인 절 2, 마지막 판정 **판정**: 통과`, (다) `회고 절 3, 마지막 판정 **판정**: 문제 있음`, (라) `확인 절 1, 마지막 판정 **판정**: 실패`, (마) `` - 물음 | 멈춤 | `001-a` phase 2 확인 3 | 다시 맡길지 | 답: 다시 맡긴다 `` 한 줄(같은 task phase 3의 줄, 다른 task `002-b`의 줄, 자리 없는 `멈춤` 줄은 나오지 않음). 통과
+  - `docs/ARCHITECTURE.md` 93줄을 읽음 → "세 번 실패에서는 멈추고 원인과 해결책을 보여 논의한다"가 그대로 있고, "세 번 실패로 멈춘 뒤 다시 맡기기로 하면 그 답을 자리…와 함께 `RUNLOG.md`의 `멈춤` 줄에 남겨…"가 더해져 있음. 통과
+- 앞 phase가 이룬 이슈·PR 규칙이 그대로다. (완료 조건 1, 5)
+  - `python3 -m unittest discover -s tests` → `OK`. 완료 조건 1의 `test_issue_text_is_data_only`, `test_text_passing_rule_in_one_place`, `test_issue_list_filters_by_body_without_narrowing_limit`, `test_pr_question_shows_comment_text`가 `ok`. 통과
+  - `git grep -n 'TOOLS.md' -- plugins/` → 출력 없음(종료 코드 1). 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 173 tests`, `OK`. 통과
+
+**남은 것**
+- awk 명령은 닫는 줄 끝에 공백이 붙은 코드 블록을 닫힌 것으로 보지 못한다 → 통과 조건이 보는 시험 파일 (가)~(라)와 check·retro 양식이 만드는 파일에는 그런 줄이 없어 통과 조건의 동작에 걸리지 않는다. 하네스에서 걸린 것
+- `멈춤` 줄의 자리와 에이전트 줄 끝 `다시 띄움:`이 eval의 셈에 걸리는지 돌려 보지 않음 → eval의 셈은 통과 조건이 보는 동작이 아니고 task 머리 범위 밖(eval 본문을 고치지 않음)에 든다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: awk 명령은 닫는 줄 끝에 공백이 붙은 코드 블록을 닫힌 것으로 보지 못한다(check·retro 양식이 만드는 파일에는 그런 줄이 없다)
+- 남은 것: `멈춤` 줄의 자리와 에이전트 줄 끝 `다시 띄움:`이 eval의 셈에 걸리는지 돌려 보지 않았다
+
+**판정**: 통과
