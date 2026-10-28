@@ -40,9 +40,13 @@ description: 요청 하나를 tasks로 계획한다. 문서 지도의 맥락 문
 
 ## 1. 진행 중인 tasks가 있는지 본다
 
-`docs/tasks/plan.md`가 없으면 새 tasks를 계획한다. 있으면 진행 중인 tasks가 있는 것이다. 그 tasks 머리를 읽고, 이 요청을 지금 tasks에 task로 더할지 묻는다.
+`docs/tasks/plan.md`가 없으면 새 tasks를 계획한다. 있으면 진행 중인 tasks가 있는 것이다.
 
-- 더한다고 하면 이 요청을 지금 tasks에 더할 task로 계획한다. 아래에서 "더하는 경우"는 이것을 말한다. 이미 있는 task 폴더는 이름만 보고 내용은 읽지 않는다.
+`docs/tasks/review.md`나 `docs/tasks/eval.md`가 있으면 그 tasks는 끝의 평가가 이미 시작된 것이다. 평가가 이미 시작돼 task를 더할 수 없다고 알리고, task로 더할지 묻지 않고 아무것도 쓰지 않고 끝난다. 더하면 실행이 이미 있는 평가를 보고 새 task의 평가를 건너뛰기 때문이다.
+
+둘 다 없으면 그 tasks 머리를 읽고, 이 요청을 지금 tasks에 task로 더할지 묻는다.
+
+- 더한다고 하면 이 요청을 지금 tasks에 더할 task로 계획한다. 아래에서 "더하는 경우"는 이것을 말한다. 이미 있는 task 폴더마다 task 머리(`plan.md`)를 읽고, phase 파일(`phase-N.md`, `done-phase-N.md`)은 읽지 않는다. 앞 task가 바꿀 글(**결정**과 6번의 task 사이 맞물림 점검이 바뀐 뒤의 꼴로 인용하라는 글)은 그 task 머리에서 찾는다.
 - 더하지 않는다고 하면 아무것도 쓰지 않고 끝난다.
 
 ## 2. 맥락 문서를 읽는다

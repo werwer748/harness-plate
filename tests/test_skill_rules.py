@@ -482,6 +482,19 @@ class PlanRulesTest(unittest.TestCase):
         draft = section(self.text, "6. 초안을 보여 주고 승인받는다")
         self.assertIn("task 사이에 같은 글을 바꾸거나 인용하는 곳이 맞물리는지 본다", draft)
 
+    def test_no_adding_after_evaluation_started(self):
+        # 평가가 시작된 tasks에는 task를 더하지 않는다(cleanup 2026-10-28 신뢰성-4).
+        body = section(self.text, "1. 진행 중인 tasks가 있는지 본다")
+        self.assertIn("`docs/tasks/review.md`나 `docs/tasks/eval.md`가 있으면", body)
+        self.assertIn("task로 더할지 묻지 않고 아무것도 쓰지 않고 끝난다", body)
+
+    def test_adding_reads_earlier_task_heads(self):
+        # 더하는 경우에는 앞 task 머리를 읽어 바뀐 뒤의 글을 인용할 수 있다(cleanup 2026-10-28 신뢰성-5).
+        body = section(self.text, "1. 진행 중인 tasks가 있는지 본다")
+        self.assertIn("이미 있는 task 폴더마다 task 머리(`plan.md`)를 읽고", body)
+        self.assertIn("phase 파일(`phase-N.md`, `done-phase-N.md`)은 읽지 않는다", body)
+        self.assertNotIn("내용은 읽지 않는다", body)
+
     def test_run_results_stay_in_phase_record(self):
         # 시험 실행 기록은 phase 기록에만 두고 맥락 문서에는 도구 동작만 한 줄로 더한다(cleanup 2026-10-28 성능-1·성능-2).
         body = part(section(self.text, "적는 규칙"), "조건")
