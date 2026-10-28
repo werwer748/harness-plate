@@ -66,3 +66,36 @@
 
 ## 하네스에서 걸린 것
 없음
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 1이 참이다
+  - `plugins/plate/skills/plan/SKILL.md`의 절 경계(6번 90~116줄, 적는 규칙 "결정" 229~235줄, "조건" 236~260줄)를 보고 `grep -nF`로 다섯 글을 찾음 → `phase의 통과 조건은 커밋 전의 작업 트리에서 돈다` 249줄(조건), `지울 글을 본문에 있는 그대로 인용하고`·`실패할 테스트 이름을 기대로 적는다` 250줄(조건), `앞 task가 바꿀 글을 인용하면 바뀐 뒤의 글 그대로 적고` 234줄(결정), `수행이 돌릴 확인에 \`HEAD\`가 있는지 본다` 102줄(6번), `task 사이에 같은 글을 바꾸거나 인용하는 곳이 맞물리는지 본다` 103줄(6번). 249줄에 `HEAD`를 풀거나 보는 확인은 작업 트리로 적고 원본 확인은 그 phase의 `phase-N.md`를 빼고 본다는 글도 있음. 통과
+- 완료 조건 2가 참이다
+  - `python3 -m unittest discover -s tests` → `Ran 164 tests in 16.551s` / `OK`. 통과
+  - `mktemp -d` 사본에 `cp -R plugins tests`, `phase의 통과 조건은 커밋 전의 작업 트리에서 돈다` → `count: 1`, 빈 글로 바꾼 뒤 사본에서 테스트 → `FAIL: test_55_checks_run_on_uncommitted_worktree (test_skill_rules.PlanRulesTest)` / `FAILED (failures=1)`. 통과
+  - 새 사본, `지울 글을 본문에 있는 그대로 인용하고` → `count: 1`, `FAIL: test_56_mutation_checks_quote_text_and_name_test (test_skill_rules.PlanRulesTest)`. 통과
+  - 새 사본, `앞 task가 바꿀 글을 인용하면 바뀐 뒤의 글 그대로 적고` → `count: 1`, `FAIL: test_57_quote_earlier_task_text_as_changed (test_skill_rules.PlanRulesTest)`. 통과
+- 완료 조건 3이 참이다
+  - `grep -h '"version"' plugins/plate/.claude-plugin/plugin.json plugins/plate/.codex-plugin/plugin.json` → `"version": "0.19.0",` 두 줄. 통과
+  - `claude plugin validate .` → 마지막 줄 `✔ Validation passed`. 통과
+  - `docs/ARCHITECTURE.md` 39줄의 `test_skill_rules.py` 줄 → "통과 조건은 커밋 전 작업 트리에서 돎", "지울 글 인용과 실패할 테스트 이름", "앞 task가 바꿀 글을 바뀐 뒤 꼴로 인용"이 있음. `tests/test_skill_rules.py` 모듈 docstring → `plan의 #37·#41·#46·#52·#53·#55·#56·#57`. 통과
+- 모든 스킬의 description이 1024자 이하다
+  - `python3 -m unittest tests.test_skill_rules.DescriptionTest -v` → `test_description_at_most_1024_chars ... ok`, 위 `OK`에도 듦. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 164 tests` / `OK`. 통과
+
+**남은 것**
+- 고친 규칙대로 plan이 초안을 적는지는 돌려 보지 않았다 → 완료 조건 1의 `- 돌리지 않음: plan은 사람에게 묻고 초안마다 승인을 받는 스킬이라, 고친 규칙대로 초안이 적히는지는 여러 턴의 답을 이어야 닿는다` 줄이 돌리지 않기로 정한 동작. 하네스에서 걸린 것
+
+**실패**
+없음
+
+**하네스에서 걸린 것**
+- 남은 것: 고친 규칙대로 plan이 초안을 적는지는 돌려 보지 않았다(task 머리 완료 조건 1의 `- 돌리지 않음` 줄이 돌리지 않기로 정함)
+
+**판정**: 통과
