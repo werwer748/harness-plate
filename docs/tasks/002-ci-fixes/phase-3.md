@@ -45,3 +45,30 @@
 
 ## 하네스에서 걸린 것
 - 읽을 것의 "`uses:` 줄 넷"이 실제 다섯 줄과 달랐다(같은 액션이 두 잡에 있다).
+
+## 확인 1
+
+**통과 조건**
+- 모든 `uses:` 줄이 SHA로 고정된다(완료 조건 3).
+  - `grep -nE 'uses: ' plugins/plate/skills/setup/SKILL.md` → 352, 365, 399, 411, 415행 다섯 줄이 모두 `uses: <소유자>/<이름>@<40자리 16진수> # v<수>` 꼴(`grep -vcE 'uses: [^/ ]+/[^@ ]+@[0-9a-f]{40} # v[0-9]+$'`로 센 어긋난 줄 `0`). 통과
+  - `git ls-remote https://github.com/actions/checkout 'refs/tags/v7' 'refs/tags/v7^{}'` → `3d3c42e5aac5ba805825da76410c181273ba90b1`(`^{}` 줄 없음), 352·411행과 같다. `anthropics/claude-code-action` v1 → `^{}` 줄 `d70510b174a1244958df0b03166a54912811f3e6`, 365행과 같다. `actions/upload-artifact` v7 → `cf430e030ddbb5b0abf93d22962f4752f3646cd9`, 399행과 같다. `actions/download-artifact` v8 → `9000827ccba6bdab643e8b6fd33ac0654aef8333`, 415행과 같다. 통과
+- 앞 phase의 동작이 그대로다(완료 조건 1·2).
+  - `python3 -m unittest tests.test_verdict -v` → `Ran 24 tests`, `OK`. 통과
+- 테스트 묶음이 통과한다.
+  - `python3 -m unittest discover -s tests` → `Ran 229 tests`, 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 229 tests`, `OK`. 통과
+
+**남은 것**
+- 워크플로를 GitHub Actions에서 돌려 보지 않았다(task 머리의 범위 밖). → 통과 조건은 `uses:` 줄의 꼴과 SHA·태그의 일치만 보고 워크플로의 실행 동작은 보지 않아 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 워크플로를 GitHub Actions에서 돌려 보지 않았다(task 머리의 범위 밖이고, 완료 조건에 `돌리지 않음` 줄은 없다).
+
+**판정**: 통과
