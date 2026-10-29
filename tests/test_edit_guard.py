@@ -556,6 +556,55 @@ class RerunTest(GuardTestCase):
         self.assertPassed(p.edit("src/app.py"))
 
 
+    def rerun_without_plan_commit(self, committed, previous=None):
+        """task 머리(`plan.md`)를 커밋하지 않은 채, `001-a: phase 1` 커밋이 committed를 바꾸고
+        phase 파일에 확인 절이 있는 프로젝트. previous가 있으면 그 앞에 지난 tasks를 끝내고 비웠다."""
+        p = self.project()
+        if previous is not None:
+            self.finish_tasks(p, previous)
+        for rel, text in committed.items():
+            p.write(rel, text)
+            p.git("add", rel)
+        p.git("commit", "-q", "-m", "001-a: phase 1")
+        p.write("docs/tasks/001-a/plan.md", "# 시험 작업\n")
+        p.write("docs/tasks/001-a/phase-1.md", phase_text(1, "예") + RECORD + CHECK)
+        return p
+
+    def test_phase_commit_counts_without_plan_commit(self):
+        # task 머리를 커밋하지 않았어도 지난 tasks가 없으면 그 phase 커밋을 센다
+        p = self.rerun_without_plan_commit({"tests/test_app.py": "import unittest\n# 바뀜\n"})
+        self.assertPassed(p.edit("src/app.py"))
+
+    def test_phase_commit_without_test_change_blocks_without_plan_commit(self):
+        p = self.rerun_without_plan_commit({"src/app.py": "print('바뀜')\n"})
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def test_previous_tasks_does_not_count_without_plan_commit(self):
+        # task 머리를 커밋하지 않았으면 지난 tasks가 그 task 폴더를 비운 커밋 뒤만 본다
+        p = self.rerun_without_plan_commit(
+            {"src/app.py": "print('바뀜')\n"},
+            previous={"tests/test_app.py": "import unittest\n# 지난 tasks\n"},
+        )
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def test_current_tasks_counts_without_plan_commit_after_previous_tasks(self):
+        p = self.rerun_without_plan_commit(
+            {"tests/test_app.py": "import unittest\n# 이번 tasks\n"},
+            previous={"tests/test_app.py": "import unittest\n# 지난 tasks\n"},
+        )
+        self.assertPassed(p.edit("src/app.py"))
+
+    def test_done_phase_rename_does_not_hide_phase_commit(self):
+        # task 머리를 커밋하지 않았을 때, 다른 phase 파일의 이름 바꿈(`done-phase-N.md`)은 비움이 아니다
+        p = self.rerun_without_plan_commit({"tests/test_app.py": "import unittest\n# 바뀜\n"})
+        p.write("docs/tasks/001-a/phase-2.md", phase_text(2, "예"))
+        p.git("add", "docs/tasks/001-a/phase-2.md")
+        p.git("commit", "-q", "-m", "001-a: phase 2 더함")
+        p.git("mv", "docs/tasks/001-a/phase-2.md", "docs/tasks/001-a/done-phase-2.md")
+        p.git("commit", "-q", "-m", "001-a: phase 2 통과")
+        self.assertPassed(p.edit("src/app.py"))
+
+
 class ThirdBlockTest(GuardTestCase):
     def setUp(self):
         super().setUp()

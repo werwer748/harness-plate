@@ -155,13 +155,13 @@ def phase_commit_has_test_change(root, task, number):
     지우기만 한 것은 세지 않는다.
 
     tasks가 끝나면 `docs/tasks/`를 비우고 다음 tasks가 같은 task 이름을 다시 쓰므로, 그 task 머리
-    (`plan.md`)를 마지막으로 더한 커밋(이번 tasks의 계획 커밋) 뒤의 커밋만 본다."""
+    (`plan.md`)를 마지막으로 더하거나 지운 커밋 뒤의 커밋만 본다. 더한 커밋이면 이번 tasks의 계획
+    커밋이고, 지운 커밋이면 task 머리를 커밋하지 않은 이번 tasks 앞에서 지난 tasks를 비운 커밋이다.
+    둘 다 없으면 지난 tasks가 없으니 역사 전체를 본다."""
     subject = "%s: phase %d" % (task, number)
     plan = "/".join([TASKS_DIR, task, "plan.md"])
-    added = (git(root, "log", "-1", "--diff-filter=A", "--format=%H", "--", plan) or "").strip()
-    if not added:
-        return False
-    log = git(root, "log", "--format=%H %s", added + "..HEAD") or ""
+    since = (git(root, "log", "-1", "--diff-filter=AD", "--format=%H", "--", plan) or "").strip()
+    log = git(root, "log", "--format=%H %s", since + "..HEAD" if since else "HEAD") or ""
     for line in log.splitlines():
         sha, _, title = line.partition(" ")
         if title != subject:

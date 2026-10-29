@@ -33,8 +33,22 @@
 - 테스트 먼저
   - 실패: `python3 -m unittest tests.test_edit_guard` → `ImportError: cannot import name 'ordinal' from 'edit_guard'`, `FAILED (errors=1)`. `ordinal`만 끼워 넣고 돌린 것(`python3 -c "…edit_guard.ordinal=lambda n: …; unittest.main(module=None)" test_edit_guard`) → `FAIL: test_previous_tasks_commit_does_not_count_before_phase_commit`, `FAIL: test_previous_tasks_phase_commit_does_not_count`, `FAIL: test_stop_message_follows_stop_count`, `Ran 64 tests`, `FAILED (failures=3)`
   - 통과: `python3 -m unittest tests.test_edit_guard` → `Ran 64 tests in 11.467s`, `OK`
+  - 고침(확인 1의 실패) 실패: task 머리를 커밋하지 않은 꼴의 시험 다섯(`test_phase_commit_counts_without_plan_commit`, `test_phase_commit_without_test_change_blocks_without_plan_commit`, `test_previous_tasks_does_not_count_without_plan_commit`, `test_current_tasks_counts_without_plan_commit_after_previous_tasks`, `test_done_phase_rename_does_not_hide_phase_commit`)을 더하고 `python3 -m unittest tests.test_edit_guard.RerunTest` → `FAIL: test_done_phase_rename_does_not_hide_phase_commit`, `FAIL: test_phase_commit_counts_without_plan_commit`, `FAIL: test_previous_tasks_does_not_count_without_plan_commit`, `Ran 16 tests`, `FAILED (failures=3)`
+  - 고침(확인 1의 실패) 통과: `python3 -m unittest tests.test_edit_guard` → `Ran 69 tests in 12.559s`, `OK`
+
+- 확인 1의 실패(task 머리를 커밋하지 않으면 phase 커밋을 세지 않음)를 고친다: `phase_commit_has_test_change`가 그 task 머리를 마지막으로 더하거나 지운 커밋(`git log -1 --diff-filter=AD -- <plan.md>`) 뒤를 보고, 그런 커밋이 없으면 역사 전체(`HEAD`)를 본다. 더한 커밋이면 이번 tasks의 계획 커밋, 지운 커밋이면 task 머리를 커밋하지 않은 이번 tasks 앞에서 지난 tasks를 비운 커밋이다. 앞의 꼴은 task 머리가 커밋되지 않았는데 지난 tasks가 같은 task 머리를 더한 커밋이 남아 있으면 그 커밋부터 세어 지난 tasks의 phase 커밋을 셌다(`test_previous_tasks_does_not_count_without_plan_commit`이 드러냄). ARCHITECTURE "막는 장치" 문단의 다시 수행 줄을 그대로 고쳤다 (`plugins/plate/hooks/edit_guard.py`, `docs/ARCHITECTURE.md`, `tests/test_edit_guard.py`)
 
 ## 확인 결과
+- 고친 뒤 다시 돌린 것(확인 1의 실패 고침). 아래 첫 수행의 줄들은 그때의 결과로 남긴다
+  - 001 완료 조건 1을 적힌 그대로(`tests/test_x.py`·`src.py`만 커밋, `plan.md`·`phase-1.md`는 커밋하지 않음): 테스트를 바꾼 `001-a: phase 1` 커밋+`## 확인 1` → `exit=0`, `src.py`만 바꾼 커밋 → `exit=2`, 확인 절 없음 → `exit=2`. `plan.md`를 커밋한 꼴도 → `exit=0`. 통과
+  - 005 완료 조건 1: 지난 tasks(`plan: old`, 테스트를 바꾼 `001-a: phase 1`, 비움), `plan: new`, 이번 `001-a: phase 1`, `## 확인 1` → 이번이 구현만 `impl exit=2`, 테스트도 `test exit=0`. 통과
+  - 005 완료 조건 3: `STOP_COUNT = 5` 사본 → 네 번 `TEST_FIRST`, 다섯 번째 `같은 파일을 다섯 번째 막았다`. 통과
+  - 005 완료 조건 4: `--diff-filter=d`를 뺀 사본(`grep -c` → `0`)에서 `python3 -m unittest tests.test_edit_guard` → `FAIL: test_phase_commit_deleting_test_only_blocks`, `FAILED (failures=1)`. 통과
+  - 005 완료 조건 2: `plugins/plate/skills/phase/SKILL.md`는 이번 고침에서 바꾸지 않았다. 첫 수행의 결과 그대로
+  - tasks 완료 조건 1: `python3 -m unittest discover -s tests` → `Ran 250 tests`, `OK`. 통과
+  - tasks 완료 조건 2(001 완료 조건 1~8): 1은 위. 2: `printf '{'` → `plate:` 줄 `exit=2`, `\xff` → `UnicodeDecodeError` 줄 `exit=2`, 푸시 훅 `{"git push` → `exit=2`, `{"ls` → `exit=0`. 3: 세는 파일 자리에 폴더 → `세 번째 막았다` 줄 `exit=2`, `os.replace` 253행. 4: `git rm tests/test_x.py`만(`tests/test_y.py` 남음) → `exit=2`. 5: `env PATH=/nonexistent <python3>`에서 `README.md` → `exit=0`, `src.py` → `FileNotFoundError` 줄 `exit=2`, `has_uncommitted_test_change(root)` 301행 < `has_tests(root)` 306행(`check` 264행 안). 6: `grep -c` → `0`, 상수 확인 → `True`. 7: ARCHITECTURE 54행에 `다시 수행`·`예외`·`결과물인 마크다운`, `### ADR-027` 63행 한 줄, PRD는 바꾸지 않음. 8: `OK`. 통과
+  - tasks 완료 조건 4: 이번 고침은 003이 보는 run·phase·cleanup·review 본문과 PRD를 바꾸지 않았고, ARCHITECTURE는 54행 한 문장만 바꿨다. 003 완료 조건 8의 grep을 다시 돌림 → `결과 없` PRD 1줄·ARCHITECTURE 2줄, `gh api user` ARCHITECTURE 57행(run 문단). 통과
+  - tasks 완료 조건 6: `python3 -m unittest tests.test_skill_rules tests.test_manifests tests.test_cleanup_skill tests.test_edit_guard tests.test_push_guard` → `OK`. `grep -n '^def section' tests/test_cleanup_skill.py` → 출력 없음(종료 1). 통과
 - 완료 조건 1: 지난 tasks의 같은 이름 phase 커밋 때문에 통과시키지 않는다
   - `mktemp -d` 시험 레포(지난 tasks의 `plan: old`, 테스트를 바꾼 `001-a: phase 1`, `docs/tasks` 비움, `plan: new`, 이번 tasks의 `001-a: phase 1`, `## 확인 1` 커밋)에 `src/app.py` 편집 JSON → 이번 커밋이 구현만 바꾸면 `impl exit=2`, 테스트도 바꾸면 `test exit=0`. 통과
 - 완료 조건 2: 새 구현 파일 여럿 옮기기
@@ -54,12 +68,13 @@
 - 없음
 
 ## 남은 것
-- 다시 수행의 셈은 그 task 머리(`plan.md`)를 더한 커밋이 git 역사에 없으면(계획을 커밋하지 않은 채 다시 수행) phase 커밋을 세지 않아 구현 편집을 막는다. plan 스킬이 계획을 늘 커밋하므로 그런 상태는 plate의 흐름에서 생기지 않는다고 봤다. 001의 완료 조건 확인 1도 시험 레포의 `plan.md`를 첫 커밋에 넣어 돌렸다
-- 계획 커밋을 "그 경로를 더한 마지막 커밋"으로 잡으므로, 이번 tasks 안에서 그 task 폴더를 지웠다 다시 더하면 그 앞의 같은 제목 커밋은 세지 않는다
+- 셈의 경계를 "그 task 머리를 마지막으로 더하거나 지운 커밋"으로 잡으므로, 이번 tasks 안에서 그 task 폴더를 지웠다 다시 더하면 그 앞의 같은 제목 커밋은 세지 않는다
+- task 머리를 커밋하지 않았고 지난 tasks가 같은 task 머리를 지우지 않고(예: `docs/tasks/`를 비우지 않고 다른 길로) 끝났으면 경계가 지난 tasks의 계획 커밋이 되어 지난 tasks의 같은 제목 커밋을 센다. plate의 run은 tasks 끝에 `docs/tasks/`를 비우므로 이 꼴은 흐름에서 생기지 않는다고 봤다
 
 ## 하네스에서 걸린 것
 - 완료 조건 5의 "이 tasks의 마지막 커밋에서 다시 돌려"는 phase 커밋 전에 돌릴 수밖에 없어 커밋할 작업 트리에서 돌렸다
 - 001 완료 조건 1의 시험 레포 설명이 `docs/tasks/001-a/plan.md`를 "있다"고만 하고 커밋했는지 적지 않는다. 고친 훅은 그 파일을 더한 커밋을 찾으므로 커밋한 레포로 돌렸다
+- 확인 1의 실패 고침: 첫 수행은 시험 레포의 설명이 모호한 것을 내 쪽에 맞는 꼴(커밋한 `plan.md`)로 읽어 통과로 적었다. 이번에는 적힌 그대로(커밋하지 않은 `plan.md`)와 커밋한 꼴을 모두 돌렸다
 
 ## 확인 1
 
