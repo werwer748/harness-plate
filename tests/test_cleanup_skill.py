@@ -191,7 +191,7 @@ class CommitAndAskTest(unittest.TestCase):
 
     def test_ask_point_and_answers(self):
         body = section(read(), "6. tasks로 만들지 묻는다")
-        self.assertIn("남은 발견(버림이 아닌 것)이 없으면 묻지 않고 8번으로 간다", body)
+        self.assertIn("남은 발견(버림이 아닌 것)이 없으면 묻지 않고 \"고른 발견이 없을 때\"로 간다", body)
         self.assertIn("번호를 고른다", body)
         self.assertIn("하나도 고르지 않는다", body)
 
@@ -206,14 +206,63 @@ class CommitAndAskTest(unittest.TestCase):
         self.assertLess(body.index("미룸`이다"), body.index("`plate:plan`)을 부른다"))
 
 
+class CleanupBranchTest(unittest.TestCase):
+    def test_glossary_defines_branch_and_remote_terms(self):
+        body = section(read(), "낱말")
+        for term in ("보고서 이름", "cleanup 브랜치", "고른 발견이 없을 때", "기본 브랜치", "GitHub 원격", "글을 넘기는 법"):
+            with self.subTest(term=term):
+                self.assertIn("- **%s**:" % term, body)
+        self.assertIn("git symbolic-ref --short refs/remotes/origin/HEAD", body)
+        self.assertIn("`--body-file`", body)
+
+    def test_branch_made_before_report_from_current_head(self):
+        body = section(read(), "5. 보고서를 쓰고 커밋한다")
+        self.assertIn("git rev-parse --verify --quiet refs/heads/cleanup/<보고서 이름>", body)
+        self.assertIn("`cleanup/<보고서 이름>-2`", body)
+        self.assertIn("git switch -c {고른 이름}", body)
+        self.assertIn("그 HEAD에서 만든다", body)
+        self.assertIn("만들지 못하면(명령이 오류를 냈다) 보고서를 쓰지 않는다", body)
+        self.assertIn("명령 치환이나 `&&`로 잇지 않고 한 명령씩 부른다", body)
+        # 브랜치를 만드는 것이 보고서를 쓰는 것보다 앞선다
+        self.assertLess(body.index("git switch -c"), body.index("1. 1번에서 정한 경로에"))
+
+    def test_no_selection_asks_pr_or_merge(self):
+        text = read()
+        body = section(text, "고른 발견이 없을 때")
+        self.assertIn("git push origin cleanup/<보고서 이름>", body)
+        self.assertIn(
+            "gh pr create --base {기본 브랜치} --head cleanup/<보고서 이름> --title '{보고서의 제목}' --body-file {보고서의 경로}",
+            body,
+        )
+        self.assertIn("git merge cleanup/<보고서 이름>", body)
+        self.assertIn("squash하지 않는다", body)
+        self.assertIn("git merge --abort", body)
+        self.assertIn("거절하면 푸시하지 않고", body)
+        self.assertIn("\"고른 발견이 없을 때\"로 간다", section(text, "7. 고른 것을 plan에 넘기고 고르지 않은 것을 미룬다"))
+        # 그 절은 7번과 8번 사이에 있다
+        self.assertLess(text.index("## 7. "), text.index("## 고른 발견이 없을 때"))
+        self.assertLess(text.index("## 고른 발견이 없을 때"), text.index("## 8. "))
+
+    def test_report_names_branch_and_pr(self):
+        body = section(read(), "8. 보고한다")
+        self.assertIn("cleanup 브랜치의 이름, PR을 열었으면 그 주소, 합쳤으면 합친 곳", body)
+
+
 class AbsoluteRulesTest(unittest.TestCase):
     def test_core_rules_present(self):
         rules = absolute_rules(read())
         self.assertIn("코드를 고치지 않는다", rules[1])
         self.assertIn("그 날의 보고서와 `AGENTS.md` 문서 지도의 행뿐이다", rules[2])
-        self.assertIn("푸시하지 않는다", rules[3])
+        self.assertIn("푸시는 고른 발견이 없을 때 승인받아 `cleanup/<보고서 이름>`을 origin에 올릴 때만 한다", rules[3])
+        self.assertNotIn("브랜치를 만들거나 바꾸지 않는다", rules[3])
         self.assertIn("6번", rules[4])
         self.assertIn("근거 없이 발견을 적지 않는다", rules[5])
+
+    def test_commits_only_on_cleanup_branch(self):
+        """커밋은 cleanup 브랜치에만 넣고, 묻는 자리에 PR·합침 물음이 든다."""
+        rules = absolute_rules(read())
+        self.assertIn("커밋은 5번에서 만든 `cleanup/<보고서 이름>`에만 넣는다", rules[2])
+        self.assertIn("\"고른 발견이 없을 때\"의 PR·합침 물음", rules[4])
 
     def test_plan_writes_and_commits_are_left_to_plan(self):
         """7번에서 부른 plan이 docs/tasks/를 쓰고 커밋하는 것이 절대 규칙 1·2와 부딪히지 않는다."""
