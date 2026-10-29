@@ -389,6 +389,71 @@ class RunRulesTest(unittest.TestCase):
                     self.assertEqual(done.returncode, 0, done.stderr)
                     self.assertEqual(done.stdout, expected + "\n")
 
+    def test_stop_line_grep_runs_on_fake_runlog(self):
+        # 3번의 `멈춤` 줄 grep 두 개를 본문에서 뽑아 가짜 RUNLOG.md에 돌린다(cleanup 2026-10-29 기존 작업 정합성-7).
+        body = section(self.text, "3. 갈 곳을 정한다")
+        commands = re.findall(r"`(grep '\^- 물음 \| 멈춤 \| `NNN-slug` [^']*' docs/tasks/RUNLOG\.md \| tail -n 1)`", body)
+        self.assertEqual(len(commands), 2, commands)
+        phase = next((c for c in commands if "phase N" in c), None)
+        retro = next((c for c in commands if "회고" in c), None)
+        self.assertIsNotNone(phase, "phase의 grep이 없다")
+        self.assertIsNotNone(retro, "task의 grep이 없다")
+        runlog = "\n".join([
+            "# RUNLOG",
+            "- 물음 | 멈춤 | `003-a` phase 2 확인 3 | 확인이 세 번 실패 | 답: 다시 맡긴다",
+            "- 물음 | 멈춤 | `003-a` 회고 3 | 회고가 세 번 문제 | 답: 다시 맡긴다",
+            "- 에이전트 | 확인 | `003-a` phase 2 | 토큰 1 | 도구 호출 1 | 시간 1초",
+            "- 물음 | 멈춤 | `003-a` phase 2 확인 6 | 확인이 또 실패 | 답: 다시 맡긴다",
+            "- 물음 | 멈춤 | `003-a` phase 12 확인 9 | 다른 phase | 답: 다시 맡긴다",
+            "- 물음 | 멈춤 | `004-b` phase 2 확인 9 | 다른 task | 답: 다시 맡긴다",
+            "- 물음 | 멈춤 | `003-a` 회고 4 | 회고가 또 문제 | 답: 다시 맡긴다",
+            "- 물음 | 멈춤 | `004-b` 회고 9 | 다른 task | 답: 다시 맡긴다",
+            "  - 물음 | 멈춤 | `003-a` phase 2 확인 9 | 줄 머리가 아니다 | 답: 다시 맡긴다",
+            "- 물음 | 멈춤 | `003-a` phase 2 수행 | 다른 자리 | 답: 그만둔다",
+            "- 물음 | 멈춤 | `003-a` | 자리 없는 멈춤 | 답: 그만둔다",
+            "",
+        ])
+        cases = (
+            (phase, "- 물음 | 멈춤 | `003-a` phase 2 확인 6 | 확인이 또 실패 | 답: 다시 맡긴다"),
+            (retro, "- 물음 | 멈춤 | `003-a` 회고 4 | 회고가 또 문제 | 답: 다시 맡긴다"),
+        )
+        with tempfile.TemporaryDirectory() as folder:
+            (Path(folder) / "docs" / "tasks").mkdir(parents=True)
+            (Path(folder) / "docs" / "tasks" / "RUNLOG.md").write_text(runlog, encoding="utf-8")
+            for command, expected in cases:
+                with self.subTest(command=command):
+                    line = command.replace("NNN-slug", "003-a").replace("phase N ", "phase 2 ")
+                    done = subprocess.run(["sh", "-c", line], cwd=folder, capture_output=True, text=True, encoding="utf-8")
+                    self.assertEqual(done.returncode, 0, done.stderr)
+                    self.assertEqual(done.stdout, expected + "\n")
+
+    def test_plan_commit_after_tasks_branch(self):
+        # 1번은 커밋하지 않은 변경, tasks 브랜치, 계획의 커밋 차례이고 계획은 tasks 브랜치에 커밋한다(cleanup 2026-10-29 신뢰성-8).
+        body = section(self.text, "1. 시작 조건을 본다")
+        order = [body.find(item) for item in ("1. **커밋하지 않은 변경.**", "2. **tasks 브랜치.**", "3. **계획의 커밋.**")]
+        self.assertNotIn(-1, order, order)
+        self.assertEqual(order, sorted(order))
+        self.assertIn("한 번도 커밋되지 않은 계획 파일은 세지 않는다", body)
+        self.assertIn("그 파일들만, 2번이 정한 `tasks/<이름>`에서 커밋한다", body)
+
+    def test_issue_already_exists_only_by_login(self):
+        # 이슈의 "이미 있음"은 gh api user의 login이 쓴 본문과 댓글로만 본다(cleanup 2026-10-29 기존 작업 정합성-5).
+        issue = subsection(self.text, "이슈를 올린다")
+        second = re.search(r"^2\. (.*)$", issue, re.M).group(1)
+        for rule in (
+            "plate를 돌린 계정이 쓴 본문이나 댓글에 이 tasks 이름이 이미 있으면 올리지 않고",
+            "`gh api user --jq .login`",
+            "`gh issue view {번호} --repo werwer748/harness-plate --json author,comments`의 `author.login`(본문)과 `comments[].author.login`(댓글)",
+            "다른 사람이 쓴 본문이나 댓글에 tasks 이름이 있어도 이미 있는 것으로 보지 않는다",
+            "login을 얻지 못하면 이미 있지 않은 것으로 본다",
+        ):
+            with self.subTest(rule=rule):
+                self.assertIn(rule, second)
+        self.assertNotIn("같은 이슈의 본문이나 댓글에 이 tasks 이름이 이미 있으면", issue)
+        pr_body = part(section(self.text, "PR을 연다"), "PR 본문의 꼴")
+        self.assertIn("`gh api user --jq .login`의 login이 쓴 본문이나 댓글에 이 tasks 이름이 있는 이슈의 주소만 쓴다", pr_body)
+        self.assertIn("login을 얻지 못하면 없는 것으로 본다", pr_body)
+
     def test_text_passing_rule_survives_fake_gh(self):
         # "글을 넘기는 법"대로 넣은 제목이 가짜 gh에 한 인자로 그대로 닿고 치환이 돌지 않는다(review 평가 1의 소스 문제 1).
         terms = section(self.text, "낱말")
