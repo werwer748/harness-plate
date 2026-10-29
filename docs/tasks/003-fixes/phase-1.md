@@ -70,3 +70,42 @@
 ## 하네스에서 걸린 것
 - 완료 조건 3의 retro 헤드리스 시험에서 retro가 #80 규칙대로 그 경우를 `경계 밖`으로 적어 판정은 "통과"로 나왔다. 기대("회고 절의 문제나 `FRICTION.md`의 경계 밖")는 채웠지만, 목표를 해치는 결함이 회고 판정을 통과시키는 꼴이다
 - 헤드리스 retro가 retro의 "task의 커밋" 낱말이 지난 tasks의 같은 이름 커밋을 잡는다고 짚었다. 같은 #80 꼴(이름으로 커밋을 찾음)이 retro 자신의 낱말에도 있다
+
+## 확인 1
+
+**통과 조건**
+- task 머리의 완료 조건이 모두 참이다.
+  - 완료 조건 1(보고서 경로): `mktemp -d` 시험 레포에서 `docs/cleanup/2026-10-29.md`를 커밋한 `cleanup/2026-10-29`를 합치지 않은 채 main으로 돌아가 본문 1번의 명령을 차례로 돌림(`ls docs/cleanup/2026-10-29.md`, `git for-each-ref --format='%(refname:short)' refs/heads/cleanup/`, `git cat-file -e cleanup/2026-10-29:docs/cleanup/2026-10-29.md`, `git cat-file -e cleanup/2026-10-29:docs/cleanup/2026-10-29-2.md`) → 작업 트리에 없음(rc 1), 목록 `cleanup/2026-10-29`, 첫 이름 rc 0(쓰임), `-2` rc 128(안 쓰임) → 새 경로 `docs/cleanup/2026-10-29-2.md`. 5번 `git rev-parse --verify --quiet refs/heads/cleanup/2026-10-29-2` → rc 1, 빈 출력 → `cleanup/2026-10-29-2`. 두 브랜치를 차례로 main에 `git merge` → 둘 다 rc 0, `git status --porcelain` 빈 출력, `docs/cleanup/`에 두 파일. 통과
+  - 완료 조건 1(지난 보고서): `plugins/plate/skills/cleanup/SKILL.md` 72줄(2번)을 읽음 → "아직 기본 브랜치에 합쳐지지 않은 cleanup 브랜치의 보고서도 지난 보고서로 본다", `git ls-tree --name-only {브랜치} docs/cleanup/`, `git show {브랜치}:{경로}`. 시험 레포에서 `git ls-tree --name-only cleanup/2026-10-29 docs/cleanup/` → `docs/cleanup/2026-10-29.md`. 통과
+  - 완료 조건 2: `python3 -m unittest -v tests.test_cleanup_skill.SharedDefinitionsTest` → 2개 ok. `cp -R` 사본 셋에서 cleanup의 "기본 브랜치" 줄(`` `origin` `` → `origin`), "GitHub 원격" 줄(`URL` → `주소`), "cleanup 브랜치" 줄(`-2`` → `.2``)을 저마다 한 줄 바꿔 `python3 -m unittest tests.test_cleanup_skill.SharedDefinitionsTest` → 셋 모두 `FAILED (failures=1)`. 통과
+  - 완료 조건 3(cleanup 합침 갈래): `mktemp -d` 시험 레포 두 개에서 `git switch main`, `git merge cleanup/2026-10-29`, (충돌 시) `git merge --abort`, `git branch -d cleanup/2026-10-29`를 차례로 돌림 → 충돌 없음: merge rc 0, `git merge-base --is-ancestor {끝 커밋} main` rc 0, 지운 뒤 `git rev-parse --verify --quiet refs/heads/cleanup/2026-10-29` 빈 출력. 충돌: merge rc 1, abort rc 0, main 해시 전과 같음, 작업 트리 깨끗. `NoSelectionMergeTest` 2개 ok. 통과
+  - 완료 조건 3(run 보낼 곳으로 합친다): `mktemp -d` 시험 레포에서 `tasks/y`에서 `git rev-parse --verify --quiet refs/heads/cleanup/x`(rc 0), `git switch cleanup/x`, `git merge --no-ff -m 'y: 보낼 곳으로 합침' tasks/y`(rc 1, 충돌), `git merge --abort`(rc 0), `git switch tasks/y` → `cleanup/x` 해시 전과 같음, `tasks/y` 남고 해시 같음, 지금 브랜치 `tasks/y`. `RunRulesTest.test_merge_to_target_conflict_restores_target` ok. 통과
+  - 완료 조건 3(retro 헤드리스): 스크래치의 시험 레포(지난 tasks의 `c3e4bab 001-report: phase 1`이 남고, 이번 task `001-report`의 결정대로 `git log --reverse … | head -1`을 쓰는 `find_phase.sh`가 이번 `b492625` 대신 `c3e4bab`을 냄)에서 `claude -p "/plate:retro docs/tasks/001-report" --plugin-dir /Users/hugo/Desktop/harness-plate/plugins/plate --permission-mode bypassPermissions --output-format json`(Claude Code 2.1.312, retro 본문 sha256 `aff04746…a8e8`) → `판정: 통과`, `문제: 0개`. 시험 레포 `docs/tasks/FRICTION.md`에 "`001-report` 경계 밖: … `find_phase.sh`가 지난 tasks의 같은 메시지 커밋 `c3e4bab`…을 낸다. 목표 …를 해치지만 …"이 적힘. `001-report: 회고` 커밋은 `retro.md`, `FRICTION.md`만 바꿈. 통과
+  - 완료 조건 3(저장소 불변): 헤드리스 시험 전후의 이 저장소 `git status --porcelain`과 `git rev-parse HEAD`를 `diff` → 빈 출력(남은 변경은 `docs/tasks/RUNLOG.md`뿐, HEAD `a49d1b3` 그대로). 통과
+  - 완료 조건 3(돌리지 않음: plan 헤드리스): 계획이 돌리지 않기로 정함. 돌리지 않음
+  - 완료 조건 4-1: `python3 -m unittest discover -s tests` → `Ran 271 tests`, 마지막 줄 `OK`. 통과
+  - 완료 조건 4-2: `grep -n '지난 tasks의 같은 이름' plugins/plate/skills/plan/SKILL.md plugins/plate/skills/retro/SKILL.md` → plan:115(6번, 102~136줄), plan:266(적는 규칙 **조건**, 260줄 아래), retro:79(4번, 64~84줄). 그 줄을 `sed -i '' '/지난 tasks의 같은 이름/d'`로 지운 `cp -R` 사본에서 `python3 -m unittest discover -s tests -k test_80` → `FAILED (failures=4)`. 통과
+  - 완료 조건 4-3: `grep -n -F 'cleanup/<' plugins/plate/skills/cleanup/SKILL.md` → 절대 규칙 17·18줄, 5번 115·127줄, 고른 발견이 없을 때 149·153·154·155·161·163·165줄. `mktemp -d` 시험 레포에서 본문 5번의 이름 고르기(`git rev-parse --verify --quiet refs/heads/cleanup/…`)와 `git switch -c`: main에서 → `cleanup/2026-10-29`의 HEAD가 main과 같고 main 해시 그대로. `tasks/x`에서 → 같은 이름이 있어 `cleanup/2026-10-29-2`가 `tasks/x`의 HEAD에서 생김, main 해시 그대로, 옛 `cleanup/2026-10-29` 해시 그대로. 통과
+  - 완료 조건 4-4: `grep -n '보낼 곳' plugins/plate/skills/plan/SKILL.md` → 55줄(1번), 139줄(7번), 170줄(계획 파일의 양식). `mktemp -d` 시험 레포 `cleanup/x`에서 `git rev-parse --verify --quiet refs/heads/tasks/y`(rc 1), `git switch -c tasks/y` → `git merge-base --is-ancestor cleanup/x tasks/y` rc 0, main 해시 그대로. 통과
+  - 완료 조건 4-5: `grep -n '보낼 곳' plugins/plate/skills/run/SKILL.md` → 0번 69·71·73·75줄, "비운다" 499·505줄, "PR을 연다" 523줄, "합친다" 564줄. `mktemp -d` 시험 레포에서 `git switch cleanup/x`, `git merge --no-ff -m 'y: 보낼 곳으로 합침' tasks/y` → rc 0, `git merge-base --is-ancestor tasks/y cleanup/x` rc 0, main 해시 그대로. `cleanup/x`를 지운 뒤 `git rev-parse --verify --quiet refs/heads/cleanup/x` → rc 1, 빈 출력. 통과
+  - 완료 조건 4-6: `grep -n -F 'cleanup/<' docs/PRD.md docs/ARCHITECTURE.md` → PRD 19(핵심 기능 9), ARCHITECTURE 56(plan 문단), 95·98(정리 점검). `grep -n '보낼 곳' docs/PRD.md docs/ARCHITECTURE.md` → PRD 18(핵심 기능 8), ARCHITECTURE 57(run 문단), 81·84(tasks 끝). 통과
+  - 완료 조건 4의 돌리지 않음 줄(plan·retro·cleanup·run 끝까지의 헤드리스): 계획이 돌리지 않기로 정함. 돌리지 않음
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 271 tests`, `OK`. 통과
+
+**남은 것**
+- 1번의 이름 고르기는 로컬 cleanup 브랜치만 본다. origin에만 남은 cleanup 브랜치의 보고서와는 같은 경로 충돌이 날 수 있다 → 완료 조건 1이 보는 동작은 스킬이 만든 로컬 cleanup 브랜치가 합쳐지지 않은 채 남은 경우이고(본문의 "cleanup 브랜치"는 로컬 브랜치, PR 갈래도 로컬을 지우지 않음), 사람이 로컬을 지운 꼴은 그 밖이다. 하네스에서 걸린 것
+- 헤드리스 retro가 retro의 "task의 커밋" 낱말이 지난 tasks의 같은 이름 커밋까지 잡는다고 적음 → retro 본문의 결함이고 task 머리 범위 밖(plate 자체의 하네스 고칠 거리). 완료 조건 3의 retro 확인이 보는 동작(그 경우를 경계 밖으로 적는다)은 채움. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: cleanup 1번의 이름 고르기가 origin에만 남은 cleanup 브랜치(로컬을 지운 것)의 보고서를 보지 않아 같은 경로 충돌이 날 수 있다
+- 남은 것: plate:retro의 "task의 커밋" 낱말(메시지가 task 이름으로 시작하는 커밋)이 지난 tasks의 같은 이름 커밋을 이 task의 커밋으로 잡는다(이 확인의 헤드리스 시험에서도 retro가 같은 것을 `FRICTION.md`의 경계 밖으로 적음)
+- 완료 조건 3의 retro 확인은 기대를 "회고 절의 문제나 `FRICTION.md`의 경계 밖"으로 둬, 목표를 해치는 결함이 있어도 회고 판정이 "통과"로 나오는 꼴을 통과로 본다
+
+**판정**: 통과
