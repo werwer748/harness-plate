@@ -18,6 +18,8 @@
              경로가 없다
     request  머지 요청. 그 밖이다. 모름("unmeasured", "unjudged")과 워크플로를 바꾼 PR의
              merge는 여기로 온다
+    stdin을 JSON 객체로 읽지 못하면(빈 입력, 깨진 JSON, 객체가 아닌 JSON), 또는
+    `--changed-files`의 파일을 읽지 못하면 판정하지 않고 request를 낸다. 이때도 종료 코드는 0이다
 
 예: echo "$BUNDLE" | python3 verdict.py
     echo "$BUNDLE" | python3 verdict.py --changed-files changed.txt
@@ -58,13 +60,28 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--changed-files")
     args = parser.parse_args()
-    result = verdict(json.load(sys.stdin))
-    if result == "merge" and args.changed_files is not None:
-        with open(args.changed_files, encoding="utf-8") as listing:
-            if touches_workflow(listing):
-                result = "request"
-    print(result)
+    print(decide(args.changed_files))
     return 0
+
+
+def decide(changed_files):
+    """읽지 못한 입력은 머지 요청으로 보낸다(fail-closed)."""
+    try:
+        bundle = json.load(sys.stdin)
+    except ValueError:
+        return "request"
+    if not isinstance(bundle, dict):
+        return "request"
+    result = verdict(bundle)
+    if changed_files is not None:
+        try:
+            with open(changed_files, encoding="utf-8") as listing:
+                paths = listing.readlines()
+        except (OSError, ValueError):
+            return "request"
+        if result == "merge" and touches_workflow(paths):
+            result = "request"
+    return result
 
 
 if __name__ == "__main__":

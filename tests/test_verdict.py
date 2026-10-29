@@ -141,5 +141,33 @@ class ChangedFilesTest(unittest.TestCase):
         self.assertEqual(verdict(changed_files=["src/app.py"], test="fail").strip(), "close")
 
 
+def run_raw(stdin, *args):
+    """stdin의 글을 그대로 넘겨 스크립트를 돌리고 (종료 코드, stdout)을 돌려준다."""
+    done = subprocess.run(
+        [sys.executable, str(SCRIPT), *args], input=stdin, capture_output=True, text=True,
+    )
+    return done.returncode, done.stdout
+
+
+class UnreadableInputTest(unittest.TestCase):
+    def test_broken_json_requests(self):
+        self.assertEqual(run_raw("not json"), (0, "request\n"))
+
+    def test_non_object_json_requests(self):
+        for stdin in ("[]", "null", "3", '"merge"'):
+            with self.subTest(stdin=stdin):
+                self.assertEqual(run_raw(stdin), (0, "request\n"))
+
+    def test_empty_input_requests(self):
+        self.assertEqual(run_raw(""), (0, "request\n"))
+
+    def test_unreadable_changed_files_requests(self):
+        with tempfile.TemporaryDirectory() as folder:
+            missing = str(Path(folder) / "missing.txt")
+            self.assertEqual(
+                run_raw(json.dumps(GOOD), "--changed-files", missing), (0, "request\n")
+            )
+
+
 if __name__ == "__main__":
     unittest.main()
