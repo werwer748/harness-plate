@@ -53,3 +53,33 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- description이 400자 이하이고 지키는 글이 남는다(완료 조건 5).
+  - `python3 -m unittest tests.test_skill_rules.DescriptionTest -v` → `test_description_at_most_400_chars ... ok`를 포함해 `Ran 6 tests`, `OK`. 통과
+  - `python3 -m unittest tests.test_skill_rules.EvalRulesTest -v` → `Ran 6 tests`, `OK`. 통과
+  - `claude plugin validate plugins/plate` → `✔ Validation passed`. 통과
+- ARCHITECTURE가 맞다(완료 조건 6의 뒤 줄).
+  - `grep -n 'description 400자' docs/ARCHITECTURE.md` → 40번 줄 한 줄. `## 디렉터리 구조`(9번 줄)와 `## 패턴과 규칙`(44번 줄) 사이라 디렉터리 구조 절 안이다. 통과
+- 앞 phase와 앞 task들의 시험이 그대로다(완료 조건 1~4, 7).
+  - `python3 -m unittest tests.test_cleanup_skill tests.test_manifests tests.test_verdict.BundleShapeTest -v` → `Ran 34 tests`, `OK`. 통과
+- 테스트 묶음이 통과한다.
+  - `python3 -m unittest discover -s tests` → `Ran 239 tests`, 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 239 tests`, `OK`. 통과
+
+**남은 것**
+- description이 짧아져 모델이 스킬을 고르는 판단이 바뀔 수 있고, 골라지는지 보는 시험은 돌리지 않았다 → 돌려 보지 않은 위험이나, task 머리 완료 조건 5의 `- 돌리지 않음: description이 바뀌면 모델이 스킬을 고르는 판단이 바뀔 수 있는데, 여러 요청 글로 스킬이 골라지는지 보는 시험은 대화형 세션이 있어야 해 돌리지 않는다` 줄이 돌리지 않기로 정한 동작이다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: description이 짧아져 모델이 스킬을 고르는 판단이 바뀔 수 있다. 완료 조건 5의 `돌리지 않음` 줄대로 골라지는지 보는 시험은 돌리지 않았다
+
+**판정**: 통과
