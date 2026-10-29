@@ -68,3 +68,37 @@
 
 ## 하네스에서 걸린 것
 없음
+
+## 확인 1
+
+**통과 조건**
+- 계획 커밋이 브랜치 뒤다(완료 조건 2).
+  - `grep -n -e '\*\*tasks 브랜치\.\*\*' -e '\*\*계획의 커밋\.\*\*' plugins/plate/skills/run/SKILL.md` → `89:2. **tasks 브랜치.**`, `96:3. **계획의 커밋.**`. 89 < 96. 통과
+- 이슈 판정이 login의 글로 좁혀진다(완료 조건 3).
+  - `grep -n 'gh api user' plugins/plate/skills/run/SKILL.md` → 376행("### 이슈를 올린다" 369행 아래, 다음 절 383행 전), 519행("## PR을 연다" 503행 아래 "PR 본문의 꼴"의 올린 이슈 항목). 통과
+  - `gh api user --jq .login` → `werwer748` 한 줄. `gh issue view 68 --repo werwer748/harness-plate --json author,comments --jq '.author.login'` → `werwer748` 한 줄. 통과
+- 멈춤 grep이 돈다(완료 조건 4).
+  - `python3 -m unittest tests.test_skill_rules.RunRulesTest.test_stop_line_grep_runs_on_fake_runlog -v` → `Ran 1 test`, `OK`. 통과
+  - 작업 트리를 `cp -R`로 `mktemp -d` 사본에 옮기고 사본의 run 본문에서 확인 grep(1곳)을 ``grep '^- 물음 | 멈춤 | `NNN-slug` phase N ' docs/tasks/RUNLOG.md | tail -n 1``로 바꿔 사본에서 같은 시험 → `FAILED (failures=1)`. 사본은 지웠다. 통과
+- 앞 phase의 동작이 그대로다(완료 조건 1).
+  - `python3 -m unittest tests.test_skill_rules.RunRulesTest.test_no_result_relaunch_limit -v` → `OK`. 통과
+- 맥락 문서가 맞다(완료 조건 8의 뒤 절).
+  - `grep -n 'gh api user' docs/ARCHITECTURE.md` → 56행(run 이슈·PR 문단, "run은 기본 브랜치(`origin`의 HEAD…"로 시작), 57행(CI 문단). 통과
+- 테스트 묶음이 통과한다.
+  - `python3 -m unittest discover -s tests` → `Ran 233 tests`, 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 233 tests`, `OK`. 통과
+
+**남은 것**
+- 계획 파일을 커밋하지 않은 채 이미 있는 `tasks/<이름>`으로 `git switch`할 때 같은 경로의 추적 파일이 있으면 switch가 실패할 수 있고 본문이 그 갈래를 다루지 않는다 → 통과 조건은 1번 세 항목의 차례(줄 번호)만 보고 switch의 동작은 보지 않아 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 계획 파일을 커밋하지 않은 채 이미 있는 `tasks/<이름>`으로 `git switch`할 때 그 브랜치에 같은 경로의 추적 파일이 있으면 switch가 실패할 수 있다. run 1번 본문은 이 실패 갈래를 따로 다루지 않는다
+
+**판정**: 통과
