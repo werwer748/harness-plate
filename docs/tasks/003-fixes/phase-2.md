@@ -45,3 +45,33 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 회고 1의 문제가 모두 고쳐졌다.
+  - `docs/ADR.md` ADR-026 결정(59줄), `docs/PRD.md` 8번(18줄), run SKILL.md "고칠 곳을 말하면" 줄(359)과 "아무것도 고치지 않고" 줄(360), `docs/ARCHITECTURE.md` 78줄을 읽음 → ADR-026과 PRD 8번이 사용자가 고치거나 올리자고 하면 이 프로젝트만의 것은 고침 task로, plate 자체의 것은 이슈로 옮기고, 다시 빼면 eval에만으로 돌리며, 고칠 안이 모두 비면 묻지 않는다고 적는다. run 359줄은 BACKLOG로 옮기는 글을 "기준을 넘은" 것으로 좁히고 옮긴 것을 다시 빼면 eval에만으로 돌린다고 적고, 360줄은 BACKLOG에 두는 것을 기준을 넘은 것으로 좁히고 옮긴 것을 eval에만으로 돌린다고 적는다. ARCHITECTURE 78줄도 "BACKLOG가 아니라 eval에만으로 돌아간다"를 적는다. 통과
+  - `python3 -m unittest discover -s tests` → `Ran 207 tests in 20.037s` `OK`. 통과
+- task 머리의 완료 조건이 모두 참이다.
+  - 1: run "보고하고 묻는다"의 359줄("고칠 곳을 말하면")과 363줄("소스 문제가 없고 하네스 고칠 거리가 없거나 모두 기준이 eval에만이거나 처리가 감수이면 … 묻지 않는다")을 읽음 → eval에만인 것을 옮기는 경우와 고칠 안이 모두 비는 경우를 저마다 다룬다. `(cd tests && python3 -m unittest test_skill_rules.RunRulesTest.test_eval_only_goes_nowhere)` → `Ran 1 test` `OK`. 통과
+  - 2: `grep -n -e 'RUNLOG.md' AGENTS.md` → 14줄(문서 지도)과 25줄(작업 규칙 절의 헤드리스 시험 저장소 불변 확인 줄). 통과
+  - 3: `docs/TOOLS.md`의 "세션 도중의 스킬 본문 고침" 절을 읽음 → 절 안에 "헤드리스 시험의 완료 조건을 본문 해시로 볼 때, 그 본문을 뒤에서 고치는 phase(회고 뒤 더한 phase도)는 시험을 다시 돌려 새 해시를 기록에 남긴다. 계획은 이것을 그 완료 조건 곁에 적는다"가 있다. 통과
+  - 4: `grep -n -e 'eval에만' plugins/plate/skills/run/SKILL.md` → 42줄(낱말), 346·353·355·359·360·363줄(보고하고 묻는다), 436줄(고침 task의 꼴). `(cd tests && python3 -m unittest test_skill_rules.RunRulesTest.test_eval_only_goes_nowhere)` → `OK`. `python3 -m unittest discover -s tests` → `Ran 207 tests` `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 207 tests in 20.037s` `OK`. 통과
+
+**남은 것**
+- run 351줄 "BACKLOG로 미룰 것"의 "고침 task에서 뺀 이 프로젝트만의 하네스 고칠 거리"를 "기준을 넘은"으로 좁히지 않아 넓게 읽힐 수 있다 → 통과 조건이 보는 동작(옮긴 eval에만인 것을 다시 빼면 eval에만으로 돌아간다)은 359·360줄이 밝혀 정하고 351줄은 그것을 바꾸지 않아 동작이 틀리지 않는다. 글의 넓은 읽힘일 뿐 결함이 아니다. 하네스에서 걸린 것
+- run의 바뀐 동작을 헤드리스로 돌려 보지 않았다 → 통과 조건이 보는 동작이지만 tasks 머리 완료 조건 2의 `- 돌리지 않음: run의 "보고하고 묻는다"는 사용자에게 묻고 멈추는 자리라 헤드리스로 끝까지 돌려도 고칠 안의 승인 뒤 동작을 볼 수 없다`가 돌리지 않기로 정한 동작이다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: run 351줄 "BACKLOG로 미룰 것"의 "고침 task에서 뺀 이 프로젝트만의 하네스 고칠 거리"가 "기준을 넘은"으로 좁혀지지 않아 글만 보면 넓게 읽힐 수 있다(359·360줄이 덮는다) (`plugins/plate/skills/run/SKILL.md`)
+- 남은 것: run의 바뀐 동작을 헤드리스로 돌려 보지 않았다(tasks 머리 완료 조건 2의 `돌리지 않음` 줄)
+
+**판정**: 통과
