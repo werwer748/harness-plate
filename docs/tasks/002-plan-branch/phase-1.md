@@ -66,3 +66,36 @@
 
 ## 하네스에서 걸린 것
 없음
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 1이 참이다.
+  - `grep -n -e 'tasks/<이름>' plugins/plate/skills/plan/SKILL.md` → 3(description), 10(첫 문단), 19(절대 규칙 4), 26(낱말 tasks 머리), 54(1번), 137(7번), 167(양식 이름 줄), 235(적는 규칙 이름 줄). 요구한 여섯 곳이 모두 나온다. 통과
+  - `grep -c -e '브랜치를 만들거나 바꾸지 않는다' plugins/plate/skills/plan/SKILL.md` → `0`. 통과
+  - `(cd tests && python3 -m unittest test_skill_rules.PlanRulesTest.test_commits_on_tasks_branch)` → `Ran 1 test` / `OK`. 통과
+- 완료 조건 2가 참이다.
+  - `grep -c -e 'plan은 브랜치를 바꾸지 않아서' -e '계획의 커밋이 로컬 기본 브랜치에만' plugins/plate/skills/run/SKILL.md` → `0`. 통과
+  - `(cd tests && python3 -m unittest test_skill_rules.RunRulesTest.test_ahead_commits_reason)` → `Ran 1 test` / `OK`. 통과
+  - `git diff 97a5a3f -- plugins/plate/skills/run/SKILL.md` → `## 1. 시작 조건을 본다`(75~96줄) 안의 바뀐 hunk는 `@@ -88,7 +88,7 @@` 하나이고, 바뀐 줄은 까닭 글을 담은 "브랜치를 만들거나 바꾼 뒤에는 로컬 기본 브랜치에 원격보다 앞선 커밋이 있는지 본다. …" 줄 하나뿐이다. `git branch -f`와 `git log --oneline` 명령 줄은 diff에 없다. 그 밖의 hunk는 description, 낱말(하네스 고칠 거리), tasks 끝 절의 것이다. 통과
+- 완료 조건 3이 참이다.
+  - `grep -c -e '계획의 커밋이 로컬 기본 브랜치에만' docs/ARCHITECTURE.md README.md` → `README.md:0`, `docs/ARCHITECTURE.md:0`. 통과
+  - `docs/ARCHITECTURE.md` 63~64줄(`→ 계획(` 줄과 바로 아래 `→` 줄), `README.md` 9줄(`` | `plan` | ``)을 읽음 → 둘 다 기본 브랜치이면 `tasks/<이름>`을 만들거나 바꾼다, `tasks/<이름>`이면 그대로 둔다, 그 밖이면 묻는다(거절하면 쓰지 않는다)의 세 갈래를 적는다. 통과
+- 테스트가 모두 통과한다(완료 조건 5).
+  - `python3 -m unittest discover -s tests` → `Ran 207 tests in 17.916s` / `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 207 tests` / `OK`. 통과
+
+**남은 것**
+- plan 본문의 새 브랜치 동작은 이 phase에서 돌려 보지 않았다(완료 조건 4의 헤드리스 시험은 다음 phase의 일이다) → 이 phase의 통과 조건(완료 조건 1, 2, 3, 5)은 본문의 글과 테스트를 보고 plan의 실행 동작을 보지 않아 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+없음
+
+**하네스에서 걸린 것**
+- 남은 것: plan 본문의 새 브랜치 동작은 이 phase에서 돌려 보지 않았다. 완료 조건 4의 헤드리스 시험이 다음 phase에서 본다
+
+**판정**: 통과
