@@ -84,3 +84,41 @@
 
 ## 하네스에서 걸린 것
 - 셸 heredoc으로 넘긴 파이썬 스크립트 하나가 `SyntaxError: Non-UTF-8 code`로 돌지 않아, 같은 스크립트를 스크래치 파일로 써서 돌렸다. 계획이나 스킬의 문제는 아니다.
+
+## 확인 1
+
+**통과 조건**
+- task 머리의 완료 조건 3이 참이다.
+  - `grep -n '보낼 곳' plugins/plate/skills/run/SKILL.md` → 20(절대 규칙 5), 69·71·73·75(0. tasks를 본다), 499·505(### 비운다), 523(## PR을 연다), 564(## 합친다). 통과
+  - `mktemp -d` 시험 레포, 합칠 때: `main` → `cleanup/x`(커밋 `c1`) → `tasks/y`(커밋 `y: plan`, `y: 비움`, plan.md에 `**보낼 곳**: cleanup/x`)에서 본문 "보낼 곳으로 합친다"의 `git rev-parse --verify --quiet refs/heads/cleanup/x`(해시, exit 0) → `git switch cleanup/x` → `git merge --no-ff -m 'y: 보낼 곳으로 합침' tasks/y`(Merge made by the 'ort' strategy.) → `git merge-base --is-ancestor tasks/y cleanup/x` exit 0 → `git branch -d tasks/y` 삭제됨, `git rev-parse main`이 전과 같음. 통과
+  - 보낼 곳이 없을 때: `cleanup/x`가 없는 새 `mktemp -d` 레포(`main`, `tasks/y`의 `y: 비움`)에서 `git rev-parse --verify --quiet refs/heads/cleanup/x` → 출력 없음, exit 1. 본문 1번대로 그 갈래는 알리고 10번으로 가 `git switch`·`git merge`에 닿지 않음. 브랜치는 `main`, `tasks/y` 그대로. 통과
+  - 재개할 때: 합친 뒤의 `cleanup/x`에서 `git branch --show-current` → `cleanup/x`, `git log -1 --format=%s` → `y: 보낼 곳으로 합침`, `git show HEAD^2^:docs/tasks/plan.md` → `**이름**: y`, `**보낼 곳**: cleanup/x`. 본문 0번의 "보낼 곳으로 합친 뒤의 재개"(이름이 같고 보낼 곳이 지금 브랜치) → "PR을 연다"/"합친다"로 감. 합치기 전 `tasks/y`에서도 `tasks/y`, `y: 비움`, `git show HEAD^:docs/tasks/plan.md`에 보낼 곳 줄 → "보낼 곳으로 합친다"로 감. 통과
+- task 머리의 완료 조건 1·2가 그대로다.
+  - `grep -n -F 'cleanup/<' plugins/plate/skills/cleanup/SKILL.md` → 17·18(절대 규칙), 115·127(5. 보고서를 쓰고 커밋한다), 149·153~165(고른 발견이 없을 때). 통과
+  - `grep -n '보낼 곳' plugins/plate/skills/plan/SKILL.md` → 19(절대 규칙 4), 55(1번), 139(7번), 170(계획 파일의 양식). 통과
+- task 머리의 완료 조건 4, 5, 6이 참이다.
+  - `grep -n -F 'cleanup/<' docs/PRD.md docs/ARCHITECTURE.md` → PRD 19(핵심 기능 9), ARCHITECTURE 32(디렉터리 구조 cleanup 줄), 56(plan 문단), 95·98(데이터 흐름 정리 점검). 통과
+  - `grep -n '보낼 곳' docs/PRD.md docs/ARCHITECTURE.md` → PRD 18(핵심 기능 8), ARCHITECTURE 56(plan 문단), 57(run 문단), 65(데이터 흐름 계획), 81·84(데이터 흐름 tasks 끝). 통과
+  - `python3 -m unittest tests.test_cleanup_skill tests.test_skill_rules -v` → `Ran 122 tests`, `OK`. `CleanupBranchTest` 넷, `test_cleanup_branch_sends_back`, `test_send_to_*` 다섯이 나옴. 통과
+  - `grep -n '지난 tasks의 같은 이름' plugins/plate/skills/plan/SKILL.md plugins/plate/skills/retro/SKILL.md` → plan 115(6. 초안을 보여 주고 승인받는다), 266(적는 규칙의 **조건**, 260부터), retro 79(4. task의 변경을 점검한다). 통과
+  - `python3 -m unittest discover -s tests` → `Ran 263 tests`, 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 263 tests`, `OK`. 통과
+
+**남은 것**
+- 고친 run 본문을 헤드리스로 끝까지 돌리지 않았다 → 완료 조건 3의 `- 돌리지 않음: run은 에이전트를 띄우고 묻는 스킬이고 PR은 GitHub이 있어야 해 헤드리스로 끝까지 돌리지 않는다`가 돌리지 않기로 정한 동작. 하네스에서 걸린 것
+- 합친 뒤 사람이 보낼 곳에 커밋을 더하면 재개로 보지 않는다 → 통과 조건의 재개 갈래는 합친 직후의 `cleanup/x`만 보므로 걸리지 않음. 하네스에서 걸린 것
+- 충돌로 되돌린 뒤 `git switch tasks/<이름>`이 실패하는 갈래를 적지 않았다 → 통과 조건의 세 갈래(합침, 없음, 재개)는 충돌을 보지 않아 걸리지 않음. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 고친 run 본문을 헤드리스로 끝까지 돌리지 않았다(완료 조건 3의 `돌리지 않음` 줄).
+- 남은 것: 보낼 곳으로 합친 뒤 사람이 그 브랜치에 커밋을 더하면 0번이 재개로 보지 않고 "실행할 계획이 없다"로 끝난다.
+- 남은 것: 충돌로 `git merge --abort` 뒤 `git switch tasks/<이름>`이 실패하는 갈래가 본문에 없다.
+
+**판정**: 통과
