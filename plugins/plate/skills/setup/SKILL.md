@@ -349,7 +349,7 @@ jobs:
     outputs:
       bundle: ${{ steps.review.outputs.structured_output }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
       - name: AGENTS.md를 기준 브랜치의 것으로 되돌린다
@@ -362,7 +362,7 @@ jobs:
             rm -f AGENTS.md
           fi
       - id: review
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@d70510b174a1244958df0b03166a54912811f3e6 # v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
@@ -396,7 +396,7 @@ jobs:
                       line["result"] = m.get("result")
                   print(json.dumps(line, ensure_ascii=False))
           PY
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: plate-review
           path: ${{ runner.temp }}/plate-review.md
@@ -408,11 +408,11 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: werwer748/harness-plate
           path: harness-plate
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: plate-review
       - name: 판정대로 댓글을 달고 머지하거나 닫는다
