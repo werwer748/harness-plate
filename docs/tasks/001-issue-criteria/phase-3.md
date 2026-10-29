@@ -50,3 +50,30 @@
 
 ## 하네스에서 걸린 것
 없음
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 3이 참이다.
+  - `grep -n -e '^### ADR-026' -e 'ADR-026' docs/ADR.md docs/PRD.md docs/ARCHITECTURE.md` → `docs/ADR.md:54`(ADR-025 결정 줄, `(ADR-026으로 더함: …)`), `docs/ADR.md:58`(`### ADR-026` 머리), `docs/PRD.md:18`(핵심 기능 8번 줄), `docs/ARCHITECTURE.md:76`(데이터 흐름의 tasks 끝 "승인받은 대로 …" 줄). 통과
+  - `grep -n -e 'eval에만' docs/PRD.md docs/ARCHITECTURE.md` → `docs/PRD.md:18`(8번 줄), `docs/ARCHITECTURE.md:39`(`test_skill_rules.py` 주석 줄), `docs/ARCHITECTURE.md:76`(tasks 끝 줄). 통과
+- 완료 조건 4가 참이다.
+  - `awk '/^## 하네스 고칠 거리/{p=1;next} /^## /{p=0} p && /^- /' docs/BACKLOG.md | wc -l` → `0`, `grep -c -e '^## ' docs/BACKLOG.md` → `3`(소스 문제, 하네스 고칠 거리, 감수한 것). 통과
+- 테스트가 모두 통과한다(완료 조건 6).
+  - `python3 -m unittest discover -s tests` → `Ran 205 tests` … `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 205 tests`, `OK`. 통과
+
+**남은 것**
+- 없음
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
