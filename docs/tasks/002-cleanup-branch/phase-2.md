@@ -65,3 +65,34 @@
 
 ## 하네스에서 걸린 것
 없음
+
+## 확인 1
+
+**통과 조건**
+- task 머리의 완료 조건 2가 참이다.
+  - `grep -n '보낼 곳' plugins/plate/skills/plan/SKILL.md` → 19(절대 규칙 4), 26(낱말), 55(1번), 139(7번), 170(계획 파일의 양식, 이름 줄 아래), 244(적는 규칙). 절대 규칙, 1번, 7번, 양식에 저마다 한 줄 이상. 통과
+  - `mktemp -d` 시험 레포(`main` 커밋 하나, `cleanup/x` 커밋 하나 더)에서 본문 7번의 차례대로 `git branch --show-current` → `cleanup/x`, `git rev-parse --verify --quiet refs/heads/tasks/fix` → 출력 없음(종료 1), `git switch -c tasks/fix` → 전환. `git merge-base --is-ancestor cleanup/x tasks/fix` → 0, `git rev-parse main` → 전과 같음. 통과
+  - 같은 레포에 `git branch tasks/old` 뒤 `git rev-parse --verify --quiet refs/heads/tasks/old` → 해시 출력(종료 0). 본문 238줄 "이름과 번호"는 새 tasks의 이름을 이 명령이 "아무것도 내지 않는" 것으로 고른다고 적어, 있는 이름은 쓰지 않는다. 통과
+- task 머리의 완료 조건 1이 그대로다.
+  - `grep -n -F 'cleanup/<' plugins/plate/skills/cleanup/SKILL.md` → 17·18(절대 규칙), 115·127(5. 보고서를 쓰고 커밋한다), 149·153·154·155·161·163·165(고른 발견이 없을 때). 통과
+- task 머리의 완료 조건 4 가운데 plan 쪽이 참이다.
+  - `grep -n '보낼 곳' docs/ARCHITECTURE.md` → 56(패턴과 규칙의 plan 문단), 65(데이터 흐름의 "계획" 아래 줄). 통과
+- 테스트가 통과한다.
+  - `python3 -m unittest tests.test_skill_rules.PlanRulesTest -v` → 24개 `OK`, 새 시험 `test_cleanup_branch_sends_back ... ok`. 통과
+  - `python3 -m unittest discover -s tests` → 258개, 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → Ran 258 tests, `OK`. 통과
+
+**남은 것**
+- 양식에서 `**보낼 곳**:` 줄이 이름 줄 바로 아래(빈 줄 없음)라 마크다운으로 그리면 한 문단으로 이어 보인다 → 통과 조건이 보는 동작(grep의 줄, 브랜치 명령, 테스트)에 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+없음
+
+**하네스에서 걸린 것**
+- 남은 것: 양식에서 `**보낼 곳**:` 줄이 이름 줄 바로 아래(빈 줄 없음)라 마크다운으로 그리면 이름 줄과 한 문단으로 이어 보인다 (`plugins/plate/skills/plan/SKILL.md` 170줄)
+
+**판정**: 통과
