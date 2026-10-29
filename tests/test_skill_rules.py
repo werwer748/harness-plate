@@ -447,6 +447,14 @@ class RunRulesTest(unittest.TestCase):
         self.assertIn("거절하면 실행하지 않고 그 줄만 더하고 끝난다", body)
         self.assertNotIn("기본 브랜치가 아니면 만들지 않고 지금 브랜치에서 실행한다", body)
 
+    def test_ahead_commits_reason(self):
+        # plan이 tasks 브랜치에 커밋하게 되어, 1번의 앞선 커밋 까닭 글은 옛 plan의 계획이나 손으로 넣은 커밋을 든다(002-plan-branch).
+        body = section(self.text, "1. 시작 조건을 본다")
+        self.assertIn("그렇게 고치기 전의 plan으로 세운 계획이나 사람이 기본 브랜치에 넣은 커밋이 있으면 로컬 기본 브랜치가 원격보다 앞설 수 있다", body)
+        self.assertNotIn("plan은 브랜치를 바꾸지 않아서", self.text)
+        self.assertNotIn("계획의 커밋이 로컬 기본 브랜치에만", self.text)
+        self.assertIn("`git branch -f {기본 브랜치} refs/remotes/origin/{기본 브랜치}`로 되돌린다", body)
+
     def test_resume_after_clearing_goes_to_pr_or_merge(self):
         # tasks 머리가 없어도 tasks/<이름>에서 마지막 커밋이 `<이름>: 비움`이면 PR·합침으로 간다(신뢰성-3).
         body = section(self.text, "0. tasks를 본다")
@@ -542,6 +550,7 @@ class RunRulesTest(unittest.TestCase):
         self.assertIn("plate 자체의 하네스 고칠 거리는 문턱을 넘은 것만 이슈로 올릴 것에, 넘지 않은 것은 BACKLOG로 미룰 것에 둔다", body)
         self.assertIn("처리가 감수인 하네스 고칠 거리는 갈래와 상관없이 감수할 것에 둔다", body)
         self.assertIn("   - 감수할 것: 처리가 감수인 하네스 고칠 거리의 번호\n", body)
+        self.assertIn("기준을 넘은 plate 자체의 것은 문턱을 넘었는지", body)
         self.assertIn("   - BACKLOG로 미룰 것: 소스 문제의 번호와, 문턱을 넘지 않은 plate 자체의 하네스 고칠 거리의 번호와, 고침 task에서 뺀 이 프로젝트만의 하네스 고칠 거리의 번호\n", body)
         self.assertNotIn("plate 자체의 하네스 고칠 거리는 모두 이슈로 올릴 것에 두고", self.text)
         # 문턱을 넘은 감수인 plate 자체의 것은 감수할 것으로 간다(감수가 문턱보다 먼저, 002-fixes).
@@ -549,11 +558,41 @@ class RunRulesTest(unittest.TestCase):
         first = body.index("처리가 감수인 하네스 고칠 거리는 갈래와 상관없이 감수할 것에 둔다")
         self.assertLess(first, body.index("plate 자체의 하네스 고칠 거리는 문턱을 넘은 것만 이슈로 올릴 것에"))
 
+    def test_eval_only_goes_nowhere(self):
+        # 기준이 "eval에만"인 하네스 고칠 거리는 고침 task, 이슈, BACKLOG, 감수 어디에도 두지 않는다(issue-criteria, ADR-026).
+        terms = section(self.text, "낱말")
+        self.assertIn("eval은 고칠 거리마다 먼저 기준(넘음, eval에만)을 적는다", terms)
+        self.assertIn('기준이 "eval에만"인 것(세 기준(피해, 일반성, 고침의 꼴)을 하나라도 넘지 않은 것)에는 처리와 문턱이 없고', terms)
+        body = subsection(self.text, "보고하고 묻는다")
+        self.assertIn("번호, 글, 기준(넘음, eval에만)과, 기준을 넘은 것은 처리와", body)
+        self.assertIn("   - eval에만: 기준이 eval에만인 하네스 고칠 거리의 번호\n", body)
+        self.assertLess(
+            body.index("   - 감수할 것: 처리가 감수인 하네스 고칠 거리의 번호"),
+            body.index("   - eval에만: 기준이 eval에만인 하네스 고칠 거리의 번호"),
+        )
+        only = '기준이 "eval에만"인 하네스 고칠 거리는 갈래와 상관없이 eval에만에 두고, 고침 task, 이슈, BACKLOG, 감수 어디에도 두지 않는다'
+        self.assertIn(only, body)
+        self.assertIn("기준이 감수와 문턱보다 먼저다", body)
+        self.assertLess(body.index(only), body.index("처리가 감수인 하네스 고칠 거리는 갈래와 상관없이 감수할 것에 둔다"))
+        self.assertIn("eval에만에 둔 것은 그대로 eval에만에 두고, eval에만에서 고침 task나 이슈로 올릴 것으로 옮긴 것은 eval에만으로 돌린다", body)
+        # 고칠 안이 모두 비면 묻지 않고, 사용자가 eval에만인 것을 옮기자고 하면 갈래대로 옮긴다(003-fixes).
+        self.assertIn("사용자가 그것을 고치거나 올리자고 할 때만 아래 \"고칠 곳을 말하면\"대로 옮긴다", body)
+        self.assertIn("사용자가 eval에만에 둔 하네스 고칠 거리를 고치거나 올리자고 하면, 이 프로젝트만의 것은 고침 task로, plate 자체의 것은 이슈로 올릴 것으로 옮긴다", body)
+        self.assertIn("옮긴 것의 그것들은 eval 절의 그 고칠 거리의 글과 근거로 써서 다시 보인다", body)
+        # 옮긴 eval에만인 것을 다시 빼면 BACKLOG가 아니라 eval에만으로 돌린다(003-fixes 회고 1).
+        self.assertIn("그렇게 옮긴 것을 고침 task나 이슈로 올릴 것에서 다시 빼면 BACKLOG로 미룰 것이 아니라 eval에만으로 돌린다", body)
+        self.assertIn("소스 문제가 없고 하네스 고칠 거리가 없거나 모두 기준이 eval에만이거나 처리가 감수이면, 고침 task, 이슈로 올릴 것, BACKLOG로 미룰 것이 모두 비므로 고칠 안 대신 고칠 것이 없다고 적고 묻지 않는다", body)
+        self.assertNotIn("소스 문제도 하네스 고칠 거리도 없으면", body)
+        shape = part(subsection(self.text, "고침 task를 더한다"), "고침 task의 꼴")
+        self.assertIn("기준을 넘고 처리가 감수가 아닌 이 프로젝트만의 하네스 고칠 거리다. 기준이 eval에만인 것은 넣지 않는다. 사용자가 고치자고 해 \"고칠 곳을 말하면\"대로 옮긴 이 프로젝트만의 것만 넣는다", shape)
+        self.assertNotIn("eval에만", subsection(self.text, "BACKLOG를 고친다"))
+
     def test_project_only_fixes_deferred_to_backlog(self):
         # 고침 task에서 뺀 이 프로젝트만의 하네스 고칠 거리는 BACKLOG로 미룰 것으로 간다(002-fixes).
         body = subsection(self.text, "보고하고 묻는다")
-        self.assertIn("고침 task에서 뺀 소스 문제와 이 프로젝트만의 하네스 고칠 거리는 BACKLOG로 미룰 것으로 옮긴다", body)
-        self.assertIn("고침 task에 두었던 이 프로젝트만의 하네스 고칠 거리도 BACKLOG로 미룰 것에 둔다", body)
+        self.assertIn("고침 task에서 뺀 소스 문제와 기준을 넘은 이 프로젝트만의 하네스 고칠 거리는 BACKLOG로 미룰 것으로 옮긴다", body)
+        self.assertIn("이슈로 올릴 것에서 뺀 기준을 넘은 하네스 고칠 거리는 BACKLOG로 미룰 것으로 옮긴다", body)
+        self.assertIn("고침 task에 두었던 기준을 넘은 이 프로젝트만의 하네스 고칠 거리도 BACKLOG로 미룰 것에 둔다", body)
         backlog = subsection(self.text, "BACKLOG를 고친다")
         self.assertIn("미룰 하네스 고칠 거리마다(갈래와 상관없이, 항목의 갈래 칸에 그 갈래를 적는다)", backlog)
         self.assertIn("갈래: {plate 자체 | 이 프로젝트만}. 처리: {규칙을 더하거나 고친다 | 규칙을 지운다}", backlog)
@@ -587,6 +626,37 @@ class PlanRulesTest(unittest.TestCase):
         self.assertIn("그 줄이 담아야 할 갈래", body)
         self.assertIn("`git clone --bare`로 만든 저장소로 채우고", body)
         self.assertIn("푸시로 채우지 않는다", body)
+
+    def test_commits_on_tasks_branch(self):
+        # plan이 계획을 tasks/<이름> 브랜치에 커밋한다: 기본 브랜치면 만들거나 바꾸고, 그 밖이면 1번에서 묻는다(002-plan-branch).
+        rules = section(self.text, "절대 규칙")
+        self.assertIn("4. **계획 파일만 `tasks/<이름>` 브랜치에 커밋한다.**", rules)
+        self.assertIn("지금 브랜치가 기본 브랜치일 때는 묻지 않고 쓰기 전에 `tasks/<이름>`을 만들거나 바꾸고, `tasks/<이름>`일 때는 그대로 두고, 그 밖의 브랜치일 때는 1번에서 물어 승인받은 때만 바꾼다. 푸시하지 않는다", rules)
+        first = section(self.text, "1. 진행 중인 tasks가 있는지 본다")
+        self.assertIn("기본 브랜치도 `tasks/<이름>`도 아니면 지금 브랜치를 보여 주고, 계획을 `tasks/<이름>` 브랜치에 커밋할지 묻고, 거기서 멈춰 답을 기다린다", first)
+        self.assertIn("`<이름>`은 6번의 초안에서 정한다", first)
+        self.assertIn("- 거절하면 아무것도 쓰지 않고 끝난다.", first.split("커밋할지 묻고")[1])
+        # 새 tasks는 기본 브랜치에서만 묻지 않고, 다른 tasks의 브랜치에서도 묻는다(002-plan-branch 회고 1).
+        self.assertIn("기본 브랜치이면 묻지 않고 2번으로 간다. 더하는 경우에 지금 브랜치가 그 tasks 머리의 이름의 `tasks/<이름>`이어도 묻지 않고 2번으로 간다.", first)
+        self.assertIn("새 tasks는 다른 tasks의 브랜치(예: 앞 tasks가 끝난 뒤 남은 `tasks/old`)에서도 묻는다", first)
+        self.assertNotIn("기본 브랜치이거나 `tasks/<이름>`(더하는 경우는 그 tasks 머리의 이름)이면 묻지 않고", first)
+        write = section(self.text, "7. 쓰고 커밋한다")
+        self.assertIn("더하는 경우에 지금 브랜치가 그 tasks의 `tasks/<이름>`이면 그대로 둔다", write)
+        self.assertNotIn("지금 브랜치가 `tasks/<이름>`이면 그대로 둔다", write)
+        self.assertIn("`git switch -c tasks/<이름>`으로 지금 HEAD에서 만들어 바꾸고", write)
+        self.assertIn("`git switch tasks/<이름>`으로 바꾼다", write)
+        self.assertIn("만들거나 바꾸지 못하면 아무것도 쓰지 않고, 실패한 명령과 오류를 보고하고 끝난다", write)
+        self.assertLess(write.index("git switch -c"), write.index("6번에서 보여 주고 승인받은 초안을 그대로 파일마다 쓴다"))
+        self.assertNotIn("$(", write)
+        names = part(section(self.text, "적는 규칙"), "이름과 번호")
+        self.assertIn("새 tasks의 이름은 로컬에 같은 이름의 `tasks/<이름>` 브랜치가 없는 것으로 고른다", names)
+        self.assertIn("더하는 경우는 그 tasks의 이름이고, 그 브랜치가 있으면 7번에서 바꾼다", names)
+        self.assertIn("커밋과 그 커밋이 들어간 브랜치", section(self.text, "8. 보고한다"))
+        self.assertNotIn("브랜치를 만들거나 바꾸지 않는다", self.text)
+        # 기본 브랜치의 정의가 run의 것과 같다.
+        defs = [[l for l in section(t, "낱말").split("\n") if l.startswith("- **기본 브랜치**:")] for t in (self.text, read("run"))]
+        self.assertEqual(len(defs[0]), 1)
+        self.assertEqual(defs[0], defs[1])
 
     def test_37_draft_check(self):
         body = section(self.text, "6. 초안을 보여 주고 승인받는다")
@@ -858,7 +928,8 @@ class EvalRulesTest(unittest.TestCase):
             "잡힌 곳이 phase의 확인, task의 회고, tasks 끝인 실패나 멈춤이 근거에 있으면 문턱을 넘는다",
             "`docs/BACKLOG.md`의 하네스 고칠 거리에 같은 뜻의 항목이 있으면 문턱을 넘는다",
             "`docs/BACKLOG.md`의 감수한 것과 같은 뜻이면 고칠 거리로 적지 않는다",
-            "이슈 제목과 본문은 문턱을 넘었고 처리가 감수가 아닌 plate 자체의 것에만 적는다",
+            "이슈 제목과 본문은 기준과 문턱을 넘었고 처리가 감수가 아닌 plate 자체의 것에만 적는다",
+            "기준을 넘은 plate 자체의 것은 문턱을 넘었는지 가르고 근거를 적는다",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, body)
@@ -871,6 +942,35 @@ class EvalRulesTest(unittest.TestCase):
             with self.subTest(line=line):
                 self.assertIn(line, form)
         self.assertIn("`docs/BACKLOG.md`의 하네스 고칠 거리와 감수한 것", section(text, "1. 읽는다"))
+
+    def test_eval_only_criteria(self):
+        text = read("eval")
+        body = section(text, "5. 하네스 고칠 거리를 정한다")
+        for phrase in (
+            "처리와 문턱보다 먼저 세 기준을 대어 보고 근거를 적는다",
+            '하나라도 넘지 않으면 그 항목의 기준은 "eval에만"이다',
+            "  - 피해: ",
+            "  - 일반성: ",
+            "이 기준은 plate 자체의 것에만 대고",
+            "  - 고침의 꼴: ",
+            "고침 task, 이슈, `docs/BACKLOG.md`, 감수 어디에도 두지 않는다",
+            "다시 나서 기준을 넘으면 그때 고칠 거리가 된다",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, body)
+        self.assertLess(body.index("세 기준을 대어 보고"), body.index("기준을 넘은 항목마다 처리를 정하고 까닭을 적는다"))
+        form = section(text, "기록의 양식")
+        self.assertEqual(form.count("   - 기준: {넘음 | eval에만} — "), 2)
+        for branch in ("갈래: plate 자체\n   - 기준:", "갈래: 이 프로젝트만\n   - 기준:"):
+            with self.subTest(branch=branch):
+                self.assertIn(branch, form)
+        rules = section(text, "적는 규칙")
+        self.assertIn(
+            '기준이 "eval에만"인 항목은 기준 줄만 두고 처리, 문턱, 이슈 제목, 이슈 본문, 고칠 곳, 해결책 줄을 빼고 적는다',
+            rules,
+        )
+        self.assertIn("이슈 제목과 이슈 본문 줄은 기준과 문턱이 넘음이고", rules)
+        self.assertIn('"eval에만"', front_matter("eval")["description"])
 
     def test_74_untested_lines_not_failures(self):
         body = section(read("eval"), "2. 실패를 모아 MAST 유형으로 나눈다")
