@@ -49,3 +49,30 @@
 
 ## 하네스에서 걸린 것
 없음
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 1이 참이다.
+  - `grep -n '합쳐지지 않은 다른 브랜치' plugins/plate/skills/plan/SKILL.md plugins/plate/skills/retro/SKILL.md` → plan 115(6번 "초안을 보여 주고 승인받는다" 안), plan 266(**조건** 아래), retro 79(4번 "task의 변경을 점검한다" 안) 세 줄이고, 줄마다 `지난 tasks의 같은 이름`과 `이름마다`가 저마다 1번 든다. 통과
+  - `mktemp -d` 아래 `cp -R` 사본에서 `sed -i '' '/합쳐지지 않은 다른 브랜치/d' plugins/plate/skills/plan/SKILL.md plugins/plate/skills/retro/SKILL.md` 뒤 `python3 -m unittest tests.test_skill_rules.PlanRulesTest.test_80_names_left_anywhere_covered tests.test_skill_rules.RetroRulesTest.test_80_retro_names_left_anywhere` → `Ran 2 tests` / `FAILED (failures=3)`. 통과
+- 디렉터리 구조의 `test_skill_rules.py` 줄이 세 경우를 든다.
+  - `grep -n -F 'test_skill_rules.py' docs/ARCHITECTURE.md | grep -c '합쳐지지 않은 다른 브랜치'` → `1`. 통과
+- 테스트 묶음이 모두 통과한다.
+  - `python3 -m unittest discover -s tests` → `Ran 273 tests` / 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 273 tests` / `OK`. 통과
+
+**남은 것**
+없음
+
+**실패**
+없음
+
+**하네스에서 걸린 것**
+없음
+
+**판정**: 통과
