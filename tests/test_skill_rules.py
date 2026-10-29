@@ -575,8 +575,14 @@ class RunRulesTest(unittest.TestCase):
         self.assertIn("기준이 감수와 문턱보다 먼저다", body)
         self.assertLess(body.index(only), body.index("처리가 감수인 하네스 고칠 거리는 갈래와 상관없이 감수할 것에 둔다"))
         self.assertIn("eval에만에 둔 것은 그대로 eval에만에 둔다", body)
+        # 고칠 안이 모두 비면 묻지 않고, 사용자가 eval에만인 것을 옮기자고 하면 갈래대로 옮긴다(003-fixes).
+        self.assertIn("사용자가 그것을 고치거나 올리자고 할 때만 아래 \"고칠 곳을 말하면\"대로 옮긴다", body)
+        self.assertIn("사용자가 eval에만에 둔 하네스 고칠 거리를 고치거나 올리자고 하면, 이 프로젝트만의 것은 고침 task로, plate 자체의 것은 이슈로 올릴 것으로 옮긴다", body)
+        self.assertIn("옮긴 것의 그것들은 eval 절의 그 고칠 거리의 글과 근거로 써서 다시 보인다", body)
+        self.assertIn("소스 문제가 없고 하네스 고칠 거리가 없거나 모두 기준이 eval에만이거나 처리가 감수이면, 고침 task, 이슈로 올릴 것, BACKLOG로 미룰 것이 모두 비므로 고칠 안 대신 고칠 것이 없다고 적고 묻지 않는다", body)
+        self.assertNotIn("소스 문제도 하네스 고칠 거리도 없으면", body)
         shape = part(subsection(self.text, "고침 task를 더한다"), "고침 task의 꼴")
-        self.assertIn("기준을 넘고 처리가 감수가 아닌 이 프로젝트만의 하네스 고칠 거리다. 기준이 eval에만인 것은 넣지 않는다", shape)
+        self.assertIn("기준을 넘고 처리가 감수가 아닌 이 프로젝트만의 하네스 고칠 거리다. 기준이 eval에만인 것은 넣지 않는다. 사용자가 고치자고 해 \"고칠 곳을 말하면\"대로 옮긴 이 프로젝트만의 것만 넣는다", shape)
         self.assertNotIn("eval에만", subsection(self.text, "BACKLOG를 고친다"))
 
     def test_project_only_fixes_deferred_to_backlog(self):
