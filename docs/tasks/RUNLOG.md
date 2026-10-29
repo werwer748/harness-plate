@@ -6,3 +6,5 @@
 - 물음 | 고칠 phase | `001-issue-criteria` | phase 4의 저장소 불변 확인에서 RUNLOG.md를 빼는 계획 수정 | 답: 승인
 - 에이전트 | 수행 | `001-issue-criteria` phase 1 | 토큰 77556 | 도구 호출 9 | 시간 91초
 - 에이전트 | 확인 | `001-issue-criteria` phase 1 | 토큰 56349 | 도구 호출 6 | 시간 52초
+- 에이전트 | 수행 | `001-issue-criteria` phase 2 | 토큰 75265 | 도구 호출 12 | 시간 132초
+- 에이전트 | 확인 | `001-issue-criteria` phase 2 | 토큰 55334 | 도구 호출 5 | 시간 50초
