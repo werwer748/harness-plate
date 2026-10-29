@@ -542,12 +542,34 @@ class RunRulesTest(unittest.TestCase):
         self.assertIn("plate 자체의 하네스 고칠 거리는 문턱을 넘은 것만 이슈로 올릴 것에, 넘지 않은 것은 BACKLOG로 미룰 것에 둔다", body)
         self.assertIn("처리가 감수인 하네스 고칠 거리는 갈래와 상관없이 감수할 것에 둔다", body)
         self.assertIn("   - 감수할 것: 처리가 감수인 하네스 고칠 거리의 번호\n", body)
+        self.assertIn("기준을 넘은 plate 자체의 것은 문턱을 넘었는지", body)
         self.assertIn("   - BACKLOG로 미룰 것: 소스 문제의 번호와, 문턱을 넘지 않은 plate 자체의 하네스 고칠 거리의 번호와, 고침 task에서 뺀 이 프로젝트만의 하네스 고칠 거리의 번호\n", body)
         self.assertNotIn("plate 자체의 하네스 고칠 거리는 모두 이슈로 올릴 것에 두고", self.text)
         # 문턱을 넘은 감수인 plate 자체의 것은 감수할 것으로 간다(감수가 문턱보다 먼저, 002-fixes).
         self.assertIn("감수가 문턱보다 먼저다: 처리가 감수인 plate 자체의 것은 문턱을 넘었어도 이슈로 올릴 것에 두지 않는다", body)
         first = body.index("처리가 감수인 하네스 고칠 거리는 갈래와 상관없이 감수할 것에 둔다")
         self.assertLess(first, body.index("plate 자체의 하네스 고칠 거리는 문턱을 넘은 것만 이슈로 올릴 것에"))
+
+    def test_eval_only_goes_nowhere(self):
+        # 기준이 "eval에만"인 하네스 고칠 거리는 고침 task, 이슈, BACKLOG, 감수 어디에도 두지 않는다(issue-criteria, ADR-026).
+        terms = section(self.text, "낱말")
+        self.assertIn("eval은 고칠 거리마다 먼저 기준(넘음, eval에만)을 적는다", terms)
+        self.assertIn('기준이 "eval에만"인 것(세 기준(피해, 일반성, 고침의 꼴)을 하나라도 넘지 않은 것)에는 처리와 문턱이 없고', terms)
+        body = subsection(self.text, "보고하고 묻는다")
+        self.assertIn("번호, 글, 기준(넘음, eval에만)과, 기준을 넘은 것은 처리와", body)
+        self.assertIn("   - eval에만: 기준이 eval에만인 하네스 고칠 거리의 번호\n", body)
+        self.assertLess(
+            body.index("   - 감수할 것: 처리가 감수인 하네스 고칠 거리의 번호"),
+            body.index("   - eval에만: 기준이 eval에만인 하네스 고칠 거리의 번호"),
+        )
+        only = '기준이 "eval에만"인 하네스 고칠 거리는 갈래와 상관없이 eval에만에 두고, 고침 task, 이슈, BACKLOG, 감수 어디에도 두지 않는다'
+        self.assertIn(only, body)
+        self.assertIn("기준이 감수와 문턱보다 먼저다", body)
+        self.assertLess(body.index(only), body.index("처리가 감수인 하네스 고칠 거리는 갈래와 상관없이 감수할 것에 둔다"))
+        self.assertIn("eval에만에 둔 것은 그대로 eval에만에 둔다", body)
+        shape = part(subsection(self.text, "고침 task를 더한다"), "고침 task의 꼴")
+        self.assertIn("기준을 넘고 처리가 감수가 아닌 이 프로젝트만의 하네스 고칠 거리다. 기준이 eval에만인 것은 넣지 않는다", shape)
+        self.assertNotIn("eval에만", subsection(self.text, "BACKLOG를 고친다"))
 
     def test_project_only_fixes_deferred_to_backlog(self):
         # 고침 task에서 뺀 이 프로젝트만의 하네스 고칠 거리는 BACKLOG로 미룰 것으로 간다(002-fixes).
