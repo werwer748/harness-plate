@@ -52,3 +52,35 @@
 
 ## 하네스에서 걸린 것
 - 프로젝트의 규칙을 따름: AGENTS.md의 스킬 본문 규칙대로, 이 phase는 세션에 실린 판의 `plate:phase`를 따라 수행했고 고친 phase 본문의 동작은 그 본문을 따라 도는 것이 아니라 시험 레포에서 명령 예를 돌려 봤다.
+
+## 확인 1
+
+**통과 조건**
+- phase 본문이 새 파일의 갈래를 적고 명령 예가 돈다(완료 조건 5).
+  - `grep -n '부모 커밋에 없' plugins/plate/skills/phase/SKILL.md` → `59:- 부모 커밋에 없는 파일(그 phase가 새로 만든 파일): ...`. 59줄은 "## 2. TODO를 차례로 끝낸다"(42줄)와 "## 3."(70줄) 사이다. 통과
+  - `mktemp -d` 시험 레포(scratchpad 아래): `base` 커밋에 `tests/test_a.py`(test_old는 `old.f()==1`, test_new는 `new.g()==2`)와 `old.py`(`return 0`), `001-a: phase 1` 커밋에서 `old.py`를 `return 1`(줄 수가 다른 판)로 고치고 `new.py`를 새로 만듦. 시작 `git status --porcelain` → 빈 줄. `git cat-file -e "$c^:<파일>"` → `old.py in parent`, `new.py not in parent`. `git checkout "$c^" -- old.py`, `tmp=$(mktemp -d) && mv new.py "$tmp"/` 뒤 `python3 -B -m unittest discover -s tests` → `FAILED (failures=1, errors=1)`. `git checkout HEAD -- old.py`, `mv "$tmp"/new.py new.py` 뒤 → `OK`. 끝 `git status --porcelain` → 빈 줄. 통과
+- review 본문이 한 번 돌림을 적는다(완료 조건 6).
+  - `grep -n '한 번' plugins/plate/skills/review/SKILL.md` → `72:2. **커버리지**: ... 1번의 테스트를 그 도구로 한 번만 돌려 ...`. 72줄은 "## 2. 잰다"(67줄)와 "## 3."(77줄) 사이의 커버리지 항목이다. 통과
+- 앞 phase의 동작이 그대로다(완료 조건 1~4).
+  - `python3 -m unittest tests.test_skill_rules.RunRulesTest.test_no_result_relaunch_limit tests.test_skill_rules.RunRulesTest.test_stop_line_grep_runs_on_fake_runlog -v` → `Ran 2 tests`, `OK`. 통과
+- 테스트 묶음이 통과한다.
+  - `python3 -m unittest discover -s tests` → `Ran 233 tests in 20.597s`, 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 233 tests`, `OK`. 통과
+
+**남은 것**
+- `sys.pycache_prefix`의 낡은 바이트코드가 되돌린 `old.py` 대신 읽혀 실패 출력을 가릴 수 있다 → 통과 조건이 보는 것은 시험 레포에서 명령 예대로 되돌려 실패가 나고 깨끗이 되살아나는지이고, 확인에서 그대로 돌았다. 일반 Python 프로젝트의 캐시 문제는 통과 조건이 보는 동작에 걸리지 않는다. 하네스에서 걸린 것
+- 구현 파일에 커밋되지 않은 변경이 있으면 `git checkout HEAD -- <구현 파일>`이 그 변경을 지운다 → 통과 조건은 깨끗한 작업 트리에서의 되돌림·되살림만 본다. 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 되돌린 Python 구현 파일이 크기·시각이 같으면 `sys.pycache_prefix`의 낡은 바이트코드가 읽혀 실패 출력을 가릴 수 있으나 phase 본문에는 적지 않았다(이 확인은 `-B`와 줄 수가 다른 판으로 피했다).
+- 남은 것: 고칠 문제 갈래에서 구현 파일에 커밋되지 않은 변경이 있으면 `git checkout HEAD -- <구현 파일>`이 그 변경을 지운다.
+- 프로젝트의 규칙을 따름: AGENTS.md의 스킬 본문 규칙대로, 고친 phase 본문의 동작은 그 본문을 따라 돈 것으로 보지 않고 시험 레포에서 명령 예를 돌려 봤다.
+
+**판정**: 통과
