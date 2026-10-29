@@ -98,3 +98,40 @@
 
 ## 하네스에서 걸린 것
 - 통과 조건 "시험이 이 저장소를 바꾸지 않았다"의 `git status --porcelain` 확인이 같은 phase의 TODO 1이 고친 파일을 빼지 않아, 커밋 전에는 비지 않는다. 시험의 흔적만 보려면 그 네 파일도 빼거나 커밋 뒤에 돌린다고 적어야 한다
+
+## 확인 1
+
+**통과 조건**
+- 회고 1의 문제가 고쳐졌다.
+  - plan 1번 브랜치 문단(54줄)과 7번 첫 문단(137줄), ARCHITECTURE 63~64줄, README 9줄을 읽음 → 1번은 기본 브랜치에서만(더하는 경우는 그 tasks의 `tasks/<이름>`에서도) 묻지 않고 "새 tasks는 다른 tasks의 브랜치(예: … `tasks/old`)에서도 묻는다"고 적는다. 7번은 그대로 두는 갈래를 더하는 경우로 좁히고 새 tasks는 다른 `tasks/…`에 커밋하지 않는다고 적는다. ARCHITECTURE와 README도 "더하는 경우 그 tasks의 `tasks/<이름>`에서는 그대로 두고, 그 밖의 브랜치(새 tasks면 다른 `tasks/…` 브랜치도 든다)에서는 … 묻는다"로 어긋나지 않는다. 통과
+  - `(cd tests && python3 -m unittest test_skill_rules.PlanRulesTest.test_commits_on_tasks_branch)` → `Ran 1 test` / `OK`. 통과
+  - 기록의 (다) 응답 글과 출력 → `tasks/old`를 들어 "계획을 새 `tasks/<이름>` 브랜치에 커밋해도 될까요?"라고 묻는다. 브랜치 `tasks/old`, `git log --oneline -1` → `22cffcd init`(돌리기 전 그대로), `git status --porcelain` 출력 없음. 통과
+- 완료 조건 4가 고친 본문으로 다시 참이다.
+  - `git hash-object plugins/plate/skills/plan/SKILL.md` → `d0441987f160dc18ca1b35c48cf4cf89df0041f5`, 기록의 해시와 같다. 통과
+  - 기록의 (가) 출력 → 브랜치 `tasks/readme-intro`, 제목 `plan: readme-intro`, 돌리기 전과 뒤의 `main`이 모두 `22cffcdbea889ec0b29f9df1eb7075765f1e831f`. 통과
+  - 기록의 (나) 응답 글과 출력 → `feature/x`와 `tasks/<이름>`을 들어 "계획을 `tasks/<이름>` 브랜치에 커밋할까요?"라고 묻는다. 브랜치 `feature/x`, 마지막 커밋 `22cffcd init` 그대로, `git status --porcelain` 출력 없음. 통과
+- 시험이 이 저장소를 바꾸지 않았다.
+  - `git status --porcelain -- . ':!docs/tasks/002-plan-branch/phase-3.md' ':!docs/tasks/RUNLOG.md'` → 출력 없음(phase 커밋 `58cdde2` 뒤). 통과
+- task 머리의 완료 조건이 모두 참이다.
+  - 완료 조건 1: `grep -n -e 'tasks/<이름>' plugins/plate/skills/plan/SKILL.md` → 3(description), 10, 19(절대 규칙 4), 26(낱말), 54(1번), 137(7번), 167, 235(적는 규칙 이름 줄). `grep -c -e '브랜치를 만들거나 바꾸지 않는다' plugins/plate/skills/plan/SKILL.md` → `0`. `test_commits_on_tasks_branch` → `OK`. 통과
+  - 완료 조건 2: `grep -c -e 'plan은 브랜치를 바꾸지 않아서' -e '계획의 커밋이 로컬 기본 브랜치에만' plugins/plate/skills/run/SKILL.md` → `0`. `(cd tests && python3 -m unittest test_skill_rules.RunRulesTest.test_ahead_commits_reason)` → `OK`. `git diff 97a5a3f -- plugins/plate/skills/run/SKILL.md` → `## 1. 시작 조건을 본다` 안의 hunk는 `@@ -88,7 +88,7 @@` 하나이고 바뀐 줄은 까닭 글을 담은 "브랜치를 만들거나 바꾼 뒤에는 …" 한 줄뿐, `git branch -f`와 `git log --oneline` 명령 줄은 바뀌지 않았다. 통과
+  - 완료 조건 3: `grep -c -e '계획의 커밋이 로컬 기본 브랜치에만' docs/ARCHITECTURE.md README.md` → `docs/ARCHITECTURE.md:0`, `README.md:0`. ARCHITECTURE `→ 계획(` 줄(과 이은 64줄)과 README `` | `plan` | `` 줄 → 저마다 기본 브랜치이면 만들거나 바꾼다, (더하는 경우 그 tasks의) `tasks/<이름>`이면 그대로, 그 밖이면 묻는다의 세 갈래를 적는다. 통과
+  - 완료 조건 4: 위 "완료 조건 4가 고친 본문으로 다시 참이다"의 세 확인. 통과
+  - 완료 조건 5: `python3 -m unittest discover -s tests` → `Ran 207 tests` / `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 207 tests in 18.938s` / `OK`. 통과
+
+**남은 것**
+- (나)·(다)는 첫 턴만 돌렸고 승인 뒤 `tasks/<이름>`을 만드는 갈래, 거절해 끝나는 갈래는 돌리지 않았다 → 통과 조건은 (나)·(다)의 첫 턴 응답과 그 자리의 상태만 보고, task 머리 결정이 (나)를 첫 턴만 보기로 정했다. 통과 조건이 보는 동작에 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: (나)·(다)는 첫 턴만 돌려 승인 뒤 다른 브랜치에서 `tasks/<이름>`을 만드는 갈래와 거절해 끝나는 갈래는 헤드리스로 보지 않았다
+- 통과 조건 "시험이 이 저장소를 바꾸지 않았다"의 `git status --porcelain` 확인이 같은 phase가 고친 파일을 빼지 않아 phase 커밋 전에는 비지 않는다(기록의 "하네스에서 걸린 것"과 같다). 확인은 커밋 `58cdde2` 뒤에 돌려 비었다
+
+**판정**: 통과
