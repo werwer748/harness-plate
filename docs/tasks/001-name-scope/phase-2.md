@@ -69,3 +69,39 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 2가 참이다.
+  - `grep -n -F '**task의 커밋**' plugins/plate/skills/retro/SKILL.md` → 31줄 하나, 그 줄에 `마지막으로 더한 커밋`이 있다. 통과
+  - 기록의 `p2/setup.sh A`로 scratchpad의 새 `mktemp -d`(`c2/A.B2ai`)에 시험 레포 A를 다시 차리고 `claude -p "/plate:retro docs/tasks/001-x" --plugin-dir /Users/hugo/Desktop/harness-plate/plugins/plate --permission-mode bypassPermissions --output-format json`을 돌림 → 결과 `판정: 통과`, 회고 커밋 `1d67718 001-x: 회고`. 그 `docs/tasks/001-x/retro.md`에서 `grep -c 'old.txt'` → `0`, `grep -c 'new.txt'` → `2`. 통과
+- 완료 조건 3이 참이다.
+  - 같은 방법으로 시험 레포 B(`c2/B.eOlG`)에서 retro를 돌림 → 결과의 첫 줄 `판정: 문제 있음`. `grep -n '기준: 계획' docs/tasks/001-x/retro.md` → 17줄("**문제**" 아래)에 `기준: 계획. 고칠 쪽: 계획`. 통과
+  - 두 헤드리스 시험 전후로 이 저장소의 `git status --porcelain`(전후 모두 ` M docs/tasks/RUNLOG.md`만) → `diff`로 같음, `git rev-parse HEAD`(전후 모두 `a900428b5ce1eed115f0b6ef9413267822595f75`, phase 커밋 뒤) → 같음. 통과
+  - `git hash-object plugins/plate/skills/retro/SKILL.md` → `684f526efee0df1a7a919100a95275fc794d0592`, 기록의 해시와 같다. 통과
+- 두 시험이 글을 지킨다.
+  - `cp -R` 사본에서 `sed -i '' '/^- \*\*task의 커밋\*\*/s/마지막으로 더한 커밋//' plugins/plate/skills/retro/SKILL.md`(본문의 `마지막으로 더한 커밋` 1→0) 뒤 `python3 -m unittest tests.test_skill_rules.RetroRulesTest.test_80_task_commits_after_task_head` → `FAILED (failures=1)`. 통과
+  - `cp -R` 사본에서 `sed -i '' '/지난 tasks의 같은 이름.*고칠 쪽: 계획/d' plugins/plate/skills/retro/SKILL.md`(4번의 79줄만 지워짐, `고칠 쪽: 계획` 줄 79·92 → 91) 뒤 `python3 -m unittest tests.test_skill_rules.RetroRulesTest.test_80_decided_gap_is_plan_problem` → `FAILED (failures=1)`. 통과
+- 완료 조건 1이 그대로다.
+  - `grep -n '합쳐지지 않은 다른 브랜치' plugins/plate/skills/retro/SKILL.md` → 79줄 하나(4번: 64~84줄), 그 줄에 `지난 tasks의 같은 이름`과 `이름마다`가 함께 있다. 통과
+- 테스트 묶음이 모두 통과한다.
+  - `python3 -m unittest discover -s tests` → `Ran 274 tests`, 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 274 tests`, `OK`. 통과
+
+**남은 것**
+- task 머리가 `git mv`로 들어온 경우 `git log -1 --diff-filter=A`가 그것을 더한 커밋으로 치지 않을 수 있다 → 통과 조건(완료 조건 2)이 보는 동작은 시험 레포 A의 새로 더한 task 머리이고 이름 바꾸기 꼴은 보지 않는다. 걸리지 않는다. 하네스에서 걸린 것
+- 헤드리스 시험을 한 번씩 돌려 같은 차림에서 늘 같은 판정이 나는지 보지 않았다 → 통과 조건은 시험 레포 A·B에서 돌린 retro의 결과를 본다. 확인에서 새로 차린 레포로 다시 돌려 같은 결과를 얻었고, 되풀이마다 같은지는 통과 조건이 보지 않는다. 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: retro 본문의 task 머리를 더한 커밋을 찾는 명령(`git log -1 --diff-filter=A … -- <task 폴더>/plan.md`)은 `git mv`로 들어온 task 머리를 더한 것으로 치지 않을 수 있다(그때 역사 전체에서 센다)
+- 남은 것: 헤드리스 시험은 에이전트 판단이라 되풀이마다 같은 판정이 나는지는 보지 않았다(수행 한 번, 확인 한 번 모두 같은 판정)
+
+**판정**: 통과
