@@ -557,8 +557,9 @@ class RunRulesTest(unittest.TestCase):
         self.assertIn('origin이 GitHub 원격이면 "PR을 연다"로, 그 밖이면 "합친다"로 간다', body)
         self.assertIn("그 비움 커밋의 부모에서", body)
         self.assertNotIn("$(", body)
-        self.assertIn("0번의 비운 뒤의 재개에서", section(self.text, "PR을 연다"))
-        self.assertIn("0번의 비운 뒤의 재개에서", section(self.text, "합친다"))
+        self.assertIn("0번의 비운 뒤의 재개나 보낼 곳으로 합친 뒤의 재개에서", section(self.text, "PR을 연다"))
+        self.assertIn("0번의 비운 뒤의 재개나 보낼 곳으로 합친 뒤의 재개에서", section(self.text, "합친다"))
+        self.assertIn("0번의 비운 뒤의 재개에서", section(self.text, "보낼 곳으로 합친다"))
 
     def test_merge_has_own_question_and_switch_failure(self):
         # "합친다"는 이 자리만의 물음을 직접 적고, `git switch`가 실패하면 합치지 않는다(신뢰성-6).
@@ -707,6 +708,67 @@ class RunRulesTest(unittest.TestCase):
             with self.subTest(head=head):
                 self.assertIn(head, lines)
         self.assertNotIn("| `docs/BACKLOG.md` | 미룬 소스 문제와 그것이 나온 tasks |", self.text)
+
+    def test_send_to_reads_plan_line(self):
+        # run이 읽는 보낼 곳의 꼴이 plan 양식의 `**보낼 곳**:` 줄과 같다(002-cleanup-branch).
+        terms = section(self.text, "낱말")
+        self.assertIn("plan이 cleanup 브랜치에서 갈랐을 때만 보낼 곳(이름 줄 바로 아래의 `**보낼 곳**:` 줄)", terms)
+        self.assertIn("- **보낼 곳**: tasks 머리의 `**보낼 곳**:` 줄에서 `**보낼 곳**: ` 뒤에 적힌 브랜치 이름", terms)
+        self.assertIn("**이름**: {브랜치 `tasks/<이름>`에 쓸 영어 소문자 이름}\n**보낼 곳**: ", section(read("plan"), "계획 파일의 양식"))
+
+    def test_send_to_merge_after_clearing(self):
+        # 비운 뒤 보낼 곳이 있으면 tasks/<이름>을 그 브랜치에 로컬로 합치고, 그 브랜치를 기본 브랜치로 보낸다(002-cleanup-branch).
+        clear = subsection(self.text, "비운다")
+        self.assertIn("`<tasks 이름>`과 보낼 곳(tasks 머리에 `**보낼 곳**:` 줄이 있을 때만)은 지우기 전에 tasks 머리에서 읽어 둔다", clear)
+        self.assertIn('읽어 둔 보낼 곳이 있으면 "보낼 곳으로 합친다"로 간다. 없으면 origin이 GitHub 원격이면 "PR을 연다"로', clear)
+        body = section(self.text, "보낼 곳으로 합친다")
+        steps = [
+            "`git rev-parse --verify --quiet refs/heads/{보낼 곳}`으로 보낼 곳이 로컬에 있는지 본다",
+            "합칠 브랜치와 합칠 곳을 보여 주고 합칠지 묻는다",
+            "`git switch {보낼 곳}`으로 합칠 곳으로 바꾼다",
+            "`git merge --no-ff -m '<이름>: 보낼 곳으로 합침' tasks/<이름>`으로 합친다. squash하지 않는다",
+            "`git merge --abort`로 되돌리고, `git switch tasks/<이름>`으로 돌아가",
+            "`git branch -d tasks/<이름>`으로 브랜치를 지운다",
+            'origin이 GitHub 원격이면 보낼 곳을 푸시할 브랜치로 해서 "PR을 연다"로, 그 밖이면 보낼 곳을 합칠 브랜치로 해서 "합친다"로 간다',
+        ]
+        at = [body.index(step) for step in steps]
+        self.assertEqual(at, sorted(at))
+        self.assertNotIn("$(", body)
+        pr = section(self.text, "PR을 연다")
+        self.assertIn("보낼 곳이 있는 tasks면 그 tasks를 합친 보낼 곳이다", pr)
+        self.assertIn("`git push origin {푸시할 브랜치}`로 푸시한다", pr)
+        self.assertIn("--head {푸시할 브랜치}", pr)
+        merge = section(self.text, "합친다")
+        self.assertIn("보낼 곳이 있는 tasks면 그 tasks를 합친 보낼 곳이다", merge)
+        self.assertIn("`git merge {합칠 브랜치}`로 합친다", merge)
+        self.assertIn("`git branch -d {합칠 브랜치}`로 브랜치를 지운다", merge)
+
+    def test_send_to_missing_stops(self):
+        # 보낼 곳이 로컬에 없으면 합치지도 PR을 열지도 않고 알리고 10번으로 간다(002-cleanup-branch).
+        body = section(self.text, "보낼 곳으로 합친다")
+        first = re.search(r"^1\. (.*)$", body, re.M).group(1)
+        self.assertIn("아무것도 내지 않으면 합치지도 PR을 열지도 않는다", first)
+        self.assertIn("보낼 곳의 이름과 그것이 로컬에 없다는 것을 알리고 10번으로 간다", first)
+        report = section(self.text, "10. 보고한다")
+        self.assertIn("`tasks/<이름>`을 보낼 곳으로 합쳤는지와 그 합침 커밋", report)
+        self.assertIn("보낼 곳이 로컬에 없다와 그 이름", report)
+
+    def test_send_to_resume(self):
+        # 비운 뒤면 보낼 곳으로 합치는 자리로, 보낼 곳으로 합친 뒤면 PR·합침으로 간다(002-cleanup-branch).
+        body = section(self.text, "0. tasks를 본다")
+        self.assertIn("`git show HEAD^2^:docs/tasks/plan.md`로 합친 비움 커밋(그 합침 커밋의 둘째 부모)의 부모에 남은 tasks 머리를 읽는다", body)
+        self.assertIn('3번이 읽은 tasks 머리에 `**보낼 곳**:` 줄이 있으면 "보낼 곳으로 합친다"로 간다', body)
+        self.assertIn("지금 브랜치가 cleanup 브랜치이고 마지막 커밋의 제목이 `<이름>: 보낼 곳으로 합침`이고", body)
+        self.assertIn("보낼 곳으로 합친 뒤의 재개다", body)
+        self.assertIn("`git show HEAD^2^:docs/tasks/review.md`처럼 읽는다", body)
+        self.assertNotIn("$(", body)
+        self.assertIn("보낼 곳으로 합친 뒤의 재개에서", section(self.text, "PR을 연다"))
+        self.assertIn("보낼 곳으로 합친 뒤의 재개에서", section(self.text, "합친다"))
+
+    def test_send_to_push_rule(self):
+        # 절대 규칙 5: 푸시하는 브랜치에 보낼 곳이 든다(002-cleanup-branch).
+        rules = section(self.text, "절대 규칙")
+        self.assertIn('푸시는 "PR을 연다"에서 승인받아 `tasks/<이름>`을, 보낼 곳이 있는 tasks면 그 tasks를 합친 보낼 곳 브랜치를 origin에 올릴 때만 한다', rules)
 
 class PlanRulesTest(unittest.TestCase):
     def setUp(self):
