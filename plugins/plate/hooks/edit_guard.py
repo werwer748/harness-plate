@@ -41,8 +41,16 @@ TEST_FIRST = (
     "테스트 파일은 " + ", ".join("`%s/`" % d for d in sorted(TEST_DIRS)) + " 아래이거나 이름이 "
     + ", ".join("`%s`" % n for n in TEST_NAMES) + " 꼴인 파일이다.\n"
 )
+ORDINALS = ("첫", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉", "열")
+
+
+def ordinal(n):
+    """`n`번째를 글로 적는다(3 → `세 번째`). 열을 넘으면 숫자로 적는다."""
+    return "%s 번째" % (ORDINALS[n - 1] if 1 <= n <= len(ORDINALS) else n)
+
+
 STOP = (
-    "plate: 테스트 먼저 때문에 같은 파일을 세 번째 막았다: `{rel}` (지금 phase: `{phase}`)\n"
+    "plate: 테스트 먼저 때문에 같은 파일을 " + ordinal(STOP_COUNT) + " 막았다: `{rel}` (지금 phase: `{phase}`)\n"
     "더 시도하지 않는다. 상태를 막힘으로 하고 멈춘다. 막힌 까닭과 원하는 해결책을 "
     "`{phase}`의 \"남은 것\"과 \"하네스에서 걸린 것\"에 적는다.\n"
 )
@@ -143,9 +151,17 @@ def has_check_section(text):
 
 
 def phase_commit_has_test_change(root, task, number):
-    """제목이 `NNN-slug: phase N`인 커밋이 테스트 파일을 더하거나 바꿨는가. 지우기만 한 것은 세지 않는다."""
+    """이번 tasks에서 제목이 `NNN-slug: phase N`인 커밋이 테스트 파일을 더하거나 바꿨는가.
+    지우기만 한 것은 세지 않는다.
+
+    tasks가 끝나면 `docs/tasks/`를 비우고 다음 tasks가 같은 task 이름을 다시 쓰므로, 그 task 머리
+    (`plan.md`)를 마지막으로 더한 커밋(이번 tasks의 계획 커밋) 뒤의 커밋만 본다."""
     subject = "%s: phase %d" % (task, number)
-    log = git(root, "log", "--format=%H %s") or ""
+    plan = "/".join([TASKS_DIR, task, "plan.md"])
+    added = (git(root, "log", "-1", "--diff-filter=A", "--format=%H", "--", plan) or "").strip()
+    if not added:
+        return False
+    log = git(root, "log", "--format=%H %s", added + "..HEAD") or ""
     for line in log.splitlines():
         sha, _, title = line.partition(" ")
         if title != subject:

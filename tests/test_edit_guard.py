@@ -27,7 +27,7 @@ DOCS_MAP = (
 )
 
 sys.path.insert(0, str(HOOK.parent))
-from edit_guard import TEST_DIRS, TEST_NAMES  # noqa: E402
+from edit_guard import STOP_COUNT, TEST_DIRS, TEST_NAMES, ordinal  # noqa: E402
 
 PLAN_FIRST = "계획부터"
 TEST_FIRST = "실패하는 테스트부터"
@@ -488,6 +488,73 @@ class RerunTest(GuardTestCase):
         p = self.rerun_project({"tests/test_app.py": "import unittest\n# 바뀜\n"}, check=fenced)
         self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
 
+    def test_phase_commit_deleting_test_only_blocks(self):
+        # phase 커밋이 테스트 파일을 지우기만 했으면 테스트 변경으로 세지 않는다
+        p = self.project()
+        p.write("tests/test_other.py", "import unittest\n")
+        p.add_task("001-a", {1: "예"})
+        p.git("rm", "-q", "tests/test_app.py")
+        p.write("docs/tasks/001-a/phase-1.md", phase_text(1, "예") + RECORD)
+        p.commit("001-a: phase 1")
+        p.write("docs/tasks/001-a/phase-1.md", phase_text(1, "예") + RECORD + CHECK)
+        p.commit("001-a: phase 1 확인")
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def finish_tasks(self, p, committed):
+        """지난 tasks: `001-a: phase 1`이 committed를 바꿔 커밋하고, 끝나서 `docs/tasks/`를 비웠다."""
+        p.add_task("001-a", {1: "예"})
+        for rel, text in committed.items():
+            p.write(rel, text)
+        p.write("docs/tasks/001-a/phase-1.md", phase_text(1, "예") + RECORD)
+        p.commit("001-a: phase 1")
+        p.git("rm", "-rq", "docs/tasks")
+        p.commit("tasks 비움")
+
+    def rerun_after_previous_tasks(self, previous, current):
+        """지난 tasks의 같은 이름 phase 커밋이 previous를 바꾼 뒤, 이번 tasks의 `001-a: phase 1`이
+        current를 바꾸고 확인 절을 받은 프로젝트."""
+        p = self.project()
+        self.finish_tasks(p, previous)
+        p.add_task("001-a", {1: "예"})
+        for rel, text in current.items():
+            p.write(rel, text)
+        p.write("docs/tasks/001-a/phase-1.md", phase_text(1, "예") + RECORD)
+        p.commit("001-a: phase 1")
+        p.write("docs/tasks/001-a/phase-1.md", phase_text(1, "예") + RECORD + CHECK)
+        p.commit("001-a: phase 1 확인")
+        return p
+
+    def test_previous_tasks_phase_commit_does_not_count(self):
+        # 지난 tasks의 같은 제목 커밋이 테스트를 바꾼 것은 세지 않는다
+        p = self.rerun_after_previous_tasks(
+            {"tests/test_app.py": "import unittest\n# 지난 tasks\n"},
+            {"src/app.py": "print('바뀜')\n"},
+        )
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def test_current_tasks_phase_commit_counts_after_previous_tasks(self):
+        p = self.rerun_after_previous_tasks(
+            {"tests/test_app.py": "import unittest\n# 지난 tasks\n"},
+            {"tests/test_app.py": "import unittest\n# 이번 tasks\n"},
+        )
+        self.assertPassed(p.edit("src/app.py"))
+
+    def test_previous_tasks_commit_does_not_count_before_phase_commit(self):
+        # 이번 tasks의 phase 커밋이 아직 없고 지난 tasks의 같은 제목 커밋만 있다
+        p = self.project()
+        self.finish_tasks(p, {"tests/test_app.py": "import unittest\n# 지난 tasks\n"})
+        p.add_task("001-a", {1: "예"})
+        p.write("docs/tasks/001-a/phase-1.md", phase_text(1, "예") + RECORD + CHECK)
+        p.commit("001-a: phase 1 확인")
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def test_plan_md_change_after_phase_commit_keeps_it(self):
+        # phase 커밋 뒤에 task 머리를 고친 커밋이 있어도 그 phase 커밋은 이번 tasks의 것이다
+        p = self.rerun_project({"tests/test_app.py": "import unittest\n# 바뀜\n"})
+        p.write("docs/tasks/001-a/plan.md", "# 시험 작업\n\n## 결정\n- 더함\n")
+        p.commit("plan: 001-a 결정 더함")
+        self.assertPassed(p.edit("src/app.py"))
+
 
 class ThirdBlockTest(GuardTestCase):
     def setUp(self):
@@ -537,7 +604,29 @@ class ThirdBlockTest(GuardTestCase):
     def test_unwritable_count_file_says_stop(self):
         # 세는 파일 자리가 폴더라 쓰지 못한다. 셈을 잃는 대신 세 번째 막음의 글로 간다
         (self.p.root / ".git" / "plate-test-first.json").mkdir()
-        self.assertBlocked(self.p.edit("src/app.py"), STOP, "세 번째")
+        self.assertBlocked(self.p.edit("src/app.py"), STOP, ordinal(STOP_COUNT) + " 막았다")
+
+    def test_stop_message_follows_stop_count(self):
+        # 글의 횟수를 손으로 적지 않고 STOP_COUNT에서 만든다. 상수를 바꾼 사본에서 글이 그 수를 따른다
+        self.assertEqual(ordinal(3), "세 번째")
+        self.assertNotIn("세 번째 막았다", HOOK.read_text(encoding="utf-8"))
+        copy = Path(tempfile.mkdtemp(dir=self.base)) / "edit_guard.py"
+        source = HOOK.read_text(encoding="utf-8")
+        self.assertIn("STOP_COUNT = %d " % STOP_COUNT, source)
+        copy.write_text(source.replace("STOP_COUNT = %d " % STOP_COUNT, "STOP_COUNT = 4 ", 1), encoding="utf-8")
+
+        def edit():
+            done = subprocess.run(
+                [sys.executable, str(copy)], input=self.p.payload("src/app.py"), env=GIT_ENV,
+                capture_output=True, text=True,
+            )
+            return done.returncode, done.stderr
+
+        for _ in range(3):
+            err = self.assertBlocked(edit(), TEST_FIRST)
+            self.assertNotIn(STOP, err)
+        err = self.assertBlocked(edit(), STOP, "네 번째 막았다")
+        self.assertNotIn("세 번째", err)
 
     def test_count_file_is_replaced_not_rewritten(self):
         # 세는 파일을 그 자리에서 고쳐 쓰지 않고 임시 파일을 바꿔 넣으므로, 읽기 전용인 세는 파일도 셈이 이어진다
