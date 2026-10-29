@@ -111,3 +111,39 @@
 - 완료 조건 5의 "이 tasks의 마지막 커밋에서"는 phase 커밋(`615122e`)이 HEAD인 상태에서 돌렸다(작업 트리는 `docs/tasks/RUNLOG.md`만 다름)
 
 **판정**: 실패
+
+## 확인 2
+
+**통과 조건**
+- task 머리의 완료 조건이 모두 참이다.
+  - 완료 조건 1: `mktemp -d` 시험 레포(`plan: old`, 테스트를 바꾼 지난 tasks의 `001-a: phase 1`, `docs/tasks` 비움, 이번 tasks의 `001-a: phase 1`, `## 확인 1` 절)에 `src/app.py` 편집 JSON을 훅에 넣음. 이번 tasks의 task 머리를 커밋한 꼴(`plan: new`)과 커밋하지 않은 꼴을 모두 돌림 → 두 꼴 모두 이번 커밋이 구현만 바꾸면 `exit=2`, 테스트도 바꾸면 `exit=0`. 통과
+  - 완료 조건 2: 시험 레포에서 `pkg/a/__init__.py`, `pkg/b/__init__.py`를 새로 만든 `001-a: phase 1` 커밋 → `git cat-file -e <커밋>^:…` 둘 다 128. 본문 59행의 명령(`tmp=$(mktemp -d)`, 파일마다 `mkdir -p "$tmp/$(dirname f)" && mv f "$tmp/f"`, `mv "$tmp/f" f`, `rm -rf "$tmp"`)대로 옮김(` D pkg/a/__init__.py`, ` D pkg/b/__init__.py`) → 되살린 뒤 `git status --porcelain`이 시작과 같음(빈 출력), 내용 `A`·`B`. 본문 61행에 다를 때의 `git checkout HEAD -- <구현 파일>`이 있고, 한 파일을 지운 뒤 그 명령 → 시작과 같음. 통과
+  - 완료 조건 3: `plugins`·`tests`를 임시 폴더에 복사해 `sed 's/^STOP_COUNT = 3 /STOP_COUNT = 5 /'`로 바꾼 사본으로 시험 레포의 `src.py`를 다섯 번 편집 → 네 번 `TEST_FIRST` 글, 다섯 번째 `테스트 먼저 때문에 같은 파일을 다섯 번째 막았다`. 통과
+  - 완료 조건 4: `tests/test_edit_guard.py:491`에 `test_phase_commit_deleting_test_only_blocks`. 복사본에서 `"--diff-filter=d", sha`를 `sha`로 바꾼 사본(`grep -c 'diff-filter=d'` → `0`)에서 `python3 -m unittest tests.test_edit_guard` → `FAIL: test_phase_commit_deleting_test_only_blocks (tests.test_edit_guard.RerunTest)`, `Ran 69 tests`, `FAILED (failures=1)`. 통과
+  - 완료 조건 5 / tasks 완료 조건 1: `python3 -m unittest discover -s tests` → `Ran 250 tests`, `OK`. 통과
+  - 완료 조건 5 / tasks 완료 조건 2: `docs/tasks/001-hook-fixes/plan.md`의 완료 조건 확인을 HEAD(`0a8f765`, 작업 트리는 `docs/tasks/RUNLOG.md`만 다름)에서 다시 돌림 → 1: 적힌 그대로(`plan.md`를 커밋하지 않은 시험 레포)와 `plan.md`를 커밋한 시험 레포 모두 테스트를 바꾼 `001-a: phase 1` 커밋+`## 확인 1` → `exit=0`, `src.py`만 바꾼 커밋 → `exit=2`, 확인 절 없음 → `exit=2`. 2: `printf '{'` → `plate:` 줄(`JSONDecodeError`), `exit=2`. `\xff` → `plate:`(`UnicodeDecodeError`) 줄, `exit=2`. 푸시 훅 `{"git push` → `exit=2`, `{"ls` → `exit=0`. 3: 세는 파일 자리에 폴더 → `세 번째 막았다` 줄, `exit=2`. `os.replace` 253행. 4: `git rm tests/test_x.py`만(`tests/test_y.py` 남음) → `exit=2`. 5: `env PATH=/nonexistent <python3>`에서 `README.md` → `exit=0`, `src.py` → `FileNotFoundError: … 'git'` 줄, `exit=2`. `has_uncommitted_test_change(root)` 301행 < `has_tests(root)` 306행(`check` 264행 안). 6: `grep -c` → `0`, 상수 확인 → `True`. 7: ARCHITECTURE 54행("막는 장치" 문단)에 `다시 수행`·`예외`·`결과물인 마크다운` 모두, `### ADR-027` 63행 한 줄, PRD 4행(목표)·16행(핵심 기능 6)이 코드 파일(`.md`가 아닌 파일)로 좁힘. 8: `OK`. 통과
+  - 완료 조건 5 / tasks 완료 조건 4: `docs/tasks/003-skill-fixes/plan.md`의 완료 조건 확인을 다시 돌림 → 1: `다시 띄움: 결과 없음` 293행("멈춘다" 285행~)·570행(`RUNLOG.md` 절 555행~), `test_no_result_relaunch_limit` `OK`. 2: `tasks 브랜치` 89행 < `계획의 커밋` 96행. 3: `gh api user` 376행("이슈를 올린다" 369행~)·519행("PR 본문의 꼴" 516행~), `gh api user --jq .login` → `werwer748`, `gh issue view 68 … --jq '.author.login'` → `werwer748`. 4: `test_stop_line_grep_runs_on_fake_runlog` `OK`. 5: `부모 커밋에 없` 59행("2. TODO를 차례로 끝낸다" 42~69행), 시험 레포에서 바꾼 파일 `mod.py`(`cat-file` 0)는 `git checkout <커밋>^ --`/`git checkout HEAD --`, 새 파일 `pkg/new.py`(`cat-file` 128)는 본문 명령대로 옮겼다 되살림 → `git status --porcelain` 빈 출력. 6: review 72행("2. 잰다" 67행~ 커버리지 항목)에 `한 번`. 7: `맥락 문서를 모두 읽는다` 없음(종료 1), `결정 절` 99행("4. 2라운드" 90행~)·190행("2라운드에 맡기는 글" 172행~). 8: `결과 없` PRD 17행·ARCHITECTURE 40·99행, `gh api user` ARCHITECTURE 57행(run 이슈·PR 문단). 9: `OK`. 통과
+  - 완료 조건 5 / tasks 완료 조건 6: `python3 -m unittest tests.test_skill_rules tests.test_manifests tests.test_cleanup_skill tests.test_edit_guard tests.test_push_guard` → `OK`. `grep -n '^def section' tests/test_cleanup_skill.py` → 출력 없음(종료 1). 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 250 tests`, `OK`. 통과
+
+**테스트 먼저 기록**
+- "한 일"의 "테스트 먼저" → 첫 수행의 실패 출력(`ImportError: cannot import name 'ordinal'`, `FAILED (errors=1)`, `FAILED (failures=3)`) 뒤에 통과 출력(`Ran 64 tests`, `OK`), 고침의 실패 출력(`RerunTest`의 `FAILED (failures=3)`) 뒤에 통과 출력(`Ran 69 tests`, `OK`)이 이 순서로 있다. 통과
+
+**남은 것**
+- 이번 tasks 안에서 그 task 폴더를 지웠다 다시 더하면 그 앞의 같은 제목 커밋은 세지 않는다 → 동작의 결함이나 통과 조건의 어느 확인도 tasks 안에서 task 폴더를 지웠다 다시 더하는 꼴을 보지 않는다. 하네스에서 걸린 것
+- task 머리를 커밋하지 않았고 지난 tasks가 같은 task 머리를 지우지 않고 끝났으면 지난 tasks의 같은 제목 커밋을 센다 → 동작의 결함이나 통과 조건의 확인(완료 조건 1, 001 완료 조건 1)은 지난 tasks를 비운 레포와 지난 tasks가 없는 레포만 본다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 이번 tasks 안에서 그 task 폴더를 지웠다 다시 더하면 그 앞의 같은 제목 커밋은 세지 않는다
+- 남은 것: task 머리를 커밋하지 않았고 지난 tasks가 같은 task 머리를 지우지 않고 끝났으면 지난 tasks의 같은 제목 커밋을 센다
+- 완료 조건 1의 시험 레포 설명이 이번 tasks의 task 머리를 커밋했는지 적지 않아 두 꼴을 모두 돌렸다. 두 꼴의 결과가 같아 판정은 갈리지 않았다
+- 완료 조건 5의 "이 tasks의 마지막 커밋에서"는 고침 커밋(`0a8f765`)이 HEAD인 상태에서 돌렸다(작업 트리는 `docs/tasks/RUNLOG.md`만 다름)
+
+**판정**: 통과
