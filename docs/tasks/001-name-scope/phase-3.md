@@ -54,3 +54,33 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 4가 참이다.
+  - `grep -n '고칠 쪽' plugins/plate/skills/run/SKILL.md` → 108(2번), 209(8번 첫 문단), 298("멈춘다" 목록), 593(`RUNLOG.md` 절)행. 8번과 "멈춘다"에 저마다 한 줄. 통과
+  - `mktemp -d` 아래 `cp -R` 사본에서 `sed -i '' '/고칠 쪽/d' plugins/plate/skills/run/SKILL.md` 뒤 `python3 -m unittest tests.test_skill_rules.RunRulesTest.test_80_plan_side_problem_stops` → `FAILED (failures=1)`. 통과
+- 완료 조건 5가 참이다.
+  - `grep -n '고칠 쪽' docs/PRD.md docs/ARCHITECTURE.md` → PRD 17행(핵심 기능 7), ARCHITECTURE 40행(디렉터리 구조), 55행(패턴과 규칙의 run 문단), 75행(데이터 흐름의 실행 "회고의 문제는 고칠 phase를 더해 고친다" 줄), 101행(데이터 흐름 아래 멈춤 문단). 네 곳에 저마다 한 줄. 통과
+  - `grep -n -F 'test_skill_rules.py' docs/ARCHITECTURE.md` → 40행(디렉터리 구조) 한 줄. 그 줄에서 `grep -c -F`로 `합쳐지지 않은 다른 브랜치`, `task 머리를 마지막으로 더한 커밋`, `고칠 쪽이 계획` → 1, 1, 1. 통과
+- 완료 조건 3의 retro 본문이 그대로다.
+  - `git diff --name-only HEAD -- plugins/plate/skills/retro/SKILL.md` → 출력 없음. 통과
+- 테스트 묶음이 모두 통과한다.
+  - `python3 -m unittest discover -s tests` → `Ran 275 tests`, 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 275 tests`, `OK`. 통과
+
+**남은 것**
+- 없음
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
