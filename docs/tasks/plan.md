@@ -42,3 +42,4 @@ plan과 retro가 이름이 남을 수 있는 모든 곳(지난 tasks, 합쳐지�
 ## task 목록
 - `001-name-scope`: plan·retro가 이름이 남을 수 있는 곳과 이름마다를 덮고, retro가 이번 task의 커밋만 보고 결정이 목표를 해치는 꼴을 문제로 판정하며, run이 그것으로 멈추고, 맥락 문서가 맞는다.
 - `002-release`: plate가 1.0.0이 된다.
+- `003-fixes`: tasks 끝에서 고치기로 한 것이 고쳐진다
