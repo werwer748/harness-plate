@@ -79,3 +79,35 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 4가 참이다.
+  - `git hash-object plugins/plate/skills/plan/SKILL.md` → `85a5bb1528ac6afabf3cce1741093fb2e5436585`, 기록의 값과 같다. 통과
+  - 기록의 (가) 출력을 읽음 → 끝의 브랜치 `tasks/readme-intro`, 제목 `plan: readme-intro`, 돌리기 전과 뒤의 `git rev-parse main`이 모두 `fbf90696422c93080b39905472ecd054162bd276`. 남아 있는 첫째 시험 저장소에서 `git -C … branch --show-current`, `git -C … log -1 --format=%s tasks/readme-intro`, `git -C … rev-parse main`을 다시 내도 같다. 통과
+  - 기록의 (나) 응답 글 전문을 읽음 → `feature/x`가 기본 브랜치도 `tasks/<이름>`도 아니라고 들고 "계획을 `tasks/<이름>` 브랜치에 커밋해도 될까요?"라고 묻는다. 그 자리의 브랜치 `feature/x`, 마지막 커밋 `fbf9069 init`(돌리기 전 그대로), `git status --porcelain` 출력 없음. 둘째 시험 저장소에서 다시 내도 같고 `tasks/` 브랜치가 없다. 통과
+- 시험이 이 저장소를 바꾸지 않았다.
+  - `git status --porcelain -- . ':!docs/tasks/002-plan-branch/phase-2.md' ':!docs/tasks/RUNLOG.md'` → 출력 없음. 통과
+- 완료 조건 1, 2, 3이 그대로 참이다.
+  - `grep -c -e '브랜치를 만들거나 바꾸지 않는다' plugins/plate/skills/plan/SKILL.md` → `0`. 통과
+  - `grep -c -e 'plan은 브랜치를 바꾸지 않아서' -e '계획의 커밋이 로컬 기본 브랜치에만' plugins/plate/skills/run/SKILL.md` → `0`. 통과
+  - `grep -c -e '계획의 커밋이 로컬 기본 브랜치에만' docs/ARCHITECTURE.md README.md` → `docs/ARCHITECTURE.md:0`, `README.md:0`. 통과
+- 테스트가 모두 통과한다(완료 조건 5).
+  - `python3 -m unittest discover -s tests` → `Ran 207 tests`, `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 207 tests in 18.322s`, `OK`. 통과
+
+**남은 것**
+- (나)는 물음까지만 봤다. 승인한 뒤 `feature/x`에서 `tasks/<이름>`을 만드는 갈래와 거절해 끝나는 갈래는 돌리지 않았다 → 통과 조건(완료 조건 4의 (나))은 첫 턴의 물음과 그 자리의 상태만 보므로 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: (나)의 승인 뒤 `feature/x`에서 `tasks/<이름>`을 만드는 갈래와 거절해 끝나는 갈래는 헤드리스로 돌리지 않았다. task 머리의 `돌리지 않음` 줄에 이 두 갈래는 이름으로 들어 있지 않고, 결정의 "두 장면만 돌린다"가 덮는다
+
+**판정**: 통과
