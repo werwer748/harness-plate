@@ -102,6 +102,48 @@ def skill_names():
     return sorted(p.parent.name for p in SKILLS.glob("*/SKILL.md"))
 
 
+def git_commands(body):
+    """본문의 백틱 안에 적힌 `git …` 명령을 적힌 차례대로 돌려준다."""
+    return re.findall(r"`(git [^`]+)`", body)
+
+
+class GitRepo:
+    """`mktemp -d` 같은 임시 폴더의 시험 레포. 본문의 명령을 `sh -c`로 돌린다."""
+
+    def __init__(self, folder):
+        self.folder = str(folder)
+        self.env = dict(os.environ, GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_NOSYSTEM="1",
+                        GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@t", GIT_COMMITTER_NAME="t",
+                        GIT_COMMITTER_EMAIL="t@t", LC_ALL="C")
+        self.git("init", "-q", "-b", "main")
+        self.commit("README.md", "시작\n", "시작")
+
+    def sh(self, line):
+        return subprocess.run(["sh", "-c", line], cwd=self.folder, env=self.env,
+                              capture_output=True, text=True, encoding="utf-8")
+
+    def git(self, *args):
+        done = subprocess.run(["git", *args], cwd=self.folder, env=self.env,
+                              capture_output=True, text=True, encoding="utf-8")
+        if done.returncode != 0:
+            raise AssertionError("git %s: %s" % (" ".join(args), done.stderr))
+        return done.stdout.strip()
+
+    def commit(self, path, content, message):
+        target = Path(self.folder) / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+        self.git("add", path)
+        self.git("commit", "-q", "-m", message)
+
+    def head(self, ref):
+        return self.git("rev-parse", ref)
+
+    def is_ancestor(self, older, newer):
+        return subprocess.run(["git", "merge-base", "--is-ancestor", older, newer], cwd=self.folder,
+                              env=self.env).returncode == 0
+
+
 class DescriptionTest(unittest.TestCase):
     """Agent Skills 규격의 한도와 plate의 description 상한을 본다. Codex는 1024자를 넘는 description을
     잘라 끝의 부르는 말과 쓰지 않을 때를 모델에게 싣지 않는다. description은 모든 세션과 띄운
@@ -431,6 +473,41 @@ class RunRulesTest(unittest.TestCase):
                     done = subprocess.run(["sh", "-c", line], cwd=folder, capture_output=True, text=True, encoding="utf-8")
                     self.assertEqual(done.returncode, 0, done.stderr)
                     self.assertEqual(done.stdout, expected + "\n")
+
+    def test_merge_to_target_conflict_restores_target(self):
+        # "보낼 곳으로 합친다"의 명령을 시험 레포에서 충돌하는 갈래로 적힌 차례대로 돌린다(cleanup-branch review 평가 1 소스 문제 3).
+        body = section(self.text, "보낼 곳으로 합친다")
+        commands = git_commands(body)
+        fill = lambda c: c.replace("{보낼 곳}", "cleanup/x").replace("<이름>", "y")
+        wanted = ["git rev-parse --verify --quiet refs/heads/{보낼 곳}", "git switch {보낼 곳}",
+                  "git merge --no-ff -m '<이름>: 보낼 곳으로 합침' tasks/<이름>", "git merge --abort",
+                  "git switch tasks/<이름>"]
+        for command in wanted:
+            self.assertIn(command, commands)
+        order = [commands.index(c) for c in wanted]
+        self.assertEqual(order, sorted(order))
+        with tempfile.TemporaryDirectory() as folder:
+            repo = GitRepo(folder)
+            repo.git("switch", "-q", "-c", "cleanup/x")
+            repo.commit("a.md", "cleanup\n", "cleanup: x")
+            repo.git("switch", "-q", "-c", "tasks/y")
+            repo.commit("b.md", "tasks\n", "y: 계획")
+            repo.git("switch", "-q", "cleanup/x")
+            repo.commit("b.md", "다른 글\n", "cleanup: x 미룸")
+            repo.git("switch", "-q", "tasks/y")
+            before = {ref: repo.head(ref) for ref in ("cleanup/x", "tasks/y", "main")}
+            exists = repo.sh(fill(wanted[0]))
+            self.assertNotEqual(exists.stdout.strip(), "")
+            self.assertEqual(repo.sh(fill(wanted[1])).returncode, 0)
+            merged = repo.sh(fill(wanted[2]))
+            self.assertNotEqual(merged.returncode, 0, "충돌해야 한다")
+            self.assertEqual(repo.sh(fill(wanted[3])).returncode, 0)
+            self.assertEqual(repo.sh(fill(wanted[4])).returncode, 0)
+            for ref, value in before.items():
+                with self.subTest(ref=ref):
+                    self.assertEqual(repo.head(ref), value)
+            self.assertEqual(repo.git("branch", "--show-current"), "tasks/y")
+            self.assertEqual(repo.git("status", "--porcelain"), "")
 
     def test_plan_commit_after_tasks_branch(self):
         # 1번은 커밋하지 않은 변경, tasks 브랜치, 계획의 커밋 차례이고 계획은 tasks 브랜치에 커밋한다(cleanup 2026-10-29 신뢰성-8).

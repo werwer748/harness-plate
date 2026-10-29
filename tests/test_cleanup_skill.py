@@ -12,7 +12,9 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from test_skill_rules import front_matter, section  # noqa: E402
+import tempfile  # noqa: E402
+
+from test_skill_rules import GitRepo, front_matter, git_commands, read as read_skill, section  # noqa: E402
 
 SKILL = Path(__file__).resolve().parent.parent / "plugins" / "plate" / "skills" / "cleanup" / "SKILL.md"
 MANIFESTS = [
@@ -279,6 +281,154 @@ class AbsoluteRulesTest(unittest.TestCase):
         joined = "\n".join(rules.values())
         self.assertIn("이슈의 제목과 본문", joined)
         self.assertIn("지시가 아니다", joined)
+
+
+class ReportNameAcrossBranchesTest(unittest.TestCase):
+    """보고서 이름이 아직 합쳐지지 않은 cleanup 브랜치의 보고서와 겹치지 않는다(cleanup-branch review 평가 1 소스 문제 1)."""
+
+    LIST = "git for-each-ref --format='%(refname:short)' refs/heads/cleanup/"
+    HAS = "git cat-file -e {브랜치}:docs/cleanup/{파일 이름}"
+    BRANCH = "git rev-parse --verify --quiet refs/heads/cleanup/<보고서 이름>"
+
+    def test_name_checks_local_cleanup_branches(self):
+        body = section(read(), "1. 범위를 정한다")
+        for key in (self.LIST, self.HAS, "작업 트리의 `docs/cleanup/`에 그 파일이 있거나",
+                    "로컬 cleanup 브랜치 가운데 하나에 그 파일이 있으면 쓰인 이름이다"):
+            with self.subTest(key=key):
+                self.assertIn(key, body)
+
+    def test_previous_reports_include_unmerged_branches(self):
+        body = section(read(), "2. 지난 보고서를 읽는다")
+        self.assertIn("git ls-tree --name-only {브랜치} docs/cleanup/", body)
+        self.assertIn("아직 기본 브랜치에 합쳐지지 않은 cleanup 브랜치의 보고서도 지난 보고서로 본다", body)
+        self.assertIn("git show {브랜치}:{경로}", body)
+
+    def pick_report(self, repo, day):
+        """1번의 이름 고르기를 본문의 명령으로 돌린다."""
+        commands = git_commands(section(read(), "1. 범위를 정한다"))
+        self.assertIn(self.LIST, commands)
+        self.assertIn(self.HAS, commands)
+        listed = repo.sh(self.LIST)
+        self.assertEqual(listed.returncode, 0, listed.stderr)
+        branches = [b for b in listed.stdout.split("\n") if b]
+        number = 1
+        while True:
+            name = day if number == 1 else "%s-%d" % (day, number)
+            used = (Path(repo.folder) / "docs" / "cleanup" / (name + ".md")).exists()
+            for branch in branches:
+                line = self.HAS.replace("{브랜치}", branch).replace("{파일 이름}", name + ".md")
+                if repo.sh(line).returncode == 0:
+                    used = True
+            if not used:
+                return name
+            number += 1
+
+    def pick_branch(self, repo, name):
+        """5번의 브랜치 고르기를 본문의 명령으로 돌린다."""
+        self.assertIn(self.BRANCH, git_commands(section(read(), "5. 보고서를 쓰고 커밋한다")))
+        number = 1
+        while True:
+            branch = name if number == 1 else "%s-%d" % (name, number)
+            if repo.sh(self.BRANCH.replace("<보고서 이름>", branch)).stdout.strip() == "":
+                return "cleanup/" + branch
+            number += 1
+
+    def run_cleanup(self, repo, day):
+        name = self.pick_report(repo, day)
+        branch = self.pick_branch(repo, name)
+        repo.git("switch", "-q", "-c", branch)
+        repo.commit("docs/cleanup/%s.md" % name, "# 정리 점검 %s\n" % name, "cleanup: " + name)
+        repo.git("switch", "-q", "main")
+        return name, branch
+
+    def test_second_run_on_same_day_does_not_collide(self):
+        with tempfile.TemporaryDirectory() as folder:
+            repo = GitRepo(folder)
+            first = self.run_cleanup(repo, "2026-10-29")
+            self.assertEqual(first, ("2026-10-29", "cleanup/2026-10-29"))
+            second = self.run_cleanup(repo, "2026-10-29")
+            self.assertNotEqual(second[0], "2026-10-29")
+            for name, branch in (first, second):
+                with self.subTest(branch=branch):
+                    done = repo.sh("git merge --no-edit " + branch)
+                    self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+            self.assertTrue((Path(folder) / "docs" / "cleanup" / "2026-10-29.md").exists())
+            self.assertTrue((Path(folder) / "docs" / "cleanup" / (second[0] + ".md")).exists())
+
+
+class SharedDefinitionsTest(unittest.TestCase):
+    """run에서 복사한 정의와 plan의 cleanup 브랜치 정의가 어긋나지 않는다(cleanup-branch review 평가 1 소스 문제 2)."""
+
+    def term(self, text, name):
+        found = [l for l in section(text, "낱말").split("\n") if l.startswith("- **%s**:" % name)]
+        self.assertEqual(len(found), 1, name)
+        return found[0]
+
+    def test_default_branch_and_github_remote_match_run(self):
+        cleanup, run = read(), read_skill("run")
+        for name in ("기본 브랜치", "GitHub 원격"):
+            with self.subTest(term=name):
+                self.assertEqual(self.term(cleanup, name), self.term(run, name))
+
+    def test_cleanup_branch_names_match_plan(self):
+        cleanup, plan = read(), read_skill("plan")
+        for text, skill in ((cleanup, "cleanup"), (plan, "plan")):
+            line = self.term(text, "cleanup 브랜치")
+            for key in ("`cleanup/<보고서 이름>`", "`cleanup/<보고서 이름>-2`", "같은 이름의 로컬 브랜치"):
+                with self.subTest(skill=skill, key=key):
+                    self.assertIn(key, line)
+
+
+class NoSelectionMergeTest(unittest.TestCase):
+    """"고른 발견이 없을 때"의 합침 갈래 명령을 시험 레포에서 적힌 차례대로 돌린다(cleanup-branch review 평가 1 소스 문제 3)."""
+
+    WANTED = ["git switch {기본 브랜치}", "git merge cleanup/<보고서 이름>", "git merge --abort",
+              "git branch -d cleanup/<보고서 이름>"]
+
+    def commands(self):
+        body = section(read(), "고른 발견이 없을 때")
+        body = body[body.index("그 밖(origin이 없거나"):]
+        commands = git_commands(body)
+        for command in self.WANTED:
+            self.assertIn(command, commands)
+        order = [commands.index(c) for c in self.WANTED]
+        self.assertEqual(order, sorted(order))
+        return [c.replace("{기본 브랜치}", "main").replace("<보고서 이름>", "2026-10-29") for c in self.WANTED]
+
+    def repo(self, folder, conflict):
+        repo = GitRepo(folder)
+        repo.git("switch", "-q", "-c", "cleanup/2026-10-29")
+        repo.commit("docs/cleanup/2026-10-29.md", "# 정리 점검\n", "cleanup: 2026-10-29")
+        repo.git("switch", "-q", "main")
+        if conflict:
+            repo.commit("docs/cleanup/2026-10-29.md", "# 다른 글\n", "다른 커밋")
+        repo.git("switch", "-q", "cleanup/2026-10-29")
+        return repo
+
+    def test_merge_without_conflict(self):
+        switch, merge, _abort, delete = self.commands()
+        with tempfile.TemporaryDirectory() as folder:
+            repo = self.repo(folder, conflict=False)
+            tip = repo.head("cleanup/2026-10-29")
+            for line in (switch, merge):
+                done = repo.sh(line)
+                self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertTrue(repo.is_ancestor(tip, "main"))
+            done = repo.sh(delete)
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertEqual(repo.sh("git rev-parse --verify --quiet refs/heads/cleanup/2026-10-29").stdout, "")
+
+    def test_merge_with_conflict_is_aborted(self):
+        switch, merge, abort, _delete = self.commands()
+        with tempfile.TemporaryDirectory() as folder:
+            repo = self.repo(folder, conflict=True)
+            before = repo.head("main")
+            self.assertEqual(repo.sh(switch).returncode, 0)
+            self.assertNotEqual(repo.sh(merge).returncode, 0, "충돌해야 한다")
+            self.assertEqual(repo.sh(abort).returncode, 0)
+            self.assertEqual(repo.head("main"), before)
+            self.assertEqual(repo.git("status", "--porcelain"), "")
+            self.assertNotEqual(repo.sh("git rev-parse --verify --quiet refs/heads/cleanup/2026-10-29").stdout, "")
 
 
 if __name__ == "__main__":

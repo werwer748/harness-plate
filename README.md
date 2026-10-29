@@ -13,7 +13,7 @@
 | `retro` | phase가 모두 통과한 task 하나를 회고해 task 폴더의 `retro.md`와 `docs/tasks/FRICTION.md`에 적는다. `run`이 띄운 에이전트가 부른다 |
 | `review` | 모든 task가 끝난 tasks에서 바뀐 코드를 다섯 범주로 A~E로 평가해 `docs/tasks/review.md`에 적는다. `run`이 띄운 에이전트가 부르고, CI 워크플로가 PR마다 PR 모드로 부른다 |
 | `eval` | 모든 task가 끝난 tasks에서 하네스가 어떻게 돌았는지 여섯 기준으로 A~E로 평가해 `docs/tasks/eval.md`에 적는다. `run`이 띄운 에이전트가 부른다 |
-| `cleanup` | 저장소를 여섯 기준(보안, 성능, 신뢰성, 유지보수성, 기능 적합성, 기존 작업 정합성)마다 새 에이전트가 따로 살피고 서로의 발견을 교차 검토해 `docs/cleanup/YYYY-MM-DD.md`에 보고서를 쓰고, 발견을 tasks로 만들지 묻는다. 동의하면 고른 발견을 `plan`에 넘긴다. 코드를 고치지 않는다. 사용자가 부른다 |
+| `cleanup` | 저장소를 여섯 기준(보안, 성능, 신뢰성, 유지보수성, 기능 적합성, 기존 작업 정합성)마다 새 에이전트가 따로 살피고 서로의 발견을 교차 검토해 `docs/cleanup/YYYY-MM-DD.md`(같은 날의 보고서가 작업 트리나 아직 합쳐지지 않은 로컬 cleanup 브랜치에 있으면 번호를 붙인다)에 보고서를 쓰고, 발견을 tasks로 만들지 묻는다. 동의하면 고른 발견을 `plan`에 넘긴다. 코드를 고치지 않는다. 사용자가 부른다 |
 
 ## tasks 끝의 PR
 
