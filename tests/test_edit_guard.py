@@ -455,6 +455,65 @@ class CurrentPhaseTest(GuardTestCase):
         self.assertBlocked(p.edit("src/app.py"), TEST_FIRST, "phase-2.md")
 
 
+RECORD = "\n## 한 일\n- 없음\n"
+CHECK = "\n## 확인 1\n- 판정: 실패\n- 실패: 글을 고친다\n"
+
+
+class RerunTest(GuardTestCase):
+    """고칠 문제를 받은 다시 수행(phase 파일에 `## 확인 N` 절이 있다)."""
+
+    def rerun_project(self, committed, check=CHECK):
+        """앞 수행이 committed의 파일을 바꿔 `001-a: phase 1`로 커밋한 프로젝트."""
+        p = self.project()
+        p.add_task("001-a", {1: "예"})
+        for rel, text in committed.items():
+            p.write(rel, text)
+        p.write("docs/tasks/001-a/phase-1.md", phase_text(1, "예") + RECORD)
+        p.commit("001-a: phase 1")
+        p.write("docs/tasks/001-a/phase-1.md", phase_text(1, "예") + RECORD + check)
+        p.commit("001-a: phase 1 확인")
+        return p
+
+    def test_phase_commit_with_test_change_passes(self):
+        p = self.rerun_project({
+            "tests/test_app.py": "import unittest\n# 바뀜\n",
+            "src/app.py": "print('바뀜')\n",
+        })
+        self.assertPassed(p.edit("src/app.py"))
+
+    def test_phase_commit_without_test_change_blocks(self):
+        p = self.rerun_project({"src/app.py": "print('바뀜')\n"})
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def test_phase_commit_with_only_bytecode_or_md_blocks(self):
+        p = self.rerun_project({
+            "tests/__pycache__/test_app.cpython-313.pyc": "bytecode",
+            "tests/README.md": "# 시험\n",
+        })
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def test_other_phase_commit_does_not_count(self):
+        # 다른 phase나 다른 task의 커밋이 테스트를 바꾼 것은 세지 않는다
+        p = self.project()
+        p.add_task("001-a", {1: "예"})
+        p.write("tests/test_app.py", "import unittest\n# 바뀜\n")
+        p.commit("001-a: phase 10")
+        p.write("tests/test_app.py", "import unittest\n# 또 바뀜\n")
+        p.commit("002-b: phase 1")
+        p.write("docs/tasks/001-a/phase-1.md", phase_text(1, "예") + RECORD + CHECK)
+        p.commit("001-a: phase 1 확인")
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def test_first_run_without_check_section_blocks(self):
+        p = self.rerun_project({"tests/test_app.py": "import unittest\n# 바뀜\n"}, check="")
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def test_check_section_inside_code_block_is_first_run(self):
+        fenced = "\n```markdown\n## 확인 1\n- 판정: 실패\n```\n"
+        p = self.rerun_project({"tests/test_app.py": "import unittest\n# 바뀜\n"}, check=fenced)
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+
 class ThirdBlockTest(GuardTestCase):
     def setUp(self):
         super().setUp()

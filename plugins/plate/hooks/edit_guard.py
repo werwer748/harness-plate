@@ -20,6 +20,8 @@ TEST_DIRS = {"tests", "test", "__tests__"}
 TEST_NAMES = ("test_*", "*_test.*", "*.test.*", "*.spec.*")
 MARKER = re.compile(r"^\*\*테스트 먼저\*\*:\s*(.*)$")
 PHASE_FILE = re.compile(r"^phase-(\d+)\.md$")
+CHECK_SECTION = re.compile(r"^## 확인 \d+\s*$")  # 확인하는 쪽이 phase 파일 끝에 더하는 절
+FENCE = re.compile(r"^\s*(```|~~~)")
 CI_WORKFLOW = ".github/workflows/plate-review.yml"  # setup이 쓰는 CI 워크플로
 CODEOWNERS = ".github/CODEOWNERS"  # setup이 쓰는 코드 소유자 파일
 SETUP_FILES = (CI_WORKFLOW, CODEOWNERS)  # setup이 처음 쓸 때 막지 않는 파일
@@ -127,6 +129,33 @@ def is_test_first(lines):
     return False
 
 
+def has_check_section(text):
+    """phase 파일에 코드 블록 밖의 확인 절(`## 확인 N`)이 있으면 고칠 문제를 받은 다시 수행이다."""
+    fenced = False
+    for line in text.splitlines():
+        if FENCE.match(line):
+            fenced = not fenced
+        elif not fenced and CHECK_SECTION.match(line):
+            return True
+    return False
+
+
+def phase_commit_has_test_change(root, task, number):
+    """제목이 `NNN-slug: phase N`인 커밋이 테스트 파일을 더하거나 바꿨는가. 지우기만 한 것은 세지 않는다."""
+    subject = "%s: phase %d" % (task, number)
+    log = git(root, "log", "--format=%H %s") or ""
+    for line in log.splitlines():
+        sha, _, title = line.partition(" ")
+        if title != subject:
+            continue
+        files = git(root, "diff-tree", "--root", "--no-commit-id", "-r", "-z", "--name-only",
+                    "--diff-filter=d", sha) or ""
+        if any(is_code_file(f) and is_test_file(f) and not is_bytecode(f)
+               for f in files.split("\0") if f):
+            return True
+    return False
+
+
 def has_tests(root):
     files = git(root, "ls-files", "-z", "--cached", "--others", "--exclude-standard") or ""
     if any(is_code_file(f) and is_test_file(f) for f in files.split("\0") if f):
@@ -227,13 +256,18 @@ def check(data):
     if not top or is_test_file(rel):
         return None
     name = current_task(tasks)
-    phase = "/".join(["docs", "tasks", name, "phase-%d.md" % tasks[name][0]])
+    number = tasks[name][0]
+    phase = "/".join(["docs", "tasks", name, "phase-%d.md" % number])
     with open(os.path.join(root, phase), encoding="utf-8") as f:
-        lines = plan_lines(f.read())
+        text = f.read()
+    lines = plan_lines(text)
     if not is_test_first(lines):
         return None
     # 싼 `git status`를 먼저 보고, 저장소 전체를 훑는 `git ls-files`는 그 뒤에 본다
     if has_uncommitted_test_change(root):
+        return None
+    # 다시 수행에서는 첫 수행이 그 phase 커밋에 남긴 테스트 변경도 센다
+    if has_check_section(text) and phase_commit_has_test_change(root, name, number):
         return None
     if not has_tests(root):
         return None
