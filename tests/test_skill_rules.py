@@ -574,11 +574,13 @@ class RunRulesTest(unittest.TestCase):
         self.assertIn(only, body)
         self.assertIn("기준이 감수와 문턱보다 먼저다", body)
         self.assertLess(body.index(only), body.index("처리가 감수인 하네스 고칠 거리는 갈래와 상관없이 감수할 것에 둔다"))
-        self.assertIn("eval에만에 둔 것은 그대로 eval에만에 둔다", body)
+        self.assertIn("eval에만에 둔 것은 그대로 eval에만에 두고, eval에만에서 고침 task나 이슈로 올릴 것으로 옮긴 것은 eval에만으로 돌린다", body)
         # 고칠 안이 모두 비면 묻지 않고, 사용자가 eval에만인 것을 옮기자고 하면 갈래대로 옮긴다(003-fixes).
         self.assertIn("사용자가 그것을 고치거나 올리자고 할 때만 아래 \"고칠 곳을 말하면\"대로 옮긴다", body)
         self.assertIn("사용자가 eval에만에 둔 하네스 고칠 거리를 고치거나 올리자고 하면, 이 프로젝트만의 것은 고침 task로, plate 자체의 것은 이슈로 올릴 것으로 옮긴다", body)
         self.assertIn("옮긴 것의 그것들은 eval 절의 그 고칠 거리의 글과 근거로 써서 다시 보인다", body)
+        # 옮긴 eval에만인 것을 다시 빼면 BACKLOG가 아니라 eval에만으로 돌린다(003-fixes 회고 1).
+        self.assertIn("그렇게 옮긴 것을 고침 task나 이슈로 올릴 것에서 다시 빼면 BACKLOG로 미룰 것이 아니라 eval에만으로 돌린다", body)
         self.assertIn("소스 문제가 없고 하네스 고칠 거리가 없거나 모두 기준이 eval에만이거나 처리가 감수이면, 고침 task, 이슈로 올릴 것, BACKLOG로 미룰 것이 모두 비므로 고칠 안 대신 고칠 것이 없다고 적고 묻지 않는다", body)
         self.assertNotIn("소스 문제도 하네스 고칠 거리도 없으면", body)
         shape = part(subsection(self.text, "고침 task를 더한다"), "고침 task의 꼴")
@@ -588,8 +590,9 @@ class RunRulesTest(unittest.TestCase):
     def test_project_only_fixes_deferred_to_backlog(self):
         # 고침 task에서 뺀 이 프로젝트만의 하네스 고칠 거리는 BACKLOG로 미룰 것으로 간다(002-fixes).
         body = subsection(self.text, "보고하고 묻는다")
-        self.assertIn("고침 task에서 뺀 소스 문제와 이 프로젝트만의 하네스 고칠 거리는 BACKLOG로 미룰 것으로 옮긴다", body)
-        self.assertIn("고침 task에 두었던 이 프로젝트만의 하네스 고칠 거리도 BACKLOG로 미룰 것에 둔다", body)
+        self.assertIn("고침 task에서 뺀 소스 문제와 기준을 넘은 이 프로젝트만의 하네스 고칠 거리는 BACKLOG로 미룰 것으로 옮긴다", body)
+        self.assertIn("이슈로 올릴 것에서 뺀 기준을 넘은 하네스 고칠 거리는 BACKLOG로 미룰 것으로 옮긴다", body)
+        self.assertIn("고침 task에 두었던 기준을 넘은 이 프로젝트만의 하네스 고칠 거리도 BACKLOG로 미룰 것에 둔다", body)
         backlog = subsection(self.text, "BACKLOG를 고친다")
         self.assertIn("미룰 하네스 고칠 거리마다(갈래와 상관없이, 항목의 갈래 칸에 그 갈래를 적는다)", backlog)
         self.assertIn("갈래: {plate 자체 | 이 프로젝트만}. 처리: {규칙을 더하거나 고친다 | 규칙을 지운다}", backlog)
