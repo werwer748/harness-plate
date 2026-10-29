@@ -48,3 +48,33 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 지금 세 곳이 같아 테스트가 통과한다(완료 조건 2).
+  - `python3 -m unittest tests.test_verdict.BundleShapeTest -v` → 테스트 셋 모두 `ok`, `Ran 3 tests`, `OK`. 통과
+- 한 곳이 어긋나면 실패한다(완료 조건 2).
+  - `T=$(mktemp -d); cp -R . "$T"/`, 사본의 `plugins/plate/skills/setup/SKILL.md`에서 그 글(1번 나옴)을 `"maintainability":{"type":"string","enum":["A","B","C","D","E"]}`로 python으로 바꾸고 `(cd "$T" && python3 -m unittest tests.test_verdict.BundleShapeTest)` → `FAILED (failures=2)`. 통과
+- 앞 phase의 동작이 그대로다(완료 조건 1).
+  - `printf 'not json' | python3 plugins/plate/ci/verdict.py; echo "exit=$?"` → `request`, `exit=0`. 통과
+- 테스트 묶음이 통과한다.
+  - `python3 -m unittest discover -s tests` → `Ran 229 tests`, 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 229 tests`, `OK`. 통과
+
+**남은 것**
+- `verdict.py`의 docstring의 값과 `verdict()` 안의 비교 글자는 견주지 않는다 → 통과 조건(완료 조건 2)이 보는 것은 setup 양식, review 표, `COMMANDS`·`GRADES`(키만 담은 튜플)의 꼴이고, 셋은 견준다. docstring과 비교 글자는 통과 조건이 보는 동작에 걸리지 않는다. 하네스에서 걸린 것
+- review 표의 적는 꼴이 바뀌면 꼴이 같아도 테스트가 실패할 수 있다 → 지금 꼴에서의 통과와 어긋남에서의 실패라는 통과 조건의 동작에 걸리지 않는다(틀린 통과가 아니라 지나친 실패의 위험). 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 값의 열거는 `verdict.py`에 상수로 없어 테스트 안의 상수와 견주고, `verdict.py`의 docstring의 값과 `verdict()` 안의 비교 글자는 견주지 않는다.
+- 남은 것: `review_shape`는 표의 값 칸을 백틱 속 큰따옴표 글자와 `"A"`~`"E"`, "0~100의 수"라는 글로 읽어, 표의 적는 꼴이 바뀌면 꼴이 같아도 테스트가 실패할 수 있다.
+
+**판정**: 통과
