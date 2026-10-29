@@ -447,6 +447,14 @@ class RunRulesTest(unittest.TestCase):
         self.assertIn("거절하면 실행하지 않고 그 줄만 더하고 끝난다", body)
         self.assertNotIn("기본 브랜치가 아니면 만들지 않고 지금 브랜치에서 실행한다", body)
 
+    def test_ahead_commits_reason(self):
+        # plan이 tasks 브랜치에 커밋하게 되어, 1번의 앞선 커밋 까닭 글은 옛 plan의 계획이나 손으로 넣은 커밋을 든다(002-plan-branch).
+        body = section(self.text, "1. 시작 조건을 본다")
+        self.assertIn("그렇게 고치기 전의 plan으로 세운 계획이나 사람이 기본 브랜치에 넣은 커밋이 있으면 로컬 기본 브랜치가 원격보다 앞설 수 있다", body)
+        self.assertNotIn("plan은 브랜치를 바꾸지 않아서", self.text)
+        self.assertNotIn("계획의 커밋이 로컬 기본 브랜치에만", self.text)
+        self.assertIn("`git branch -f {기본 브랜치} refs/remotes/origin/{기본 브랜치}`로 되돌린다", body)
+
     def test_resume_after_clearing_goes_to_pr_or_merge(self):
         # tasks 머리가 없어도 tasks/<이름>에서 마지막 커밋이 `<이름>: 비움`이면 PR·합침으로 간다(신뢰성-3).
         body = section(self.text, "0. tasks를 본다")
@@ -609,6 +617,31 @@ class PlanRulesTest(unittest.TestCase):
         self.assertIn("그 줄이 담아야 할 갈래", body)
         self.assertIn("`git clone --bare`로 만든 저장소로 채우고", body)
         self.assertIn("푸시로 채우지 않는다", body)
+
+    def test_commits_on_tasks_branch(self):
+        # plan이 계획을 tasks/<이름> 브랜치에 커밋한다: 기본 브랜치면 만들거나 바꾸고, 그 밖이면 1번에서 묻는다(002-plan-branch).
+        rules = section(self.text, "절대 규칙")
+        self.assertIn("4. **계획 파일만 `tasks/<이름>` 브랜치에 커밋한다.**", rules)
+        self.assertIn("지금 브랜치가 기본 브랜치일 때는 묻지 않고 쓰기 전에 `tasks/<이름>`을 만들거나 바꾸고, `tasks/<이름>`일 때는 그대로 두고, 그 밖의 브랜치일 때는 1번에서 물어 승인받은 때만 바꾼다. 푸시하지 않는다", rules)
+        first = section(self.text, "1. 진행 중인 tasks가 있는지 본다")
+        self.assertIn("기본 브랜치도 `tasks/<이름>`도 아니면 지금 브랜치를 보여 주고, 계획을 `tasks/<이름>` 브랜치에 커밋할지 묻고, 거기서 멈춰 답을 기다린다", first)
+        self.assertIn("`<이름>`은 6번의 초안에서 정한다", first)
+        self.assertIn("- 거절하면 아무것도 쓰지 않고 끝난다.", first.split("커밋할지 묻고")[1])
+        write = section(self.text, "7. 쓰고 커밋한다")
+        self.assertIn("`git switch -c tasks/<이름>`으로 지금 HEAD에서 만들어 바꾸고", write)
+        self.assertIn("`git switch tasks/<이름>`으로 바꾼다", write)
+        self.assertIn("만들거나 바꾸지 못하면 아무것도 쓰지 않고, 실패한 명령과 오류를 보고하고 끝난다", write)
+        self.assertLess(write.index("git switch -c"), write.index("6번에서 보여 주고 승인받은 초안을 그대로 파일마다 쓴다"))
+        self.assertNotIn("$(", write)
+        names = part(section(self.text, "적는 규칙"), "이름과 번호")
+        self.assertIn("새 tasks의 이름은 로컬에 같은 이름의 `tasks/<이름>` 브랜치가 없는 것으로 고른다", names)
+        self.assertIn("더하는 경우는 그 tasks의 이름이고, 그 브랜치가 있으면 7번에서 바꾼다", names)
+        self.assertIn("커밋과 그 커밋이 들어간 브랜치", section(self.text, "8. 보고한다"))
+        self.assertNotIn("브랜치를 만들거나 바꾸지 않는다", self.text)
+        # 기본 브랜치의 정의가 run의 것과 같다.
+        defs = [[l for l in section(t, "낱말").split("\n") if l.startswith("- **기본 브랜치**:")] for t in (self.text, read("run"))]
+        self.assertEqual(len(defs[0]), 1)
+        self.assertEqual(defs[0], defs[1])
 
     def test_37_draft_check(self):
         body = section(self.text, "6. 초안을 보여 주고 승인받는다")
