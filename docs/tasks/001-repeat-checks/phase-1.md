@@ -49,3 +49,31 @@
 
 ## 하네스에서 걸린 것
 없음
+
+## 확인 1
+
+**통과 조건**
+- task 머리의 완료 조건 1~5가 참이다.
+  - `grep -n '지난 tasks의 같은 이름' plugins/plate/skills/plan/SKILL.md plugins/plate/skills/retro/SKILL.md` → plan 114행("6. 초안을 보여 주고 승인받는다", 101~135행 안), plan 263행("적는 규칙"의 **조건**, 257~283행 안), retro 79행("4. task의 변경을 점검한다", 64~84행 안). plan의 두 줄에 "둘 이상"이 있고, retro 줄에 `경계 밖`과 "둘 이상"이 있다. 통과
+  - `python3 -m unittest tests.test_skill_rules.PlanRulesTest tests.test_skill_rules.RetroRulesTest -v` → `test_80_repeated_names_and_multiple_inputs_covered ... ok`, `test_80_decided_behavior_with_repeated_names_goes_out_of_bounds ... ok`, `Ran 27 tests`, `OK`. 통과
+  - `tmp=$(mktemp -d); cp -R . "$tmp/repo"` 뒤 사본의 plan·retro 본문에서 `grep -v '지난 tasks의 같은 이름'`으로 그 줄을 지우고(남은 수 0) 같은 명령 → 새 시험 둘이 `FAIL`, `FAILED (failures=4)`. 사본은 지움. 통과
+  - `grep -n 'test_skill_rules.py' docs/ARCHITECTURE.md` → 그 줄에 "지난 tasks의 같은 이름"이 있다(`grep -c` 1). 통과
+  - `python3 -m unittest discover -s tests` → `Ran 252 tests`, 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 252 tests`, `OK`. 통과
+
+**남은 것**
+- retro의 회고 절 양식이 "남은 것" 판정 값을 `문제 | 문제 아님` 둘로 두어, 판정 칸에 무엇을 적을지가 까닭의 글로만 갈린다 → 통과 조건(완료 조건 2)이 보는 것은 4번이 "문제 아님"으로 닫지 않고 5번에서 `경계 밖`으로 모으라고 하는지이고, 그 글은 있다. 양식의 판정 값은 TODO 밖이라 걸리지 않는다. 하네스에서 걸린 것
+- 고친 본문대로 plan이 계획하고 retro가 회고하는지 헤드리스로 돌리지 않았다 → task 머리 완료 조건 3의 `- 돌리지 않음: plan은 사용자에게 묻고 retro는 task 전체를 읽는 스킬이라, 고친 규칙대로 계획하고 회고하는지는 헤드리스로 끝까지 돌리지 않는다` 줄이 돌리지 않기로 정한 동작이다. 하네스에서 걸린 것
+
+**실패**
+없음
+
+**하네스에서 걸린 것**
+- 남은 것: retro의 회고 절 양식의 "남은 것" 판정 값이 `문제 | 문제 아님` 둘뿐이라, 새 규칙의 `경계 밖`을 판정 칸에 어떻게 적을지가 까닭의 글로만 갈린다(`plugins/plate/skills/retro/SKILL.md`)
+- 남은 것: 고친 plan·retro 본문의 동작은 헤드리스로 돌려 보지 않았다(task 머리 완료 조건 3의 `돌리지 않음` 줄)
+
+**판정**: 통과
