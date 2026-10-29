@@ -12,10 +12,10 @@
 - `docs/PRD.md`, `docs/ADR.md`, `docs/TOOLS.md`, `docs/BACKLOG.md`
 
 **TODO**
-- [ ] plan 6번의 초안 전 점검과 "적는 규칙"의 **조건**에서 `지난 tasks의 같은 이름`이 든 줄이 바뀐다. 이름이나 번호로 고르거나 찾는 동작마다 세 경우(지난 tasks의 같은 이름, 합쳐지지 않은 다른 브랜치(로컬과 origin)의 같은 이름, 한 동작이 만드는 이름마다)를 확인 하나씩으로 덮게 한다. 입력이 둘 이상인 경우의 글은 그대로 둔다 (`plugins/plate/skills/plan/SKILL.md`)
-- [ ] retro 4번에서 `지난 tasks의 같은 이름`이 든 줄이 같은 세 경우를 들게 바뀐다 (`plugins/plate/skills/retro/SKILL.md`)
-- [ ] 두 옛 시험이 새 글을 지키게 바뀌고, 시험 `PlanRulesTest.test_80_names_left_anywhere_covered`와 `RetroRulesTest.test_80_retro_names_left_anywhere`가 더해진다. 두 시험은 그 줄에 `지난 tasks의 같은 이름`, `합쳐지지 않은 다른 브랜치`, `이름마다`가 있는지 본다 (`tests/test_skill_rules.py`)
-- [ ] 디렉터리 구조의 `test_skill_rules.py` 줄에서 #80 규칙을 적은 대목이 세 경우를 든다 (`docs/ARCHITECTURE.md`)
+- [x] plan 6번의 초안 전 점검과 "적는 규칙"의 **조건**에서 `지난 tasks의 같은 이름`이 든 줄이 바뀐다. 이름이나 번호로 고르거나 찾는 동작마다 세 경우(지난 tasks의 같은 이름, 합쳐지지 않은 다른 브랜치(로컬과 origin)의 같은 이름, 한 동작이 만드는 이름마다)를 확인 하나씩으로 덮게 한다. 입력이 둘 이상인 경우의 글은 그대로 둔다 (`plugins/plate/skills/plan/SKILL.md`)
+- [x] retro 4번에서 `지난 tasks의 같은 이름`이 든 줄이 같은 세 경우를 들게 바뀐다 (`plugins/plate/skills/retro/SKILL.md`)
+- [x] 두 옛 시험이 새 글을 지키게 바뀌고, 시험 `PlanRulesTest.test_80_names_left_anywhere_covered`와 `RetroRulesTest.test_80_retro_names_left_anywhere`가 더해진다. 두 시험은 그 줄에 `지난 tasks의 같은 이름`, `합쳐지지 않은 다른 브랜치`, `이름마다`가 있는지 본다 (`tests/test_skill_rules.py`)
+- [x] 디렉터리 구조의 `test_skill_rules.py` 줄에서 #80 규칙을 적은 대목이 세 경우를 든다 (`docs/ARCHITECTURE.md`)
 
 **통과 조건**
 - 완료 조건 1이 참이다.
@@ -25,3 +25,27 @@
   - 확인: `grep -n -F 'test_skill_rules.py' docs/ARCHITECTURE.md` → 그 줄에 `합쳐지지 않은 다른 브랜치`가 있다
 - 테스트 묶음이 모두 통과한다.
   - 확인: `python3 -m unittest discover -s tests` → 마지막 줄이 `OK`
+
+## 한 일
+- plan 6번의 초안 전 점검과 "적는 규칙"의 **조건**에서 `지난 tasks의 같은 이름`이 든 줄: "찾으면"을 "고르거나 찾으면"으로 넓히고, 세 경우(지난 tasks의 같은 이름이 남은 경우, 합쳐지지 않은 다른 브랜치(로컬과 origin)에 같은 이름이 있는 경우, 한 동작이 이름을 둘 이상 만들면 그 이름마다)를 확인 하나씩으로 덮게 바꿨다. 입력이 둘 이상인 경우의 글은 그대로 두고, **조건** 줄의 까닭에 다른 브랜치와 이름마다의 까닭을 더했다 (`plugins/plate/skills/plan/SKILL.md`)
+- retro 4번의 그 줄: 이름이나 번호로 고르거나 찾는 동작이 같은 세 경우 가운데 하나에서, 또는 입력이 둘 이상인 경우에 목표를 해치면으로 바꿨다. `경계 밖`으로 모으는 뒷부분은 그대로 뒀다 (`plugins/plate/skills/retro/SKILL.md`)
+- 두 옛 시험(`PlanRulesTest.test_80_repeated_names_and_multiple_inputs_covered`, `RetroRulesTest.test_80_decided_behavior_with_repeated_names_goes_out_of_bounds`)의 키를 새 글("고르거나 찾으면", "고르거나 찾는 동작이")에 맞추고, `PlanRulesTest.test_80_names_left_anywhere_covered`와 `RetroRulesTest.test_80_retro_names_left_anywhere`를 더했다 (`tests/test_skill_rules.py`)
+- 디렉터리 구조의 `test_skill_rules.py` 줄의 #80 대목이 세 경우를 들고 retro는 "그 세 경우나 입력이 둘 이상인 경우"로 바뀌었다 (`docs/ARCHITECTURE.md`)
+
+## 확인 결과
+- 완료 조건 1이 참이다.
+  - `grep -n '합쳐지지 않은 다른 브랜치' plugins/plate/skills/plan/SKILL.md plugins/plate/skills/retro/SKILL.md` → plan 115(6번의 초안 전 점검), plan 266(**조건**), retro 79(4번) 세 줄이고, 줄마다 `지난 tasks의 같은 이름`과 `이름마다`가 저마다 1번 든다. 통과
+  - `cp -R`로 `mktemp -d` 아래 사본을 만들고 `sed -i '' '/합쳐지지 않은 다른 브랜치/d' plugins/plate/skills/plan/SKILL.md plugins/plate/skills/retro/SKILL.md` 뒤 `python3 -m unittest tests.test_skill_rules.PlanRulesTest.test_80_names_left_anywhere_covered tests.test_skill_rules.RetroRulesTest.test_80_retro_names_left_anywhere` → `Ran 2 tests` / `FAILED (failures=3)`. 통과
+- 디렉터리 구조의 `test_skill_rules.py` 줄이 세 경우를 든다.
+  - `grep -n -F 'test_skill_rules.py' docs/ARCHITECTURE.md | grep -c '합쳐지지 않은 다른 브랜치'` → `1`. 통과
+- 테스트 묶음이 모두 통과한다.
+  - `python3 -m unittest discover -s tests` → `Ran 273 tests in 23.049s` / `OK`. 통과
+
+## 계획과 달라진 점
+없음
+
+## 남은 것
+- retro 4번의 그 줄은 아직 `경계 밖`으로 모은다. 문제(기준: 계획, 고칠 쪽: 계획)로 판정하는 것은 이 phase의 TODO가 아니라 남겨 뒀다
+
+## 하네스에서 걸린 것
+없음

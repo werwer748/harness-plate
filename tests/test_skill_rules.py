@@ -1064,10 +1064,21 @@ class PlanRulesTest(unittest.TestCase):
                 lines = [l for l in body.split("\n") if "지난 tasks의 같은 이름" in l]
                 self.assertTrue(lines)
                 line = lines[0]
-                for key in ("이름이나 번호", "커밋, 파일, 브랜치를 찾으면", "지난 tasks의 같은 이름이 남은 경우를",
+                for key in ("이름이나 번호", "커밋, 파일, 브랜치를 고르거나 찾으면", "지난 tasks의 같은 이름이 남은 경우",
                             "입력(파일, 줄, 항목)을 받으면 둘 이상인 경우를", "확인 하나로"):
                     self.assertIn(key, line)
         self.assertIn("동작 일반으로 넓힌 것이다", rules)
+
+    def test_80_names_left_anywhere_covered(self):
+        # 이름·번호로 고르거나 찾는 동작은 지난 tasks, 합쳐지지 않은 다른 브랜치, 한 동작이 만드는 이름마다를 덮는다(#80).
+        draft = section(self.text, "6. 초안을 보여 주고 승인받는다").split("초안을 보여 준 뒤에는")[0]
+        rules = part(section(self.text, "적는 규칙"), "조건")
+        for name, body in (("6", draft), ("조건", rules)):
+            with self.subTest(part=name):
+                lines = [l for l in body.split("\n") if "지난 tasks의 같은 이름" in l]
+                self.assertTrue(lines)
+                for key in ("지난 tasks의 같은 이름", "합쳐지지 않은 다른 브랜치(로컬과 origin)", "이름마다"):
+                    self.assertIn(key, lines[0])
 
     def test_shared_definitions_match(self):
         # run과 plan에 복사된 같은 정의 셋이 어긋나지 않는다(cleanup 2026-10-28 유지보수성-6).
@@ -1147,10 +1158,19 @@ class RetroRulesTest(unittest.TestCase):
         lines = [l for l in body.split("\n") if "지난 tasks의 같은 이름" in l]
         self.assertTrue(lines)
         line = lines[0]
-        for key in ("결정이나 완료 조건이 정한 동작이라도", "지난 tasks의 같은 이름이 남은 경우", "둘 이상인 경우에 목표를 해치면",
+        for key in ("결정이나 완료 조건이 정한 동작이라도", "고르거나 찾는 동작이", "지난 tasks의 같은 이름이 남은 경우", "둘 이상인 경우에 목표를 해치면",
                     '"문제 아님"으로 닫지 않고 5번에서 `경계 밖`으로 모은다', '기록의 "남은 것"에 그 꼴이 적힌 줄도 그렇다'):
             with self.subTest(key=key):
                 self.assertIn(key, line)
+
+    def test_80_retro_names_left_anywhere(self):
+        # retro 4번도 같은 세 경우(지난 tasks, 합쳐지지 않은 다른 브랜치, 이름마다)를 든다(#80).
+        body = section(read("retro"), "4. task의 변경을 점검한다")
+        lines = [l for l in body.split("\n") if "지난 tasks의 같은 이름" in l]
+        self.assertTrue(lines)
+        for key in ("지난 tasks의 같은 이름", "합쳐지지 않은 다른 브랜치(로컬과 origin)", "이름마다"):
+            with self.subTest(key=key):
+                self.assertIn(key, lines[0])
 
     def test_69_run_check_as_written(self):
         body = section(read("retro"), "2. 완료 조건의 확인을 모두 돌린다")
