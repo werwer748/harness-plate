@@ -50,3 +50,29 @@
 
 ## 하네스에서 걸린 것
 없음
+
+## 확인 1
+
+**통과 조건**
+- eval 본문이 완료 조건 1을 이룬다.
+  - `grep -n -e 'eval에만' plugins/plate/skills/eval/SKILL.md` → 3(description), 179·183(5절), 256·262(기록의 양식), 280(적는 규칙). 넷 모두 나온다. 통과
+  - `grep -n -e '- 기준:' plugins/plate/skills/eval/SKILL.md` → 256(양식의 plate 자체 갈래 항목), 262(양식의 이 프로젝트만 갈래 항목) 한 줄씩. 통과
+  - `(cd tests && python3 -m unittest test_skill_rules.EvalRulesTest.test_eval_only_criteria)` → `Ran 1 test` `OK`. 통과
+- 테스트가 모두 통과한다.
+  - `python3 -m unittest discover -s tests` → `Ran 204 tests` `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 204 tests` `OK`. 통과
+
+**남은 것**
+- 8절의 돌려주는 줄 "고칠 거리: plate 자체 N개, 이 프로젝트만 M개"는 "eval에만"인 항목을 세는지 빼는지 정하지 않았다 → 통과 조건(완료 조건 1)이 보는 곳은 description, 5절, 양식, 적는 규칙이고 8절의 돌려주는 줄은 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+없음
+
+**하네스에서 걸린 것**
+- 남은 것: 8절의 돌려주는 줄 "고칠 거리: plate 자체 N개, 이 프로젝트만 M개"가 "eval에만"인 항목을 세는지 빼는지 정하지 않았다 (`plugins/plate/skills/eval/SKILL.md`). 계획의 TODO와 통과 조건이 8절을 다루지 않는다
+
+**판정**: 통과
