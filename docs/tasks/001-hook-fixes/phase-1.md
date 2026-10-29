@@ -63,3 +63,39 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- `.md` 편집은 git 없이 통과한다(성능-5).
+  - scratchpad에 `mktemp -d`로 만든 셋업된 git 레포(`AGENTS.md`에 `<!-- plate:docs-map:start -->`, 커밋된 `tests/test_x.py`·`tests/test_y.py`·`src.py`, 테스트 먼저 "예"인 `docs/tasks/001-a/phase-1.md`)에 `printf '{"tool_input": {"file_path": "README.md"}, "cwd": "<레포>"}' | env PATH=/nonexistent $(command -v python3) plugins/plate/hooks/edit_guard.py` → 종료 0. 통과
+- 커밋하지 않은 테스트 변경을 먼저 본다(성능-6).
+  - `grep -n -e 'has_uncommitted_test_change(root)' -e 'has_tests(root)' plugins/plate/hooks/edit_guard.py` → `130:def has_tests(root):`, `155:def has_uncommitted_test_change(root):`, `236:    if has_uncommitted_test_change(root):`, `238:    if not has_tests(root):`. `check`는 201행에서 시작하고, 그 안에서 236행이 238행보다 앞선다. 통과
+- 테스트 파일 삭제만으로는 통과하지 않는다(신뢰성-10).
+  - 같은 레포에서 `git rm -q tests/test_x.py`(`git status --short` → `D  tests/test_x.py`) 뒤 `src.py` 편집 JSON을 `python3 plugins/plate/hooks/edit_guard.py`에 넣음 → stderr에 테스트 먼저로 막는 `plate:` 글, 종료 2. 통과
+- 막는 글이 상수에서 만들어진다(유지보수성-5).
+  - `grep -c -F '`test_*`, `*_test.*`' plugins/plate/hooks/edit_guard.py` → `0`. 통과
+  - `python3 -c "import sys; sys.path.insert(0, 'plugins/plate/hooks'); import edit_guard as g; print(all(n in g.TEST_FIRST for n in g.TEST_NAMES) and all(d in g.TEST_FIRST for d in g.TEST_DIRS))"` → `True`. 통과
+- 테스트 묶음이 통과한다.
+  - `python3 -m unittest discover -s tests` → `Ran 210 tests in 17.252s`, 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 210 tests`, `OK`. 통과
+
+**테스트 먼저 기록**
+- 기록 "한 일"의 "테스트 먼저" 줄 → 실패 출력(`FAILED (failures=3)`, 더한 세 시험의 `FAIL`)이 먼저, 통과 출력(`Ran 47 tests`, `OK`)이 그 뒤에 있다. 통과
+
+**남은 것**
+- `.md` 이름의 심볼릭 링크가 코드 파일을 가리키면 이제 통과한다 → 통과 조건이 보는 동작(`.md` 편집이 git 없이 통과)과 어긋나지 않고, 링크의 경우는 어느 통과 조건도 보지 않는다. 하네스에서 걸린 것
+- `AD`, `MD` 상태의 테스트 파일은 지금처럼 테스트 변경으로 센다 → 통과 조건(신뢰성-10)이 보는 것은 `git rm`만 한 `D ` 상태이고, 그 동작은 위에서 막힘을 확인했다. 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: `.md` 갈래는 경로 글의 끝만 보아, `.md` 이름의 심볼릭 링크가 코드 파일을 가리키면 통과한다.
+- 남은 것: 삭제를 세지 않는 것은 `D `, ` D` 상태뿐이고 `AD`, `MD`는 테스트 변경으로 센다.
+
+**판정**: 통과
