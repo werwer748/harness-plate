@@ -67,3 +67,36 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- task 머리의 완료 조건 1이 참이다.
+  - `grep -n -F 'cleanup/<' plugins/plate/skills/cleanup/SKILL.md` → 17·18행(절대 규칙), 115·127행(5. 보고서를 쓰고 커밋한다), 149·153·154·155·161·163·165행(고른 발견이 없을 때), 그 밖에 10·52행. 세 자리에 저마다 한 줄 이상. 통과
+  - `grep -n -e '브랜치를 만들거나 바꾸지 않는다' -e '^3\. \*\*푸시하지 않는다' plugins/plate/skills/cleanup/SKILL.md` → 출력 없음(rc=1). 절대 규칙 절에서 아무것도 나오지 않음. 통과
+  - `mktemp -d` 시험 레포(기본 브랜치 `main`, 빈 커밋 하나)에서 본문 5번의 명령(`git rev-parse --verify --quiet refs/heads/cleanup/2026-10-29` → 없으면 그 이름, 있으면 `-2`, `-3`을 같은 명령으로 봄 → `git switch -c {고른 이름}`)을 한 명령씩 돌림 → `main`에서: rev-parse rc=1, `cleanup/2026-10-29`가 `main`의 HEAD(같은 해시)에서 생기고 `main` 해시 그대로. 새 레포의 `tasks/x`(커밋 하나 더)에서: rc=1, `cleanup/2026-10-29`가 `tasks/x`의 HEAD에서 생기고 `main` 그대로. 같은 이름이 있을 때: `cleanup/2026-10-29` rc=0(해시 냄), `-2` rc=1 → `cleanup/2026-10-29-2`가 생기고 옛 브랜치 해시와 `main` 그대로. 둘 다 있을 때도 `-3`이 생기고 옛 두 브랜치 해시 그대로. 통과
+- task 머리의 완료 조건 4 가운데 cleanup 쪽이 참이다.
+  - `grep -n -F 'cleanup/<' docs/PRD.md docs/ARCHITECTURE.md` → PRD 19행(핵심 기능 9), ARCHITECTURE 32행(디렉터리 구조의 `cleanup/SKILL.md` 줄), 94·97행(데이터 흐름의 정리 점검). 통과
+- 테스트가 통과한다.
+  - `python3 -m unittest tests.test_cleanup_skill -v` → `Ran 33 tests` `OK`. 새 시험 `test_commits_only_on_cleanup_branch`, `CleanupBranchTest`의 `test_branch_made_before_report_from_current_head`, `test_glossary_defines_branch_and_remote_terms`, `test_no_selection_asks_pr_or_merge`, `test_report_names_branch_and_pr`가 나옴. 통과
+  - `python3 -m unittest discover -s tests` → `Ran 257 tests in 24.788s`, 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 257 tests`, `OK`. 통과
+
+**남은 것**
+- `docs/ARCHITECTURE.md` 54행 훅 문단의 cleanup "푸시하지 않는다"가 맞지 않음 → 통과 조건이 보는 동작(cleanup 본문의 브랜치 동작, PRD·ARCHITECTURE의 디렉터리 구조와 데이터 흐름 자리, 테스트)에 걸리지 않음. 하네스에서 걸린 것
+- 갈래 시험은 본문 명령을 옮겨 돌린 것이고 cleanup을 헤드리스로 끝까지 돌리지 않음 → 완료 조건 1의 `- 돌리지 않음: cleanup은 에이전트 열두 개를 띄우고 묻는 스킬이고 PR은 GitHub이 있어야 해 헤드리스로 끝까지 돌리지 않는다`가 돌리지 않기로 정한 동작. 하네스에서 걸린 것
+- 합칠 때 커밋하지 않은 변경이 있으면 묻지 않고, `git switch`가 겹치는 변경으로 실패하면 합치지 않음 → 고른 발견이 없을 때의 합침 동작이며 통과 조건은 이를 보지 않음. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: `docs/ARCHITECTURE.md` 54행 패턴과 규칙의 훅 문단이 cleanup을 "푸시하지 않는다"에 넣고 있어 바뀐 절대 규칙 3과 맞지 않는다. 뒤 phase나 회고에서 맞출 거리
+- 남은 것: cleanup을 헤드리스로 끝까지 돌리지 않았다(완료 조건 1의 `돌리지 않음` 줄)
+- 남은 것: "고른 발견이 없을 때"의 합침은 커밋하지 않은 변경이 있을 때 run처럼 한 번 더 묻지 않는다
+
+**판정**: 통과
