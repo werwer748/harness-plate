@@ -1152,16 +1152,39 @@ class RetroRulesTest(unittest.TestCase):
         body = section(read("retro"), "5. tasks 끝에 볼 것을 모은다")
         self.assertIn("물은 자리가 `멈춤`이 아닌 줄(권한, 실행 방식,", body)
 
-    def test_80_decided_behavior_with_repeated_names_goes_out_of_bounds(self):
-        # 결정이 정한 동작이라도 되풀이된 이름이나 여러 입력에서 목표를 해치면 문제 아님으로 닫지 않는다(#80).
-        body = section(read("retro"), "4. task의 변경을 점검한다")
+    def test_80_task_commits_after_task_head(self):
+        # task의 커밋은 그 task 머리를 마지막으로 더한 커밋 뒤의 것만 센다(#80).
+        words = section(read("retro"), "낱말")
+        lines = [l for l in words.split("\n") if l.startswith("- **task의 커밋**")]
+        self.assertEqual(len(lines), 1)
+        for key in ("그 task 머리 `plan.md`를 마지막으로 더한 커밋 뒤의 커밋 가운데",
+                    "`git log -1 --diff-filter=A --format=%H -- <task 폴더>/plan.md`",
+                    "없으면(task 머리를 커밋하지 않았다) 역사 전체에서 센다"):
+            with self.subTest(key=key):
+                self.assertIn(key, lines[0])
+
+    def test_80_decided_gap_is_plan_problem(self):
+        # 결정이 정한 동작이 되풀이된 이름이나 여러 입력에서 목표를 해치면 경계 밖이 아니라 문제(기준: 계획, 고칠 쪽: 계획)다(#80).
+        text = read("retro")
+        body = section(text, "4. task의 변경을 점검한다")
         lines = [l for l in body.split("\n") if "지난 tasks의 같은 이름" in l]
         self.assertTrue(lines)
         line = lines[0]
         for key in ("결정이나 완료 조건이 정한 동작이라도", "고르거나 찾는 동작이", "지난 tasks의 같은 이름이 남은 경우", "둘 이상인 경우에 목표를 해치면",
-                    '"문제 아님"으로 닫지 않고 5번에서 `경계 밖`으로 모은다', '기록의 "남은 것"에 그 꼴이 적힌 줄도 그렇다'):
+                    '"문제 아님"으로 닫지 않고, `경계 밖`으로도 돌리지 않고 "문제"에 `기준: 계획`, `고칠 쪽: 계획`으로 적는다',
+                    '기록의 "남은 것"에 그 꼴이 적힌 줄도 그렇다. 그 줄의 판정은 "문제"다'):
             with self.subTest(key=key):
                 self.assertIn(key, line)
+        self.assertNotIn("5번에서 `경계 밖`으로 모은다. 기록의", line)
+        self.assertIn("아래 문단의 꼴(결정이나 완료 조건이 정한 동작이 목표를 해친다)은 경계 밖으로 모으지 않고 문제로 적는다", body)
+        gather = section(text, "5. tasks 끝에 볼 것을 모은다")
+        self.assertIn("4번에서 `고칠 쪽: 계획`으로 문제에 적은 꼴(결정이나 완료 조건이 정한 동작이 목표를 해친다)은 여기에 넣지 않고 **문제**로 모은다", gather)
+        self.assertIn("고칠 쪽: {문서 | 코드 | 계획 | 정하지 못함}", section(text, "기록의 양식"))
+        rules = section(text, "적는 규칙")
+        for key in ('그 꼴의 고칠 쪽은 "계획"이다',
+                    '결정이나 완료 조건이 정한 동작이 목표를 해치는 꼴(4번)은 경계 밖이 아니라 "문제"에 적는다'):
+            with self.subTest(key=key):
+                self.assertIn(key, rules)
 
     def test_80_retro_names_left_anywhere(self):
         # retro 4번도 같은 세 경우(지난 tasks, 합쳐지지 않은 다른 브랜치, 이름마다)를 든다(#80).
