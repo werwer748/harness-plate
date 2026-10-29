@@ -1,0 +1,6 @@
+# RUNLOG
+
+- 물음 | 권한 | 없음 | auto mode에서 plugins/plate/skills/ 쓰기가 막혀 권한 모드를 바꿀지 | 답: 바꿨다
+- 물음 | 실행 방식 | 없음 | task 하나씩과 tasks 일괄 가운데 | 답: tasks 일괄
+- 물음 | 기본 브랜치 | 없음 | 로컬 main에만 앞선 plan 커밋 97a5a3f를 두고 main을 origin/main으로 되돌릴지 | 답: 되돌린다
+- 물음 | 고칠 phase | `001-issue-criteria` | phase 4의 저장소 불변 확인에서 RUNLOG.md를 빼는 계획 수정 | 답: 승인

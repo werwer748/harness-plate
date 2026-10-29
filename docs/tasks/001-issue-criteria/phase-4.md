@@ -19,6 +19,6 @@
   - 확인: 기록에 적힌 해시가 작업 트리에서 다시 낸 `git hash-object plugins/plate/skills/eval/SKILL.md`와 같다
   - 확인: 기록에 붙은 "하네스 고칠 거리" 절에서 A의 항목은 `- 기준: eval에만`으로 시작하는 줄이 있고 처리·문턱·이슈 제목·이슈 본문 줄이 없으며, B의 항목은 `- 기준: 넘음`으로 시작하는 줄과 `- 처리:` 줄이 있다
 - 시험이 이 저장소를 바꾸지 않았다.
-  - 확인: `git status --porcelain -- . ':!docs/tasks/001-issue-criteria/phase-4.md'`가 아무것도 내지 않는다
+  - 확인: `git status --porcelain -- . ':!docs/tasks/001-issue-criteria/phase-4.md' ':!docs/tasks/RUNLOG.md'`가 아무것도 내지 않는다
 - 테스트가 모두 통과한다(완료 조건 6).
   - 확인: `python3 -m unittest discover -s tests`가 OK다
