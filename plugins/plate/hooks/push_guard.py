@@ -350,8 +350,25 @@ def check(data):
     return None
 
 
+ERROR = (
+    "plate: 푸시 훅 안에서 예외가 났다: {error}\n"
+    "{verdict}\n"
+)
+ERROR_BLOCK = "명령의 글에 push가 있어 기본 브랜치로 가는지 볼 수 없으므로 막는다. push를 다른 명령과 잇지 말고 따로 부른다."
+ERROR_PASS = "명령의 글에 push가 없어 통과시킨다."
+
+
 def main():
-    message = check(json.load(sys.stdin))
+    raw = b""
+    try:
+        raw = sys.stdin.buffer.read()
+        message = check(json.loads(raw.decode("utf-8")))
+    except Exception as e:  # 예외로 종료 1이 되면 도구는 막지 않는다. push가 있을 때만 막는다
+        blocked = b"push" in raw
+        sys.stderr.write(ERROR.format(
+            error="%s: %s" % (type(e).__name__, e), verdict=ERROR_BLOCK if blocked else ERROR_PASS,
+        ))
+        return 2 if blocked else 0
     if message:
         sys.stderr.write(message)
         return 2

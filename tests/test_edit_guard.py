@@ -559,6 +559,48 @@ class ThirdBlockTest(GuardTestCase):
         self.p.write("docs/tasks/001-a/phase-1.md", checked)
         self.assertBlocked(self.p.edit("src/app.py"), STOP)
 
+    def test_unwritable_count_file_says_stop(self):
+        # 세는 파일 자리가 폴더라 쓰지 못한다. 셈을 잃는 대신 세 번째 막음의 글로 간다
+        (self.p.root / ".git" / "plate-test-first.json").mkdir()
+        self.assertBlocked(self.p.edit("src/app.py"), STOP, "세 번째")
+
+    def test_count_file_is_replaced_not_rewritten(self):
+        # 세는 파일을 그 자리에서 고쳐 쓰지 않고 임시 파일을 바꿔 넣으므로, 읽기 전용인 세는 파일도 셈이 이어진다
+        self.p.edit("src/app.py")
+        store = self.p.root / ".git" / "plate-test-first.json"
+        store.chmod(0o444)
+        err = self.assertBlocked(self.p.edit("src/app.py"), TEST_FIRST)
+        self.assertNotIn(STOP, err)
+        self.assertBlocked(self.p.edit("src/app.py"), STOP)
+        counts = json.loads(store.read_text(encoding="utf-8"))
+        self.assertEqual(counts["docs/tasks/001-a/phase-1.md"]["files"]["src/app.py"], 3)
+        leftovers = [f for f in os.listdir(self.p.root / ".git") if f.startswith("plate-test-first") and f != store.name]
+        self.assertEqual(leftovers, [])
+
+
+class ExceptionTest(GuardTestCase):
+    """훅 안에서 예외가 나면 까닭을 stderr에 내고 종료 2로 막는다."""
+
+    def run_stdin(self, stdin, env=None):
+        done = subprocess.run(
+            [sys.executable, str(HOOK)], input=stdin, env=env or GIT_ENV,
+            capture_output=True, text=True,
+        )
+        return done.returncode, done.stderr
+
+    def test_broken_stdin_blocks(self):
+        err = self.assertBlocked(self.run_stdin("{"))
+        self.assertTrue(err.startswith("plate:"), err)
+
+    def test_non_utf8_phase_file_blocks(self):
+        p = self.project()
+        p.add_task("001-a", {1: "예"})
+        with open(p.root / "docs/tasks/001-a/phase-1.md", "ab") as f:
+            f.write(b"\xff")
+        err = self.assertBlocked(p.edit("src/app.py"))
+        self.assertIn("plate:", err)
+        self.assertNotIn("Traceback", err)
+
 
 class HooksJsonCommandTest(GuardTestCase):
     """hooks.json의 명령 글을 Claude Code처럼 `sh -c`로 돌린다.

@@ -13,6 +13,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 
 DOCS_MAP_START = "<!-- plate:docs-map:start -->"
 TASKS_DIR = "docs/tasks"
@@ -26,6 +27,7 @@ CI_WORKFLOW = ".github/workflows/plate-review.yml"  # setup이 쓰는 CI 워크�
 CODEOWNERS = ".github/CODEOWNERS"  # setup이 쓰는 코드 소유자 파일
 SETUP_FILES = (CI_WORKFLOW, CODEOWNERS)  # setup이 처음 쓸 때 막지 않는 파일
 COUNT_FILE = "plate-test-first.json"  # git 폴더 안에 둔다. 작업 트리에 변경을 만들지 않는다
+STOP_COUNT = 3  # 같은 파일을 테스트 먼저 때문에 이만큼 막으면 STOP의 글을 낸다
 
 PLAN_FIRST = (
     "plate: 남은 phase가 있는 task가 없어서 코드 파일을 고치지 않는다: `{rel}`\n"
@@ -219,12 +221,28 @@ def count_block(root, phase, lines, rel):
         entry = {"plan": digest, "files": {}}
     entry["files"][rel] = entry["files"].get(rel, 0) + 1
     counts[phase] = entry
-    try:
-        with open(store, "w", encoding="utf-8") as f:
-            json.dump(counts, f, ensure_ascii=False)
-    except OSError:
-        pass
+    if not write_counts(store, counts):
+        # 셈을 남기지 못하면 세 번째 막음에 닿지 못한다. 셈을 잃는 대신 STOP으로 보낸다
+        return STOP_COUNT
     return entry["files"][rel]
+
+
+def write_counts(store, counts):
+    """세는 파일을 같은 폴더의 임시 파일에 쓰고 바꿔 넣는다. 쓰지 못하면 False를 돌려준다."""
+    tmp = None
+    try:
+        fd, tmp = tempfile.mkstemp(dir=os.path.dirname(store), prefix=COUNT_FILE + ".")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(counts, f, ensure_ascii=False)
+        os.replace(tmp, store)
+        return True
+    except OSError:
+        if tmp:
+            try:
+                os.remove(tmp)
+            except OSError:
+                pass
+        return False
 
 
 def check(data):
@@ -271,13 +289,23 @@ def check(data):
         return None
     if not has_tests(root):
         return None
-    if count_block(root, phase, lines, rel) >= 3:
+    if count_block(root, phase, lines, rel) >= STOP_COUNT:
         return STOP.format(rel=rel, phase=phase)
     return TEST_FIRST.format(rel=rel, phase=phase)
 
 
+ERROR = (
+    "plate: 편집 훅 안에서 예외가 나서 이 편집을 막는다: {error}\n"
+    "막아야 할 편집을 조용히 통과시키지 않으려고 막는다. 까닭(깨진 입력, UTF-8이 아닌 phase 파일, "
+    "git의 오류)을 찾아 고친 뒤 다시 시도하고, 풀 수 없으면 막힘으로 멈춰 보고한다.\n"
+)
+
+
 def main():
-    message = check(json.load(sys.stdin))
+    try:
+        message = check(json.load(sys.stdin))
+    except Exception as e:  # 예외로 종료 1이 되면 도구는 막지 않는다(fail-open). 정한 대로 막는다
+        message = ERROR.format(error="%s: %s" % (type(e).__name__, e))
     if message:
         sys.stderr.write(message)
         return 2

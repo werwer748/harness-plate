@@ -525,6 +525,27 @@ class PassTest(PushGuardTestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
 
 
+class ExceptionTest(unittest.TestCase):
+    """훅 안에서 예외가 나면 까닭을 stderr에 내고, stdin의 글에 `push`가 있을 때만 막는다."""
+
+    def run_stdin(self, stdin):
+        done = subprocess.run(
+            [sys.executable, str(HOOK)], input=stdin, env=GIT_ENV,
+            capture_output=True, text=True,
+        )
+        return done.returncode, done.stderr
+
+    def test_broken_stdin_with_push_blocks(self):
+        code, err = self.run_stdin('{"git push')
+        self.assertEqual(code, 2, err)
+        self.assertTrue(err.startswith("plate:"), err)
+
+    def test_broken_stdin_without_push_passes(self):
+        code, err = self.run_stdin('{"ls')
+        self.assertEqual(code, 0, err)
+        self.assertTrue(err.startswith("plate:"), err)
+
+
 class HooksJsonTest(PushGuardTestCase):
     """hooks.json에서 Bash에 건 명령 글을 Claude Code처럼 `sh -c`로 돌린다."""
 
