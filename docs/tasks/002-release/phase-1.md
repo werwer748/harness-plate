@@ -11,8 +11,8 @@
 - `docs/ARCHITECTURE.md`, `docs/ADR.md`, `docs/TOOLS.md`, `docs/BACKLOG.md`
 
 **TODO**
-- [ ] 두 매니페스트의 `version`이 `0.22.0`에서 `1.0.0`으로 바뀐다 (`plugins/plate/.claude-plugin/plugin.json`, `plugins/plate/.codex-plugin/plugin.json`)
-- [ ] PRD의 `9단계까지 만든 뒤 1.0.0을 낸다.` 줄이 `9단계까지 만들어 1.0.0을 냈다.`로 바뀐다 (`docs/PRD.md`)
+- [x] 두 매니페스트의 `version`이 `0.22.0`에서 `1.0.0`으로 바뀐다 (`plugins/plate/.claude-plugin/plugin.json`, `plugins/plate/.codex-plugin/plugin.json`)
+- [x] PRD의 `9단계까지 만든 뒤 1.0.0을 낸다.` 줄이 `9단계까지 만들어 1.0.0을 냈다.`로 바뀐다 (`docs/PRD.md`)
 
 **통과 조건**
 - 완료 조건 1, 2, 3이 참이다.
@@ -20,3 +20,23 @@
   - 확인: `claude plugin validate plugins/plate` → `Validation passed`
   - 확인: `grep -n '1.0.0' docs/PRD.md` → 핵심 기능 아래의 줄이 `9단계까지 만들어 1.0.0을 냈다`를 적고, `낸다`로 끝나는 옛 줄은 없다
   - 확인: `python3 -m unittest discover -s tests` → 마지막 줄이 `OK`
+
+## 한 일
+- 두 매니페스트의 `version`이 `0.22.0`에서 `1.0.0`으로 바뀐다: 두 파일의 3행 `"version": "0.22.0"`을 `"version": "1.0.0"`으로 바꿨다 (`plugins/plate/.claude-plugin/plugin.json`, `plugins/plate/.codex-plugin/plugin.json`)
+- PRD의 `9단계까지 만든 뒤 1.0.0을 낸다.` 줄이 `9단계까지 만들어 1.0.0을 냈다.`로 바뀐다: 21행을 바꿨다 (`docs/PRD.md`)
+
+## 확인 결과
+- 완료 조건 1, 2, 3이 참이다.
+  - `grep -n '"version"' plugins/plate/.claude-plugin/plugin.json plugins/plate/.codex-plugin/plugin.json` → `plugins/plate/.codex-plugin/plugin.json:3:  "version": "1.0.0",`, `plugins/plate/.claude-plugin/plugin.json:3:  "version": "1.0.0",`. 통과
+  - `claude plugin validate plugins/plate` → 마지막 줄 `✔ Validation passed` (디렉터리 검사의 LICENSE_MISSING 문제와 ICON_MISSING 경고가 함께 나왔으나 결과를 바꾸지 않는다고 출력이 적는다). 통과
+  - `grep -n '1.0.0' docs/PRD.md` → `21:9단계까지 만들어 1.0.0을 냈다.` 한 줄뿐이고(핵심 기능 목록 9항 바로 아래), `낸다`로 끝나는 옛 줄은 없다. 통과
+  - `python3 -m unittest discover -s tests` → `Ran 275 tests in 23.513s`, 마지막 줄 `OK`. 통과
+
+## 계획과 달라진 점
+- 없음
+
+## 남은 것
+- `claude plugin validate`가 플러그인 디렉터리 제출 기준으로 LICENSE 없음(LICENSE_MISSING)과 아이콘 없음(ICON_MISSING)을 알린다. 통과 판정에는 영향이 없고 이 phase의 범위 밖이라 손대지 않았다.
+
+## 하네스에서 걸린 것
+- 없음
