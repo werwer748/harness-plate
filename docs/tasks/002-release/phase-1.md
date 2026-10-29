@@ -40,3 +40,28 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 1, 2, 3이 참이다.
+  - `grep -n '"version"' plugins/plate/.claude-plugin/plugin.json plugins/plate/.codex-plugin/plugin.json` → `plugins/plate/.codex-plugin/plugin.json:3:  "version": "1.0.0",`, `plugins/plate/.claude-plugin/plugin.json:3:  "version": "1.0.0",`. 통과
+  - `claude plugin validate plugins/plate` → 마지막 줄 `✔ Validation passed` (ICON_MISSING 경고와 라이선스 파일 없음 안내가 함께 나왔고, 출력은 이 검사들이 결과를 바꾸지 않는다고 적는다). 통과
+  - `grep -n '1.0.0' docs/PRD.md` → `21:9단계까지 만들어 1.0.0을 냈다.` 한 줄뿐이고, `grep -n '낸다' docs/PRD.md`로 본 `낸다`로 끝나는 옛 줄은 없다. 통과
+  - `python3 -m unittest discover -s tests` → `Ran 275 tests in 25.429s`, 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 275 tests`, `OK`. 통과
+
+**남은 것**
+- `claude plugin validate`가 플러그인 디렉터리 제출 기준으로 LICENSE 없음(LICENSE_MISSING)과 아이콘 없음(ICON_MISSING)을 알린다 → 통과 조건이 보는 동작(`Validation passed`)에 걸리지 않는다. 출력도 이 검사들이 결과를 바꾸지 않는다고 적는다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: `claude plugin validate`의 디렉터리 제출 기준 검사가 LICENSE 없음과 ICON_MISSING을 알린다. 판정에 넣지 않았다.
+
+**판정**: 통과
