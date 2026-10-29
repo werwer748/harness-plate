@@ -69,3 +69,44 @@
 
 ## 하네스에서 걸린 것
 - 처음 시험 레포에서 기준 편집을 먼저 돌려 세는 파일이 생긴 뒤 `mkdir`이 실패해, 폴더 자리 확인은 새 시험 레포에서 다시 돌렸다. 통과 조건이 시험 레포를 확인마다 새로 만드는지 적지 않았다.
+
+## 확인 1
+
+**통과 조건**
+- 예외에서 편집 훅은 막는다(완료 조건 2).
+  - `printf '{' | python3 plugins/plate/hooks/edit_guard.py; echo "exit=$?"` → stderr `plate: 편집 훅 안에서 예외가 나서 이 편집을 막는다: JSONDecodeError: …`, `exit=2`. 통과
+  - `mktemp -d` 시험 레포(`AGENTS.md`에 docs-map 줄, `tests/test_x.py`, `src.py`, `docs/tasks/001-a/plan.md`, `**테스트 먼저**: 예`인 `phase-1.md` 커밋)의 `phase-1.md`에 `printf '\xff' >>` 뒤 `src.py` 편집 JSON을 `python3 plugins/plate/hooks/edit_guard.py`에 넣음 → stderr `plate: 편집 훅 안에서 예외가 나서 이 편집을 막는다: UnicodeDecodeError: …`, 종료 2. 통과
+- 예외에서 푸시 훅은 `push`가 있을 때만 막는다(완료 조건 2).
+  - `printf '{"git push' | python3 plugins/plate/hooks/push_guard.py; echo "exit=$?"` → stderr `plate: 푸시 훅 안에서 예외가 났다: JSONDecodeError: …`, `exit=2`. 통과
+  - `printf '{"ls' | python3 plugins/plate/hooks/push_guard.py; echo "exit=$?"` → stderr `plate: 푸시 훅 안에서 예외가 났다: …`, "push가 없어 통과시킨다", `exit=0`. 통과
+- 세는 파일의 쓰기 실패는 STOP으로 간다(완료 조건 3).
+  - 새 시험 레포(위와 같은 꼴)에서 `mkdir .git/plate-test-first.json` 뒤 `src.py` 편집 JSON → stderr `plate: 테스트 먼저 때문에 같은 파일을 세 번째 막았다: \`src.py\` …`, 종료 2. 통과
+  - `grep -n 'os.replace' plugins/plate/hooks/edit_guard.py` → `237:        os.replace(tmp, store)`. 통과
+- ARCHITECTURE가 바뀐 동작을 적는다.
+  - `grep -n '예외' docs/ARCHITECTURE.md` → 48행(스킬 호출 문단)과 53행. 53행이 "막는 장치" 문단이고, 편집 훅은 종료 2로 막고 푸시 훅은 stdin 글에 `push`가 있을 때만 종료 2로 막고 없으면 종료 0이라는 두 훅의 처리가 있다. 통과
+- 테스트 묶음이 통과한다.
+  - `python3 -m unittest discover -s tests` → `Ran 222 tests in 20.581s`, 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 222 tests`, `OK`. 통과
+
+**테스트 먼저 기록**
+- 기록 "한 일"의 "테스트 먼저" 줄 → 구현 전 실패 출력(`FAILED (failures=6)`)이 먼저, 구현 뒤 같은 명령의 통과 출력(`Ran 11 tests`, `OK`)이 그 뒤에 있다. 통과
+
+**남은 것**
+- 세는 파일의 쓰기에 실패하면 첫 막음부터 "세 번째 막았다" 글을 낸다 → 통과 조건("쓰기 실패는 STOP으로 간다")이 요구하는 동작 그대로이고, 글의 횟수가 사실과 다른 것은 그 통과 조건이 보는 결함이 아니다. 하네스에서 걸린 것
+- 세는 파일이 깨진 JSON이면 셈을 비우고, 잠금이 없어 동시에 돌면 셈을 잃을 수 있다 → 이 phase의 통과 조건은 쓰기 실패와 `os.replace`만 보고 깨진 파일 읽기나 동시 실행은 보지 않는다. 하네스에서 걸린 것
+- 푸시 훅은 예외 때 stdin 글 어디에든 `push`가 있으면 막는다 → 완료 조건 2와 task 머리의 결정이 정한 동작이고, 통과 조건이 보는 동작의 결함이 아니다(잘못 막음 쪽의 위험). 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 세는 파일의 쓰기에 실패하면 실제 막은 횟수와 상관없이 첫 막음부터 "세 번째 막았다" 글을 내, 글의 횟수가 사실과 다르다.
+- 남은 것: 세는 파일이 깨진 JSON이면 셈을 비우고 처음부터 센다(신뢰성-5의 "깨진 파일을 삼킨다"는 이 phase가 다루지 않음). 잠금이 없어 두 훅이 같은 때 돌면 셈을 잃을 수 있다.
+- 남은 것: 푸시 훅은 예외가 나면 stdin 글의 어디(`description`, 다른 낱말 속)에든 `push`가 있으면 막는다.
+- 통과 조건이 시험 레포를 확인마다 새로 만드는지 적지 않아, 폴더 자리 확인은 기준 편집으로 세는 파일이 생기기 전의 새 시험 레포에서 돌렸다(수행 기록의 같은 지적과 같다).
+
+**판정**: 통과
