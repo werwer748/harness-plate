@@ -62,3 +62,30 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 완료 조건 5가 참이다.
+  - `git hash-object plugins/plate/skills/eval/SKILL.md` → `ac05dfe6b1a2ec0be73680e8e073566778c87c3e`, 기록에 적힌 값과 같다. 통과
+  - 기록에 붙은 "하네스 고칠 거리" 절을 읽고 시험 저장소 `/var/folders/0j/cj37rxmj1mj73vhflqpgsxm00000gn/T/tmp.NzuCKG53PT/docs/tasks/eval.md`의 같은 절(커밋 `3fd428f greet: 하네스 eval`)과 견줌 → 같다. A(고칠 거리 3, 확인 명령을 다른 도구로 돌린 것)는 `- 기준: eval에만`으로 시작하는 줄만 있고 처리·문턱·이슈 제목·이슈 본문 줄이 없다. B(고칠 거리 1, plate:phase 3번 때문에 회고에서 잡혀 다시 수행한 것)는 `- 기준: 넘음`으로 시작하는 줄과 `- 처리:` 줄이 있다. 통과
+- 시험이 이 저장소를 바꾸지 않았다.
+  - `git status --porcelain -- . ':!docs/tasks/001-issue-criteria/phase-4.md' ':!docs/tasks/RUNLOG.md'` → 출력 없음. 통과
+- 테스트가 모두 통과한다(완료 조건 6).
+  - `python3 -m unittest discover -s tests` → `Ran 205 tests in 18.368s` `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 205 tests` `OK`. 통과
+
+**남은 것**
+- 시험은 한 번 돌렸다. 같은 기록에서 eval이 A와 B를 늘 같게 가르는지는 보지 않았다 → 통과 조건은 돌린 한 번의 기록(해시와 붙인 절)을 보며 되풀이의 한결같음은 보지 않아 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 시험은 한 번 돌렸다. 같은 기록에서 eval이 A와 B를 늘 같게 가르는지는 보지 않았다
+
+**판정**: 통과
