@@ -131,6 +131,18 @@ class CriteriaTest(unittest.TestCase):
             with self.subTest(verdict=verdict):
                 self.assertIn("- **%s**" % verdict, body)
 
+    def test_previous_reports_step_does_not_read_all_context_docs(self):
+        """2번은 맥락 문서를 모두 읽지 않는다. 1라운드 글이 경로만 넘겨 쓰이지 않던 읽기다(성능-2)."""
+        self.assertNotIn("맥락 문서를 모두 읽는다", read())
+
+    def test_rebuttal_reads_context_docs_and_scopes_decisions(self):
+        """4번이 반박 판정 때 맥락 문서를 읽고, "결정이 정한 것"의 범위를 정한다(기존 작업 정합성-8)."""
+        body = section(read(), "4. 2라운드: 기준마다 다른 기준의 발견을 검토한다")
+        self.assertIn("반박의 근거가 든 맥락 문서는 이 판정을 할 때 읽는다", body)
+        self.assertIn("PRD의 범위 밖, ARCHITECTURE의 규칙, ADR, BACKLOG의 감수한 것", body)
+        self.assertIn("지난 tasks 머리·task 머리의 결정 절", body)
+        self.assertIn("닫힌 이슈의 글과 테스트만으로는 결정으로 치지 않는다", body)
+
 
 class PromptTest(unittest.TestCase):
     def test_round_one_prompt(self):
@@ -147,6 +159,12 @@ class PromptTest(unittest.TestCase):
         for verdict in VERDICTS:
             with self.subTest(verdict=verdict):
                 self.assertIn("  - %s:" % verdict, prompt)
+
+    def test_round_two_prompt_cites_accepted_decisions_as_rebuttal(self):
+        """2라운드 글이 맥락 문서나 지난 tasks의 결정 절이 감수한 것을 반박의 근거로 들게 한다."""
+        prompt = block(read(), "2라운드에 맡기는 글")
+        self.assertIn("지난 tasks 머리·task 머리의 결정 절", prompt)
+        self.assertIn("이미 감수했으면 그 줄을 반박의 근거로 든다", prompt)
 
     def test_both_prompts_treat_outside_text_as_data(self):
         text = read()
