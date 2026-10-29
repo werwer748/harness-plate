@@ -102,6 +102,48 @@ def skill_names():
     return sorted(p.parent.name for p in SKILLS.glob("*/SKILL.md"))
 
 
+def git_commands(body):
+    """본문의 백틱 안에 적힌 `git …` 명령을 적힌 차례대로 돌려준다."""
+    return re.findall(r"`(git [^`]+)`", body)
+
+
+class GitRepo:
+    """`mktemp -d` 같은 임시 폴더의 시험 레포. 본문의 명령을 `sh -c`로 돌린다."""
+
+    def __init__(self, folder):
+        self.folder = str(folder)
+        self.env = dict(os.environ, GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_NOSYSTEM="1",
+                        GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@t", GIT_COMMITTER_NAME="t",
+                        GIT_COMMITTER_EMAIL="t@t", LC_ALL="C")
+        self.git("init", "-q", "-b", "main")
+        self.commit("README.md", "시작\n", "시작")
+
+    def sh(self, line):
+        return subprocess.run(["sh", "-c", line], cwd=self.folder, env=self.env,
+                              capture_output=True, text=True, encoding="utf-8")
+
+    def git(self, *args):
+        done = subprocess.run(["git", *args], cwd=self.folder, env=self.env,
+                              capture_output=True, text=True, encoding="utf-8")
+        if done.returncode != 0:
+            raise AssertionError("git %s: %s" % (" ".join(args), done.stderr))
+        return done.stdout.strip()
+
+    def commit(self, path, content, message):
+        target = Path(self.folder) / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+        self.git("add", path)
+        self.git("commit", "-q", "-m", message)
+
+    def head(self, ref):
+        return self.git("rev-parse", ref)
+
+    def is_ancestor(self, older, newer):
+        return subprocess.run(["git", "merge-base", "--is-ancestor", older, newer], cwd=self.folder,
+                              env=self.env).returncode == 0
+
+
 class DescriptionTest(unittest.TestCase):
     """Agent Skills 규격의 한도와 plate의 description 상한을 본다. Codex는 1024자를 넘는 description을
     잘라 끝의 부르는 말과 쓰지 않을 때를 모델에게 싣지 않는다. description은 모든 세션과 띄운
@@ -432,6 +474,41 @@ class RunRulesTest(unittest.TestCase):
                     self.assertEqual(done.returncode, 0, done.stderr)
                     self.assertEqual(done.stdout, expected + "\n")
 
+    def test_merge_to_target_conflict_restores_target(self):
+        # "보낼 곳으로 합친다"의 명령을 시험 레포에서 충돌하는 갈래로 적힌 차례대로 돌린다(cleanup-branch review 평가 1 소스 문제 3).
+        body = section(self.text, "보낼 곳으로 합친다")
+        commands = git_commands(body)
+        fill = lambda c: c.replace("{보낼 곳}", "cleanup/x").replace("<이름>", "y")
+        wanted = ["git rev-parse --verify --quiet refs/heads/{보낼 곳}", "git switch {보낼 곳}",
+                  "git merge --no-ff -m '<이름>: 보낼 곳으로 합침' tasks/<이름>", "git merge --abort",
+                  "git switch tasks/<이름>"]
+        for command in wanted:
+            self.assertIn(command, commands)
+        order = [commands.index(c) for c in wanted]
+        self.assertEqual(order, sorted(order))
+        with tempfile.TemporaryDirectory() as folder:
+            repo = GitRepo(folder)
+            repo.git("switch", "-q", "-c", "cleanup/x")
+            repo.commit("a.md", "cleanup\n", "cleanup: x")
+            repo.git("switch", "-q", "-c", "tasks/y")
+            repo.commit("b.md", "tasks\n", "y: 계획")
+            repo.git("switch", "-q", "cleanup/x")
+            repo.commit("b.md", "다른 글\n", "cleanup: x 미룸")
+            repo.git("switch", "-q", "tasks/y")
+            before = {ref: repo.head(ref) for ref in ("cleanup/x", "tasks/y", "main")}
+            exists = repo.sh(fill(wanted[0]))
+            self.assertNotEqual(exists.stdout.strip(), "")
+            self.assertEqual(repo.sh(fill(wanted[1])).returncode, 0)
+            merged = repo.sh(fill(wanted[2]))
+            self.assertNotEqual(merged.returncode, 0, "충돌해야 한다")
+            self.assertEqual(repo.sh(fill(wanted[3])).returncode, 0)
+            self.assertEqual(repo.sh(fill(wanted[4])).returncode, 0)
+            for ref, value in before.items():
+                with self.subTest(ref=ref):
+                    self.assertEqual(repo.head(ref), value)
+            self.assertEqual(repo.git("branch", "--show-current"), "tasks/y")
+            self.assertEqual(repo.git("status", "--porcelain"), "")
+
     def test_plan_commit_after_tasks_branch(self):
         # 1번은 커밋하지 않은 변경, tasks 브랜치, 계획의 커밋 차례이고 계획은 tasks 브랜치에 커밋한다(cleanup 2026-10-29 신뢰성-8).
         body = section(self.text, "1. 시작 조건을 본다")
@@ -557,8 +634,9 @@ class RunRulesTest(unittest.TestCase):
         self.assertIn('origin이 GitHub 원격이면 "PR을 연다"로, 그 밖이면 "합친다"로 간다', body)
         self.assertIn("그 비움 커밋의 부모에서", body)
         self.assertNotIn("$(", body)
-        self.assertIn("0번의 비운 뒤의 재개에서", section(self.text, "PR을 연다"))
-        self.assertIn("0번의 비운 뒤의 재개에서", section(self.text, "합친다"))
+        self.assertIn("0번의 비운 뒤의 재개나 보낼 곳으로 합친 뒤의 재개에서", section(self.text, "PR을 연다"))
+        self.assertIn("0번의 비운 뒤의 재개나 보낼 곳으로 합친 뒤의 재개에서", section(self.text, "합친다"))
+        self.assertIn("0번의 비운 뒤의 재개에서", section(self.text, "보낼 곳으로 합친다"))
 
     def test_merge_has_own_question_and_switch_failure(self):
         # "합친다"는 이 자리만의 물음을 직접 적고, `git switch`가 실패하면 합치지 않는다(신뢰성-6).
@@ -708,6 +786,67 @@ class RunRulesTest(unittest.TestCase):
                 self.assertIn(head, lines)
         self.assertNotIn("| `docs/BACKLOG.md` | 미룬 소스 문제와 그것이 나온 tasks |", self.text)
 
+    def test_send_to_reads_plan_line(self):
+        # run이 읽는 보낼 곳의 꼴이 plan 양식의 `**보낼 곳**:` 줄과 같다(002-cleanup-branch).
+        terms = section(self.text, "낱말")
+        self.assertIn("plan이 cleanup 브랜치에서 갈랐을 때만 보낼 곳(이름 줄 바로 아래의 `**보낼 곳**:` 줄)", terms)
+        self.assertIn("- **보낼 곳**: tasks 머리의 `**보낼 곳**:` 줄에서 `**보낼 곳**: ` 뒤에 적힌 브랜치 이름", terms)
+        self.assertIn("**이름**: {브랜치 `tasks/<이름>`에 쓸 영어 소문자 이름}\n**보낼 곳**: ", section(read("plan"), "계획 파일의 양식"))
+
+    def test_send_to_merge_after_clearing(self):
+        # 비운 뒤 보낼 곳이 있으면 tasks/<이름>을 그 브랜치에 로컬로 합치고, 그 브랜치를 기본 브랜치로 보낸다(002-cleanup-branch).
+        clear = subsection(self.text, "비운다")
+        self.assertIn("`<tasks 이름>`과 보낼 곳(tasks 머리에 `**보낼 곳**:` 줄이 있을 때만)은 지우기 전에 tasks 머리에서 읽어 둔다", clear)
+        self.assertIn('읽어 둔 보낼 곳이 있으면 "보낼 곳으로 합친다"로 간다. 없으면 origin이 GitHub 원격이면 "PR을 연다"로', clear)
+        body = section(self.text, "보낼 곳으로 합친다")
+        steps = [
+            "`git rev-parse --verify --quiet refs/heads/{보낼 곳}`으로 보낼 곳이 로컬에 있는지 본다",
+            "합칠 브랜치와 합칠 곳을 보여 주고 합칠지 묻는다",
+            "`git switch {보낼 곳}`으로 합칠 곳으로 바꾼다",
+            "`git merge --no-ff -m '<이름>: 보낼 곳으로 합침' tasks/<이름>`으로 합친다. squash하지 않는다",
+            "`git merge --abort`로 되돌리고, `git switch tasks/<이름>`으로 돌아가",
+            "`git branch -d tasks/<이름>`으로 브랜치를 지운다",
+            'origin이 GitHub 원격이면 보낼 곳을 푸시할 브랜치로 해서 "PR을 연다"로, 그 밖이면 보낼 곳을 합칠 브랜치로 해서 "합친다"로 간다',
+        ]
+        at = [body.index(step) for step in steps]
+        self.assertEqual(at, sorted(at))
+        self.assertNotIn("$(", body)
+        pr = section(self.text, "PR을 연다")
+        self.assertIn("보낼 곳이 있는 tasks면 그 tasks를 합친 보낼 곳이다", pr)
+        self.assertIn("`git push origin {푸시할 브랜치}`로 푸시한다", pr)
+        self.assertIn("--head {푸시할 브랜치}", pr)
+        merge = section(self.text, "합친다")
+        self.assertIn("보낼 곳이 있는 tasks면 그 tasks를 합친 보낼 곳이다", merge)
+        self.assertIn("`git merge {합칠 브랜치}`로 합친다", merge)
+        self.assertIn("`git branch -d {합칠 브랜치}`로 브랜치를 지운다", merge)
+
+    def test_send_to_missing_stops(self):
+        # 보낼 곳이 로컬에 없으면 합치지도 PR을 열지도 않고 알리고 10번으로 간다(002-cleanup-branch).
+        body = section(self.text, "보낼 곳으로 합친다")
+        first = re.search(r"^1\. (.*)$", body, re.M).group(1)
+        self.assertIn("아무것도 내지 않으면 합치지도 PR을 열지도 않는다", first)
+        self.assertIn("보낼 곳의 이름과 그것이 로컬에 없다는 것을 알리고 10번으로 간다", first)
+        report = section(self.text, "10. 보고한다")
+        self.assertIn("`tasks/<이름>`을 보낼 곳으로 합쳤는지와 그 합침 커밋", report)
+        self.assertIn("보낼 곳이 로컬에 없다와 그 이름", report)
+
+    def test_send_to_resume(self):
+        # 비운 뒤면 보낼 곳으로 합치는 자리로, 보낼 곳으로 합친 뒤면 PR·합침으로 간다(002-cleanup-branch).
+        body = section(self.text, "0. tasks를 본다")
+        self.assertIn("`git show HEAD^2^:docs/tasks/plan.md`로 합친 비움 커밋(그 합침 커밋의 둘째 부모)의 부모에 남은 tasks 머리를 읽는다", body)
+        self.assertIn('3번이 읽은 tasks 머리에 `**보낼 곳**:` 줄이 있으면 "보낼 곳으로 합친다"로 간다', body)
+        self.assertIn("지금 브랜치가 cleanup 브랜치이고 마지막 커밋의 제목이 `<이름>: 보낼 곳으로 합침`이고", body)
+        self.assertIn("보낼 곳으로 합친 뒤의 재개다", body)
+        self.assertIn("`git show HEAD^2^:docs/tasks/review.md`처럼 읽는다", body)
+        self.assertNotIn("$(", body)
+        self.assertIn("보낼 곳으로 합친 뒤의 재개에서", section(self.text, "PR을 연다"))
+        self.assertIn("보낼 곳으로 합친 뒤의 재개에서", section(self.text, "합친다"))
+
+    def test_send_to_push_rule(self):
+        # 절대 규칙 5: 푸시하는 브랜치에 보낼 곳이 든다(002-cleanup-branch).
+        rules = section(self.text, "절대 규칙")
+        self.assertIn('푸시는 "PR을 연다"에서 승인받아 `tasks/<이름>`을, 보낼 곳이 있는 tasks면 그 tasks를 합친 보낼 곳 브랜치를 origin에 올릴 때만 한다', rules)
+
 class PlanRulesTest(unittest.TestCase):
     def setUp(self):
         self.text = read("plan")
@@ -723,13 +862,15 @@ class PlanRulesTest(unittest.TestCase):
         # plan이 계획을 tasks/<이름> 브랜치에 커밋한다: 기본 브랜치면 만들거나 바꾸고, 그 밖이면 1번에서 묻는다(002-plan-branch).
         rules = section(self.text, "절대 규칙")
         self.assertIn("4. **계획 파일만 `tasks/<이름>` 브랜치에 커밋한다.**", rules)
-        self.assertIn("지금 브랜치가 기본 브랜치일 때는 묻지 않고 쓰기 전에 `tasks/<이름>`을 만들거나 바꾸고, `tasks/<이름>`일 때는 그대로 두고, 그 밖의 브랜치일 때는 1번에서 물어 승인받은 때만 바꾼다. 푸시하지 않는다", rules)
+        self.assertIn("지금 브랜치가 기본 브랜치일 때는 묻지 않고 쓰기 전에 `tasks/<이름>`을 만들거나 바꾸고, cleanup 브랜치(`cleanup/…`)일 때도 묻지 않고", rules)
+        self.assertIn("`tasks/<이름>`일 때는 그대로 두고, 그 밖의 브랜치일 때는 1번에서 물어 승인받은 때만 바꾼다. 푸시하지 않는다", rules)
         first = section(self.text, "1. 진행 중인 tasks가 있는지 본다")
-        self.assertIn("기본 브랜치도 `tasks/<이름>`도 아니면 지금 브랜치를 보여 주고, 계획을 `tasks/<이름>` 브랜치에 커밋할지 묻고, 거기서 멈춰 답을 기다린다", first)
+        self.assertIn("기본 브랜치도 cleanup 브랜치도 `tasks/<이름>`도 아니면 지금 브랜치를 보여 주고, 계획을 `tasks/<이름>` 브랜치에 커밋할지 묻고, 거기서 멈춰 답을 기다린다", first)
         self.assertIn("`<이름>`은 6번의 초안에서 정한다", first)
         self.assertIn("- 거절하면 아무것도 쓰지 않고 끝난다.", first.split("커밋할지 묻고")[1])
         # 새 tasks는 기본 브랜치에서만 묻지 않고, 다른 tasks의 브랜치에서도 묻는다(002-plan-branch 회고 1).
-        self.assertIn("기본 브랜치이면 묻지 않고 2번으로 간다. 더하는 경우에 지금 브랜치가 그 tasks 머리의 이름의 `tasks/<이름>`이어도 묻지 않고 2번으로 간다.", first)
+        self.assertIn("기본 브랜치이면 묻지 않고 2번으로 간다. cleanup 브랜치(`cleanup/…`)이면 묻지 않고 2번으로 간다.", first)
+        self.assertIn("만든다. 더하는 경우에 지금 브랜치가 그 tasks 머리의 이름의 `tasks/<이름>`이어도 묻지 않고 2번으로 간다.", first)
         self.assertIn("새 tasks는 다른 tasks의 브랜치(예: 앞 tasks가 끝난 뒤 남은 `tasks/old`)에서도 묻는다", first)
         self.assertNotIn("기본 브랜치이거나 `tasks/<이름>`(더하는 경우는 그 tasks 머리의 이름)이면 묻지 않고", first)
         write = section(self.text, "7. 쓰고 커밋한다")
@@ -749,6 +890,30 @@ class PlanRulesTest(unittest.TestCase):
         defs = [[l for l in section(t, "낱말").split("\n") if l.startswith("- **기본 브랜치**:")] for t in (self.text, read("run"))]
         self.assertEqual(len(defs[0]), 1)
         self.assertEqual(defs[0], defs[1])
+
+    def test_cleanup_branch_sends_back(self):
+        # plan이 cleanup 브랜치에서 묻지 않고 tasks/<이름>을 갈라 tasks 머리에 보낼 곳을 적는다(002-cleanup-branch).
+        defs = section(self.text, "낱말")
+        self.assertIn("- **cleanup 브랜치**: cleanup 스킬(`plate:cleanup`)이 보고서를 쓰기 전에 만드는 `cleanup/<보고서 이름>` 브랜치.", defs)
+        self.assertIn("`cleanup/<보고서 이름>-2`처럼 번호가 붙는다", defs)
+        self.assertIn("지금 브랜치의 이름이 `cleanup/`으로 시작하면 cleanup 브랜치로 본다", defs)
+        self.assertIn("cleanup 브랜치에서 갈랐을 때만 보낼 곳", defs)
+        # cleanup 본문이 만드는 브랜치 꼴과 같다.
+        self.assertIn("`cleanup/<보고서 이름>-2`", section(read("cleanup"), "낱말"))
+        rules = section(self.text, "절대 규칙")
+        self.assertIn("새 tasks면 그 브랜치를 tasks 머리의 `**보낼 곳**:` 줄에 적고", rules)
+        first = section(self.text, "1. 진행 중인 tasks가 있는지 본다")
+        self.assertIn("cleanup 브랜치(`cleanup/…`)이면 묻지 않고 2번으로 간다. 새 tasks면 그 브랜치의 이름이 tasks 머리의 `**보낼 곳**:` 줄에 들고", first)
+        self.assertLess(first.index("cleanup 브랜치(`cleanup/…`)이면 묻지 않고"), first.index("커밋할지 묻고"))
+        write = section(self.text, "7. 쓰고 커밋한다")
+        self.assertIn("기본 브랜치이거나 cleanup 브랜치(`cleanup/…`)이거나 1번에서 승인받았으면, `tasks/<이름>`이 로컬에 없을 때 `git switch -c tasks/<이름>`으로 지금 HEAD에서 만들어 바꾸고", write)
+        self.assertIn("tasks 머리의 `**보낼 곳**:` 줄에 승인받은 초안대로 들어 있다", write)
+        self.assertIn("더하는 경우는 tasks 머리의 보낼 곳을 고치지 않는다", write)
+        form = section(self.text, "계획 파일의 양식")
+        self.assertIn("**이름**: {브랜치 `tasks/<이름>`에 쓸 영어 소문자 이름}\n**보낼 곳**: {그 cleanup 브랜치}\n", form)
+        head = part(section(self.text, "적는 규칙"), "tasks 머리")
+        self.assertIn("`**보낼 곳**:` 줄은 1번에서 지금 브랜치가 cleanup 브랜치(`cleanup/…`)였던 새 tasks에만 이름 줄 바로 아래에 두고", head)
+        self.assertIn("그 밖의 브랜치에서 갈랐거나 git 레포가 아니면 그 줄을 두지 않는다", head)
 
     def test_37_draft_check(self):
         body = section(self.text, "6. 초안을 보여 주고 승인받는다")
@@ -890,6 +1055,20 @@ class PlanRulesTest(unittest.TestCase):
         self.assertIn("마다 시험 저장소에서 돌리는 확인을 두거나, 예를 뺀다", body)
         self.assertIn("plan은 그 확인을 미리 돌리지 않는다", body)
 
+    def test_80_repeated_names_and_multiple_inputs_covered(self):
+        # 이름·번호로 찾는 동작은 지난 tasks의 같은 이름이 남은 경우를, 입력을 받는 동작은 둘 이상인 경우를 확인으로 덮는다(#80).
+        draft = section(self.text, "6. 초안을 보여 주고 승인받는다").split("초안을 보여 준 뒤에는")[0]
+        rules = part(section(self.text, "적는 규칙"), "조건")
+        for name, body in (("6", draft), ("조건", rules)):
+            with self.subTest(part=name):
+                lines = [l for l in body.split("\n") if "지난 tasks의 같은 이름" in l]
+                self.assertTrue(lines)
+                line = lines[0]
+                for key in ("이름이나 번호", "커밋, 파일, 브랜치를 찾으면", "지난 tasks의 같은 이름이 남은 경우를",
+                            "입력(파일, 줄, 항목)을 받으면 둘 이상인 경우를", "확인 하나로"):
+                    self.assertIn(key, line)
+        self.assertIn("동작 일반으로 넓힌 것이다", rules)
+
     def test_shared_definitions_match(self):
         # run과 plan에 복사된 같은 정의 셋이 어긋나지 않는다(cleanup 2026-10-28 유지보수성-6).
         run = read("run")
@@ -961,6 +1140,17 @@ class RetroRulesTest(unittest.TestCase):
     def test_50_stop_list_includes_permission(self):
         body = section(read("retro"), "5. tasks 끝에 볼 것을 모은다")
         self.assertIn("물은 자리가 `멈춤`이 아닌 줄(권한, 실행 방식,", body)
+
+    def test_80_decided_behavior_with_repeated_names_goes_out_of_bounds(self):
+        # 결정이 정한 동작이라도 되풀이된 이름이나 여러 입력에서 목표를 해치면 문제 아님으로 닫지 않는다(#80).
+        body = section(read("retro"), "4. task의 변경을 점검한다")
+        lines = [l for l in body.split("\n") if "지난 tasks의 같은 이름" in l]
+        self.assertTrue(lines)
+        line = lines[0]
+        for key in ("결정이나 완료 조건이 정한 동작이라도", "지난 tasks의 같은 이름이 남은 경우", "둘 이상인 경우에 목표를 해치면",
+                    '"문제 아님"으로 닫지 않고 5번에서 `경계 밖`으로 모은다', '기록의 "남은 것"에 그 꼴이 적힌 줄도 그렇다'):
+            with self.subTest(key=key):
+                self.assertIn(key, line)
 
     def test_69_run_check_as_written(self):
         body = section(read("retro"), "2. 완료 조건의 확인을 모두 돌린다")
