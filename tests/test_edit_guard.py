@@ -6,26 +6,16 @@ JSON을 훅에 주어 돌린다. 종료 코드 2가 막음, 0이 통과다. 막�
 
 import json
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-PLUGIN_ROOT = Path(__file__).resolve().parent.parent / "plugins" / "plate"
-HOOK = PLUGIN_ROOT / "hooks" / "edit_guard.py"
-HOOKS_JSON = PLUGIN_ROOT / "hooks" / "hooks.json"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from hook_helpers import GIT_ENV, PLUGIN_ROOT, HookTestCase, hook_command, run_hook_command  # noqa: E402
 
-GIT_ENV = dict(
-    os.environ,
-    GIT_CONFIG_GLOBAL=os.devnull,
-    GIT_CONFIG_NOSYSTEM="1",
-    GIT_AUTHOR_NAME="t",
-    GIT_AUTHOR_EMAIL="t@t",
-    GIT_COMMITTER_NAME="t",
-    GIT_COMMITTER_EMAIL="t@t",
-)
+HOOK = PLUGIN_ROOT / "hooks" / "edit_guard.py"
 
 DOCS_MAP = (
     "<!-- plate:docs-map:start -->\n"
@@ -126,24 +116,9 @@ class Project:
         return done.returncode, done.stderr
 
 
-class GuardTestCase(unittest.TestCase):
-    def setUp(self):
-        self.base = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, self.base)
-
+class GuardTestCase(HookTestCase):
     def project(self, **kwargs):
         return Project(self.base, **kwargs)
-
-    def assertPassed(self, result):
-        code, err = result
-        self.assertEqual(code, 0, "통과해야 하는데 막았다: " + err)
-
-    def assertBlocked(self, result, *phrases):
-        code, err = result
-        self.assertEqual(code, 2, "막아야 하는데 통과시켰다 (종료 코드 %d): %s" % (code, err))
-        for phrase in phrases:
-            self.assertIn(phrase, err)
-        return err
 
 
 class SetupAndCodeFileTest(GuardTestCase):
@@ -603,20 +578,13 @@ class ExceptionTest(GuardTestCase):
 
 
 class HooksJsonCommandTest(GuardTestCase):
-    """hooks.json의 명령 글을 Claude Code처럼 `sh -c`로 돌린다.
-
-    `${CLAUDE_PLUGIN_ROOT}`는 명령 글에 그대로 바뀌어 들어가고 같은 이름의 환경 변수로도 넘어간다.
-    """
+    """hooks.json에서 Edit에 건 명령 글을 Claude Code처럼 `sh -c`로 돌린다. 항목은 차례가 아니라 matcher로 고른다."""
 
     def run_command(self, plugin_root, stdin):
-        with open(HOOKS_JSON, encoding="utf-8") as f:
-            command = json.load(f)["hooks"]["PreToolUse"][0]["hooks"][0]["command"]
-        done = subprocess.run(
-            ["sh", "-c", command.replace("${CLAUDE_PLUGIN_ROOT}", str(plugin_root))],
-            input=stdin, env=dict(GIT_ENV, CLAUDE_PLUGIN_ROOT=str(plugin_root)),
-            capture_output=True, text=True,
-        )
-        return done.returncode, done.stderr
+        return run_hook_command("Edit", plugin_root, stdin)
+
+    def test_command_runs_edit_guard(self):
+        self.assertIn("edit_guard.py", hook_command("Edit"))
 
     def test_missing_script_exits_zero(self):
         p = self.project()  # 남은 phase가 없다: 스크립트가 있으면 막는 호출이다

@@ -7,8 +7,12 @@
 """
 
 import re
+import sys
 import unittest
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from test_skill_rules import front_matter, section  # noqa: E402
 
 SKILL = Path(__file__).resolve().parent.parent / "plugins" / "plate" / "skills" / "cleanup" / "SKILL.md"
 MANIFESTS = [
@@ -22,28 +26,6 @@ VERDICTS = ["동의", "반박", "중복", "충돌"]
 
 def read():
     return SKILL.read_text(encoding="utf-8")
-
-
-def section(text, heading):
-    """`## {heading}` 절의 본문(다음 `## ` 절 앞까지)을 돌려준다. 코드 블록 안의 `## `은 건너뛴다."""
-    lines = text.split("\n")
-    start = None
-    fence = False
-    out = []
-    for line in lines:
-        if line.startswith("````"):
-            fence = not fence
-        if not fence and line.startswith("## "):
-            if start is not None:
-                break
-            if line[3:].strip() == heading:
-                start = True
-                continue
-        if start:
-            out.append(line)
-    if start is None:
-        raise AssertionError("절이 없다: ## %s" % heading)
-    return "\n".join(out)
 
 
 def block(text, heading):
@@ -67,11 +49,9 @@ def absolute_rules(text):
 
 class FrontmatterTest(unittest.TestCase):
     def test_name_is_cleanup(self):
-        text = read()
-        self.assertTrue(text.startswith("---\n"))
-        head = text.split("---\n")[1]
-        self.assertIn("name: cleanup\n", head)
-        self.assertRegex(head, r"description: \S")
+        head = front_matter("cleanup")
+        self.assertEqual(head["name"], "cleanup")
+        self.assertRegex(head["description"], r"^\S")
 
     def test_manifests_mention_cleanup(self):
         for manifest in MANIFESTS:
