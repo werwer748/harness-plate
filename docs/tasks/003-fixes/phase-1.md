@@ -54,3 +54,40 @@
 
 ## 하네스에서 걸린 것
 - plan **조건**이 "사용자에게 묻는 스킬"을 돌릴 수 없는 예로 들어 `돌리지 않음` 줄을 부르지만, 이 phase에서 plan과 run 모두 헤드리스로 첫 물음과 멈추는 자리까지 돌았다. 그 예를 좁히는 것은 plate 자체의 하네스 고칠 거리라 이 task에서 고치지 않았다(`plugins/plate/skills/plan/SKILL.md`의 "적는 규칙" **조건**)
+
+## 확인 1
+
+**통과 조건**
+- task 머리의 완료 조건이 모두 참이다.
+  - 완료 조건 1, run: phase 기록의 `mk_run.sh`로 새로 차린 시험 레포(scratchpad `chk1/run/repo`: `tasks/x`에 tasks 일괄 `RUNLOG.md`, 고칠 쪽이 계획인 문제가 든 `retro.md`, 합쳐지지 않은 `report/a`)에서 `claude -p '/plate:run' --plugin-dir /Users/hugo/Desktop/harness-plate/plugins/plate --permission-mode bypassPermissions --output-format json` → "회고가 계획 자체에 문제가 있다고 판정해서, 여기서 멈추고 결정을 여쭤봅니다", "tasks 일괄이어도 고칠 phase를 … 더하지 않고, 여기서 멈췄습니다"와 계획을 고칠 안. 뒤에 `ls docs/tasks/001-report` → `done-phase-1.md plan.md retro.md`(`phase-2.md` 없음), `git status --porcelain` 빈 출력, HEAD `001-report: RUNLOG` 그대로. 통과
+  - 완료 조건 1, plan: `mk_plan.sh`로 새로 차린 시험 레포(`chk1/plan/repo`: 로컬 `report/a`에 `reports/1.md`, origin에만 `report/b`에 `reports/2.md`)에서 `claude -p '/plate:plan `scripts/new_report.sh`에 `-n <개수>` 옵션을 더해, 새 보고서를 한 번에 그 개수만큼 만들게 해 줘.' --plugin-dir … --permission-mode bypassPermissions --output-format json` → 첫 물음을 담은 글이 "다른 브랜치에 아직 합쳐지지 않은 보고서가 있습니다. `report/a`에 `reports/1.md`, `origin/report/b`에 `reports/2.md`가 있습니다"를 들었다(이번 첫 물음 자체는 `-n` 값의 범위를 묻고, 브랜치의 같은 이름은 그 물음 앞의 확인한 것에 든다). 파일을 쓰지 않았다(`git status --porcelain` 빈 출력, 브랜치 `main`·`report/a`). 통과
+  - tasks 완료 조건 1: `python3 -m unittest discover -s tests` → `Ran 275 tests`, 마지막 줄 `OK`. 통과
+  - tasks 완료 조건 2: `grep -n '합쳐지지 않은 다른 브랜치' plugins/plate/skills/plan/SKILL.md plugins/plate/skills/retro/SKILL.md` → plan 115(`## 6. 초안을 보여 주고 승인받는다` 아래), plan 266(`**조건**` 아래), retro 79(`## 4. task의 변경을 점검한다` 아래). 통과
+  - tasks 완료 조건 2: `cp -R` 사본에서 `sed -i '' '/합쳐지지 않은 다른 브랜치/d'`로 두 본문의 그 줄을 지우고 `python3 -m unittest tests.test_skill_rules` → `FAILED (failures=7)`, 그 가운데 `PlanRulesTest.test_80_names_left_anywhere_covered`(part 6, 조건), `RetroRulesTest.test_80_retro_names_left_anywhere`. 통과
+  - tasks 완료 조건 3: `mk_retroA.sh`로 새로 차린 시험 레포(`chk1/rA/repo`: 지난 tasks의 `001-x: phase 1`(old.txt)이 남음)에서 `claude -p '/plate:retro docs/tasks/001-x' --plugin-dir … --permission-mode bypassPermissions --output-format json` → `판정: 통과`, 커밋 `001-x: 회고`. `grep -c old.txt docs/tasks/001-x/retro.md` → 0, `grep -c new.txt` → 2. 통과
+  - tasks 완료 조건 4: `mk_retroB.sh`로 새로 차린 시험 레포(`chk1/rB/repo`)에서 `claude -p '/plate:retro docs/tasks/001-report' …` → 첫 줄 `판정: 문제 있음`. `retro.md` 17줄의 문제 줄에 `기준: 계획`, 19줄 `**판정**: 문제 있음`. 통과
+  - tasks 완료 조건 4: `grep -n '고칠 쪽' plugins/plate/skills/run/SKILL.md` → 108, 209(`## 8. 고칠 phase를 더한다` 아래), 298(`## 멈춘다` 아래), 593. `cp -R` 사본에서 `sed -i '' '/고칠 쪽/d'` 뒤 `python3 -m unittest tests.test_skill_rules` → `FAILED (failures=6)`, 그 가운데 `RunRulesTest.test_80_plan_side_problem_stops`. 통과
+  - tasks 완료 조건 5: `grep -n '고칠 쪽' docs/PRD.md docs/ARCHITECTURE.md` → PRD 17(핵심 기능 7), ARCHITECTURE 40(디렉터리 구조), 55(run 문단), 75(데이터 흐름의 실행), 101(멈춤 문단). 통과
+  - tasks 완료 조건 6: `grep -n '"version"' plugins/plate/.claude-plugin/plugin.json plugins/plate/.codex-plugin/plugin.json` → 두 줄 모두 `"version": "1.0.0"`. `grep -n '1.0.0' docs/PRD.md` → 21 `9단계까지 만들어 1.0.0을 냈다.`. 통과
+  - 저장소 불변(phase 커밋 뒤, `docs/tasks/RUNLOG.md`를 빼고): 시험 전후 `git status --porcelain` → ` M docs/tasks/RUNLOG.md`만, `git rev-parse HEAD` → `04dee7b…` 그대로. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 275 tests`, `OK`. 통과
+
+**남은 것**
+- run 시험은 tasks 일괄 갈래만 돌렸다(task 하나씩, 고칠 쪽이 계획이 아닌 갈래는 돌리지 않음) → 완료 조건 1이 보는 장면은 tasks 일괄에서 고칠 쪽이 계획인 문제의 멈춤이라 걸리지 않는다. 하네스에서 걸린 것
+- plan 시험은 첫 물음까지만 돌렸다 → 완료 조건 1은 "초안 점검이나 첫 물음"을 보므로 걸리지 않는다. 하네스에서 걸린 것
+- 헤드리스 시험을 한 번씩만 돌려 되풀이마다 같은 결과인지 보지 않았다 → 완료 조건은 그 장면에서 한 번 기대대로 도는지를 보고, 되풀이를 보지 않는다. 이 확인에서 새로 차린 레포로 다시 돌려 같은 결과가 났다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: run 시험은 tasks 일괄 갈래만 돌렸다. task 하나씩 갈래와 고칠 phase를 더하는 갈래는 돌리지 않았다
+- 남은 것: plan 시험은 첫 물음까지만 돌렸고 초안 점검(6번)의 확인 목록은 보지 않았다
+- 남은 것: 헤드리스 시험은 되풀이를 보지 않았다(이 확인의 다시 돌림이 두 번째다)
+- 완료 조건 1의 plan 기대 "초안 점검이나 첫 물음이 그 브랜치의 같은 이름을 드는지"는 첫 물음을 담은 글 전체로 보았다. 이번 돌림에서 첫 물음 자체는 `-n` 값을 묻고 같은 이름은 그 앞의 확인한 것에 들어, 수행 기록(첫 물음이 같은 이름을 물음)과 꼴이 달랐다. 기대가 "물음"과 "글"을 가르지 않아 판정이 읽기에 기댄다 (`docs/tasks/003-fixes/plan.md`의 완료 조건 1)
+
+**판정**: 통과
