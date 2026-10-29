@@ -4,14 +4,19 @@ CI의 워크플로가 부르듯 등급 묶음 JSON을 stdin으로 주어 스크�
 (`merge` 자동 머지, `request` 머지 요청, `close` 닫기)을 본다.
 """
 
+import importlib.util
 import json
+import re
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-SCRIPT = Path(__file__).resolve().parent.parent / "plugins" / "plate" / "ci" / "verdict.py"
+ROOT = Path(__file__).resolve().parent.parent
+SCRIPT = ROOT / "plugins" / "plate" / "ci" / "verdict.py"
+SETUP = ROOT / "plugins" / "plate" / "skills" / "setup" / "SKILL.md"
+REVIEW = ROOT / "plugins" / "plate" / "skills" / "review" / "SKILL.md"
 
 # 자동 머지의 조건이 모두 맞는 등급 묶음
 GOOD = {
@@ -167,6 +172,96 @@ class UnreadableInputTest(unittest.TestCase):
             self.assertEqual(
                 run_raw(json.dumps(GOOD), "--changed-files", missing), (0, "request\n")
             )
+
+
+def setup_shape():
+    """setup의 CI 워크플로 양식에서 `--json-schema`의 JSON을 뽑아 {키: 값의 집합}으로 돌려준다.
+
+    수 값은 "number"로 센다. required가 키 전부가 아니거나 다른 키를 받으면 실패한다.
+    """
+    found = re.findall(r"--json-schema '([^']*)'", SETUP.read_text(encoding="utf-8"))
+    if len(found) != 1:
+        raise AssertionError("setup 양식의 --json-schema 줄이 %d개다" % len(found))
+    schema = json.loads(found[0])
+    properties = schema["properties"]
+    if sorted(schema["required"]) != sorted(properties):
+        raise AssertionError("setup 양식의 required가 키 전부가 아니다: %s" % schema["required"])
+    if schema.get("additionalProperties") is not False:
+        raise AssertionError("setup 양식이 다른 키를 받는다")
+    shape = {}
+    for key, spec in properties.items():
+        values = set()
+        for branch in spec.get("anyOf", [spec]):
+            if branch["type"] == "number":
+                values.add("number")
+            elif branch["type"] == "string":
+                values.update(branch["enum"])
+            else:
+                raise AssertionError("setup 양식의 %s에 모르는 type이 있다: %s" % (key, branch))
+        shape[key] = values
+    return shape
+
+
+def review_shape():
+    """review의 PR 모드 절의 등급 묶음 표를 {키: 값의 집합}으로 돌려준다.
+
+    `"A"`~`"E"`는 A부터 E까지로 펴고, "0~100의 수"는 "number"로 센다.
+    """
+    lines = REVIEW.read_text(encoding="utf-8").splitlines()
+    start = lines.index("## PR 모드")
+    header = lines.index("| 키 | 값 | 뜻 |", start)
+    shape = {}
+    for line in lines[header + 2:]:
+        if not line.startswith("|"):
+            break
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        keys = re.findall(r"`([^`]+)`", cells[0])
+        values = set()
+        for low, high in re.findall(r'`"([A-Z])"`~`"([A-Z])"`', cells[1]):
+            values.update(chr(code) for code in range(ord(low), ord(high) + 1))
+        values.update(re.findall(r'`"([^"`]+)"`', cells[1]))
+        if "0~100의 수" in cells[1]:
+            values.add("number")
+        for key in keys:
+            shape[key] = values
+    return shape
+
+
+def verdict_module():
+    spec = importlib.util.spec_from_file_location("plate_verdict", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+class BundleShapeTest(unittest.TestCase):
+    """등급 묶음의 꼴(키 일곱 개와 값의 열거)이 setup 양식, review 표, 판정 스크립트에서 같다."""
+
+    COMMAND_VALUES = {"pass", "fail", "none", "unmeasured"}
+    GRADE_VALUES = {"A", "B", "C", "D", "E", "unjudged"}
+    COVERAGE_VALUES = {"number", "skipped", "unmeasured"}
+
+    def test_setup_schema_matches_review_table(self):
+        self.assertEqual(setup_shape(), review_shape())
+
+    def test_keys_match_verdict_script(self):
+        module = verdict_module()
+        keys = set(module.COMMANDS) | set(module.GRADES) | {"coverage"}
+        self.assertEqual(len(keys), 7)
+        self.assertEqual(set(setup_shape()), keys)
+        self.assertEqual(set(review_shape()), keys)
+
+    def test_values_match_verdict_script(self):
+        module = verdict_module()
+        for name, shape in (("setup", setup_shape()), ("review", review_shape())):
+            for key in module.COMMANDS:
+                with self.subTest(source=name, key=key):
+                    self.assertEqual(shape[key], self.COMMAND_VALUES)
+            for key in module.GRADES:
+                with self.subTest(source=name, key=key):
+                    self.assertEqual(shape[key], self.GRADE_VALUES)
+            with self.subTest(source=name, key="coverage"):
+                self.assertEqual(shape["coverage"], self.COVERAGE_VALUES)
 
 
 if __name__ == "__main__":
