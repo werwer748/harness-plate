@@ -41,3 +41,4 @@
 - `002-ci-fixes`: 판정 스크립트, CI 워크플로 양식, 등급 묶음 꼴의 발견 3건이 고쳐진다.
 - `003-skill-fixes`: run, phase, cleanup, review 본문의 발견 8건이 고쳐진다.
 - `004-test-tidy`: 테스트 정리 4건과 description 줄이기가 끝난다.
+- `005-fixes`: tasks 끝에서 고치기로 한 것이 고쳐진다
