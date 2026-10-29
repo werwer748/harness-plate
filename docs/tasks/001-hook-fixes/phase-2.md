@@ -53,3 +53,34 @@
 
 ## 하네스에서 걸린 것
 - 없음
+
+## 확인 1
+
+**통과 조건**
+- 다시 수행의 세 갈래가 결정대로다(완료 조건 1).
+  - `mktemp -d`로 만든 시험 레포 셋(`AGENTS.md`에 `<!-- plate:docs-map:start -->`, `tests/test_x.py`·`src.py` 커밋, `docs/tasks/001-a/plan.md`, `**테스트 먼저**: 예`인 `phase-1.md`)에 `{"tool_input": {"file_path": "<레포>/src.py"}, "cwd": "<레포>"}`를 `python3 plugins/plate/hooks/edit_guard.py`의 stdin으로 넣음 → `tests/test_x.py`를 고친 `001-a: phase 1` 커밋과 `## 확인 1` 절: `exit=0`. 커밋이 `src.py`만 바꿈과 `## 확인 1` 절: `exit=2`(테스트 먼저 막음 글). 테스트를 고친 커밋이 있으나 `## 확인 1` 절 없음: `exit=2`. 통과
+- phase 스킬의 규칙(고칠 문제를 받으면 동작을 바꾸는 실패에만 테스트부터 쓴다)과 훅이 같은 것을 시킨다.
+  - `plugins/plate/skills/phase/SKILL.md` "2. TODO를 차례로 끝낸다"의 "고칠 문제를 넘겨받았으면 동작을 바꾸는 실패에만 테스트부터 쓴다"와 `edit_guard.py:270`의 `has_check_section(text) and phase_commit_has_test_change(root, name, number)` 갈래를 대어 봄 → 고칠 문제를 받은 수행의 phase 파일에는 `## 확인 N` 절이 있고, 앞 수행이 테스트를 바꾼 `NNN-slug: phase N` 커밋이 있으면 커밋하지 않은 테스트 변경 없이도 구현 편집이 통과한다(위 레포 A, exit=0). 테스트 없는 고침이 막히지 않는다. 통과
+- ARCHITECTURE가 바뀐 동작을 적는다.
+  - `grep -n '다시 수행' docs/ARCHITECTURE.md` → `53:`의 "막는 장치" 문단 한 줄. 통과
+- 테스트 묶음이 통과한다.
+  - `python3 -m unittest discover -s tests` → `Ran 216 tests in 18.378s` / `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 216 tests` / `OK`. 통과
+
+**테스트 먼저 기록**
+- 기록 "한 일"의 "테스트 먼저" 줄 → 실패 출력(`FAILED (failures=1)`)이 먼저, 통과 출력(`Ran 6 tests` / `OK`)이 그 뒤에 있다. 통과
+
+**남은 것**
+- 다시 수행 갈래는 `git log` 전체를 훑으므로 이력이 긴 레포에서는 확인 절이 있는 phase의 막음마다 그만큼 느려진다 → 통과 조건이 보는 것은 갈래의 판정(종료 코드)이고 속도가 아니다. 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 남은 것: 다시 수행 갈래는 `git log` 전체를 훑으므로 이력이 긴 레포에서는 확인 절이 있는 phase의 막음마다 그만큼 느려진다.
+
+**판정**: 통과
