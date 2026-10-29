@@ -858,7 +858,8 @@ class EvalRulesTest(unittest.TestCase):
             "잡힌 곳이 phase의 확인, task의 회고, tasks 끝인 실패나 멈춤이 근거에 있으면 문턱을 넘는다",
             "`docs/BACKLOG.md`의 하네스 고칠 거리에 같은 뜻의 항목이 있으면 문턱을 넘는다",
             "`docs/BACKLOG.md`의 감수한 것과 같은 뜻이면 고칠 거리로 적지 않는다",
-            "이슈 제목과 본문은 문턱을 넘었고 처리가 감수가 아닌 plate 자체의 것에만 적는다",
+            "이슈 제목과 본문은 기준과 문턱을 넘었고 처리가 감수가 아닌 plate 자체의 것에만 적는다",
+            "기준을 넘은 plate 자체의 것은 문턱을 넘었는지 가르고 근거를 적는다",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, body)
@@ -871,6 +872,35 @@ class EvalRulesTest(unittest.TestCase):
             with self.subTest(line=line):
                 self.assertIn(line, form)
         self.assertIn("`docs/BACKLOG.md`의 하네스 고칠 거리와 감수한 것", section(text, "1. 읽는다"))
+
+    def test_eval_only_criteria(self):
+        text = read("eval")
+        body = section(text, "5. 하네스 고칠 거리를 정한다")
+        for phrase in (
+            "처리와 문턱보다 먼저 세 기준을 대어 보고 근거를 적는다",
+            '하나라도 넘지 않으면 그 항목의 기준은 "eval에만"이다',
+            "  - 피해: ",
+            "  - 일반성: ",
+            "이 기준은 plate 자체의 것에만 대고",
+            "  - 고침의 꼴: ",
+            "고침 task, 이슈, `docs/BACKLOG.md`, 감수 어디에도 두지 않는다",
+            "다시 나서 기준을 넘으면 그때 고칠 거리가 된다",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, body)
+        self.assertLess(body.index("세 기준을 대어 보고"), body.index("기준을 넘은 항목마다 처리를 정하고 까닭을 적는다"))
+        form = section(text, "기록의 양식")
+        self.assertEqual(form.count("   - 기준: {넘음 | eval에만} — "), 2)
+        for branch in ("갈래: plate 자체\n   - 기준:", "갈래: 이 프로젝트만\n   - 기준:"):
+            with self.subTest(branch=branch):
+                self.assertIn(branch, form)
+        rules = section(text, "적는 규칙")
+        self.assertIn(
+            '기준이 "eval에만"인 항목은 기준 줄만 두고 처리, 문턱, 이슈 제목, 이슈 본문, 고칠 곳, 해결책 줄을 빼고 적는다',
+            rules,
+        )
+        self.assertIn("이슈 제목과 이슈 본문 줄은 기준과 문턱이 넘음이고", rules)
+        self.assertIn('"eval에만"', front_matter("eval")["description"])
 
     def test_74_untested_lines_not_failures(self):
         body = section(read("eval"), "2. 실패를 모아 MAST 유형으로 나눈다")
