@@ -723,13 +723,15 @@ class PlanRulesTest(unittest.TestCase):
         # plan이 계획을 tasks/<이름> 브랜치에 커밋한다: 기본 브랜치면 만들거나 바꾸고, 그 밖이면 1번에서 묻는다(002-plan-branch).
         rules = section(self.text, "절대 규칙")
         self.assertIn("4. **계획 파일만 `tasks/<이름>` 브랜치에 커밋한다.**", rules)
-        self.assertIn("지금 브랜치가 기본 브랜치일 때는 묻지 않고 쓰기 전에 `tasks/<이름>`을 만들거나 바꾸고, `tasks/<이름>`일 때는 그대로 두고, 그 밖의 브랜치일 때는 1번에서 물어 승인받은 때만 바꾼다. 푸시하지 않는다", rules)
+        self.assertIn("지금 브랜치가 기본 브랜치일 때는 묻지 않고 쓰기 전에 `tasks/<이름>`을 만들거나 바꾸고, cleanup 브랜치(`cleanup/…`)일 때도 묻지 않고", rules)
+        self.assertIn("`tasks/<이름>`일 때는 그대로 두고, 그 밖의 브랜치일 때는 1번에서 물어 승인받은 때만 바꾼다. 푸시하지 않는다", rules)
         first = section(self.text, "1. 진행 중인 tasks가 있는지 본다")
-        self.assertIn("기본 브랜치도 `tasks/<이름>`도 아니면 지금 브랜치를 보여 주고, 계획을 `tasks/<이름>` 브랜치에 커밋할지 묻고, 거기서 멈춰 답을 기다린다", first)
+        self.assertIn("기본 브랜치도 cleanup 브랜치도 `tasks/<이름>`도 아니면 지금 브랜치를 보여 주고, 계획을 `tasks/<이름>` 브랜치에 커밋할지 묻고, 거기서 멈춰 답을 기다린다", first)
         self.assertIn("`<이름>`은 6번의 초안에서 정한다", first)
         self.assertIn("- 거절하면 아무것도 쓰지 않고 끝난다.", first.split("커밋할지 묻고")[1])
         # 새 tasks는 기본 브랜치에서만 묻지 않고, 다른 tasks의 브랜치에서도 묻는다(002-plan-branch 회고 1).
-        self.assertIn("기본 브랜치이면 묻지 않고 2번으로 간다. 더하는 경우에 지금 브랜치가 그 tasks 머리의 이름의 `tasks/<이름>`이어도 묻지 않고 2번으로 간다.", first)
+        self.assertIn("기본 브랜치이면 묻지 않고 2번으로 간다. cleanup 브랜치(`cleanup/…`)이면 묻지 않고 2번으로 간다.", first)
+        self.assertIn("만든다. 더하는 경우에 지금 브랜치가 그 tasks 머리의 이름의 `tasks/<이름>`이어도 묻지 않고 2번으로 간다.", first)
         self.assertIn("새 tasks는 다른 tasks의 브랜치(예: 앞 tasks가 끝난 뒤 남은 `tasks/old`)에서도 묻는다", first)
         self.assertNotIn("기본 브랜치이거나 `tasks/<이름>`(더하는 경우는 그 tasks 머리의 이름)이면 묻지 않고", first)
         write = section(self.text, "7. 쓰고 커밋한다")
@@ -749,6 +751,30 @@ class PlanRulesTest(unittest.TestCase):
         defs = [[l for l in section(t, "낱말").split("\n") if l.startswith("- **기본 브랜치**:")] for t in (self.text, read("run"))]
         self.assertEqual(len(defs[0]), 1)
         self.assertEqual(defs[0], defs[1])
+
+    def test_cleanup_branch_sends_back(self):
+        # plan이 cleanup 브랜치에서 묻지 않고 tasks/<이름>을 갈라 tasks 머리에 보낼 곳을 적는다(002-cleanup-branch).
+        defs = section(self.text, "낱말")
+        self.assertIn("- **cleanup 브랜치**: cleanup 스킬(`plate:cleanup`)이 보고서를 쓰기 전에 만드는 `cleanup/<보고서 이름>` 브랜치.", defs)
+        self.assertIn("`cleanup/<보고서 이름>-2`처럼 번호가 붙는다", defs)
+        self.assertIn("지금 브랜치의 이름이 `cleanup/`으로 시작하면 cleanup 브랜치로 본다", defs)
+        self.assertIn("cleanup 브랜치에서 갈랐을 때만 보낼 곳", defs)
+        # cleanup 본문이 만드는 브랜치 꼴과 같다.
+        self.assertIn("`cleanup/<보고서 이름>-2`", section(read("cleanup"), "낱말"))
+        rules = section(self.text, "절대 규칙")
+        self.assertIn("새 tasks면 그 브랜치를 tasks 머리의 `**보낼 곳**:` 줄에 적고", rules)
+        first = section(self.text, "1. 진행 중인 tasks가 있는지 본다")
+        self.assertIn("cleanup 브랜치(`cleanup/…`)이면 묻지 않고 2번으로 간다. 새 tasks면 그 브랜치의 이름이 tasks 머리의 `**보낼 곳**:` 줄에 들고", first)
+        self.assertLess(first.index("cleanup 브랜치(`cleanup/…`)이면 묻지 않고"), first.index("커밋할지 묻고"))
+        write = section(self.text, "7. 쓰고 커밋한다")
+        self.assertIn("기본 브랜치이거나 cleanup 브랜치(`cleanup/…`)이거나 1번에서 승인받았으면, `tasks/<이름>`이 로컬에 없을 때 `git switch -c tasks/<이름>`으로 지금 HEAD에서 만들어 바꾸고", write)
+        self.assertIn("tasks 머리의 `**보낼 곳**:` 줄에 승인받은 초안대로 들어 있다", write)
+        self.assertIn("더하는 경우는 tasks 머리의 보낼 곳을 고치지 않는다", write)
+        form = section(self.text, "계획 파일의 양식")
+        self.assertIn("**이름**: {브랜치 `tasks/<이름>`에 쓸 영어 소문자 이름}\n**보낼 곳**: {그 cleanup 브랜치}\n", form)
+        head = part(section(self.text, "적는 규칙"), "tasks 머리")
+        self.assertIn("`**보낼 곳**:` 줄은 1번에서 지금 브랜치가 cleanup 브랜치(`cleanup/…`)였던 새 tasks에만 이름 줄 바로 아래에 두고", head)
+        self.assertIn("그 밖의 브랜치에서 갈랐거나 git 레포가 아니면 그 줄을 두지 않는다", head)
 
     def test_37_draft_check(self):
         body = section(self.text, "6. 초안을 보여 주고 승인받는다")
