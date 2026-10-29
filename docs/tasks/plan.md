@@ -64,3 +64,4 @@ plan과 retro가 tasks를 넘어 되풀이되는 이름과 여러 입력의 경�
 ## task 목록
 - `001-repeat-checks`: plan과 retro가 되풀이되는 이름과 여러 입력의 경우를 확인하고 회고한다(#80).
 - `002-cleanup-branch`: cleanup, plan, run이 cleanup 브랜치에서 일하고 끝에서 그 브랜치로 기본 브랜치에 들어가며, 맥락 문서가 맞는다.
+- `003-fixes`: tasks 끝에서 고치기로 한 것이 고쳐진다
