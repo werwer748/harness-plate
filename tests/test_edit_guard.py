@@ -36,6 +36,9 @@ DOCS_MAP = (
     "<!-- plate:docs-map:end -->\n"
 )
 
+sys.path.insert(0, str(HOOK.parent))
+from edit_guard import TEST_DIRS, TEST_NAMES  # noqa: E402
+
 PLAN_FIRST = "계획부터"
 TEST_FIRST = "실패하는 테스트부터"
 STOP = "더 시도하지 않는다"
@@ -114,10 +117,10 @@ class Project:
             "tool_input": {key: path},
         })
 
-    def edit(self, rel, tool="Edit"):
+    def edit(self, rel, tool="Edit", env=None):
         """rel을 고치는 편집 도구의 호출을 훅에 준다. (종료 코드, stderr)를 돌려준다."""
         done = subprocess.run(
-            [sys.executable, str(HOOK)], input=self.payload(rel, tool), env=GIT_ENV,
+            [sys.executable, str(HOOK)], input=self.payload(rel, tool), env=env or GIT_ENV,
             capture_output=True, text=True,
         )
         return done.returncode, done.stderr
@@ -164,6 +167,14 @@ class SetupAndCodeFileTest(GuardTestCase):
         p.add_task("001-a", {1: "예"})  # 테스트 먼저인 phase에서도 같다
         self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
         self.assertPassed(p.edit("docs/tasks/001-a/notes.txt", tool="Write"))
+
+    def test_md_file_passes_without_git(self):
+        # `.md`는 git을 부르기 전에 통과시킨다. PATH에 git이 없어도 통과한다
+        p = self.project()
+        p.add_task("001-a", {1: "예"})
+        no_git = dict(GIT_ENV, PATH="/nonexistent")
+        self.assertPassed(p.edit("README.md", env=no_git))
+        self.assertPassed(p.edit("docs/notes.MD", tool="Write", env=no_git))
 
     def test_file_outside_project_passes(self):
         p = self.project()
@@ -334,6 +345,25 @@ class TestFirstTest(GuardTestCase):
         p.write("tests/test_app.py", "import unittest\n# 바뀜\n")
         p.commit("앞 phase")
         self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def test_deleted_test_file_only_does_not_count(self):
+        p = self.project()
+        p.write("tests/test_other.py", "import unittest\n")
+        p.add_task("001-a", {1: "예"})
+        p.git("rm", "-q", "tests/test_app.py")
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+        p.git("reset", "-q", "--", "tests/test_app.py")  # 작업 트리에서만 지운 것도 같다
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def test_message_names_test_file_rules(self):
+        p = self.project()
+        p.add_task("001-a", {1: "예"})
+        err = self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+        for name in TEST_NAMES + tuple("%s/" % d for d in TEST_DIRS):
+            with self.subTest(name=name):
+                self.assertIn("`%s`" % name, err)
+        # 이름 목록을 손으로 다시 적지 않고 상수에서 만든다
+        self.assertNotIn("`test_*`, `*_test.*`", HOOK.read_text(encoding="utf-8"))
 
     def test_marker_no_passes(self):
         p = self.project()

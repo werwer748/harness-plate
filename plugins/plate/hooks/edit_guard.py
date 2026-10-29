@@ -34,8 +34,8 @@ TEST_FIRST = (
     "plate: 지금 phase(`{phase}`)는 테스트 먼저다. 커밋되지 않은 변경에 테스트 파일이 없어서 "
     "테스트 파일이 아닌 코드 파일을 고치지 않는다: `{rel}`\n"
     "실패하는 테스트부터 쓴다. 테스트를 돌려 실패 출력을 기록에 남기고, 그 뒤에 구현한다.\n"
-    "테스트 파일은 `tests/`, `test/`, `__tests__/` 아래이거나 이름이 "
-    "`test_*`, `*_test.*`, `*.test.*`, `*.spec.*` 꼴인 파일이다.\n"
+    "테스트 파일은 " + ", ".join("`%s/`" % d for d in sorted(TEST_DIRS)) + " 아래이거나 이름이 "
+    + ", ".join("`%s`" % n for n in TEST_NAMES) + " 꼴인 파일이다.\n"
 )
 STOP = (
     "plate: 테스트 먼저 때문에 같은 파일을 세 번째 막았다: `{rel}` (지금 phase: `{phase}`)\n"
@@ -161,7 +161,8 @@ def has_uncommitted_test_change(root):
         i += 1
         if len(item) < 4:
             continue
-        paths.append(item[3:])
+        if item[:2].strip() != "D":  # 지우기만 한 항목은 테스트 변경으로 세지 않는다
+            paths.append(item[3:])
         if "R" in item[:2] or "C" in item[:2]:  # 이름을 바꾼 항목은 다음 칸이 옛 경로다
             paths.append(items[i])
             i += 1
@@ -203,6 +204,9 @@ def check(data):
     path = tool_input.get("file_path") or tool_input.get("notebook_path")
     if not path:
         return None
+    if str(path).lower().endswith(".md"):
+        # 코드 파일이 아니다. git을 부르기 전에 통과시킨다
+        return None
     cwd = data.get("cwd") or os.getcwd()
     top = git(cwd, "rev-parse", "--show-toplevel")
     root = os.path.realpath(top.strip() if top else cwd)
@@ -226,7 +230,12 @@ def check(data):
     phase = "/".join(["docs", "tasks", name, "phase-%d.md" % tasks[name][0]])
     with open(os.path.join(root, phase), encoding="utf-8") as f:
         lines = plan_lines(f.read())
-    if not is_test_first(lines) or not has_tests(root) or has_uncommitted_test_change(root):
+    if not is_test_first(lines):
+        return None
+    # 싼 `git status`를 먼저 보고, 저장소 전체를 훑는 `git ls-files`는 그 뒤에 본다
+    if has_uncommitted_test_change(root):
+        return None
+    if not has_tests(root):
         return None
     if count_block(root, phase, lines, rel) >= 3:
         return STOP.format(rel=rel, phase=phase)
