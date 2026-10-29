@@ -61,7 +61,7 @@ docs/                              # 이 레포의 하네스 기록. 위치는 A
 셋업(AGENTS.md의 문서 지도와 규칙 구간, docs/의 양식, GitHub 원격이 있고 승인하면 .github/workflows/plate-review.yml과, 없고 login을 얻었으면 .github/CODEOWNERS. 보고에 시크릿 등록 방법과 ruleset 거는 법을 적는다. 설치만 하고 묻지 않고 끝난다)
 → 맥락(docs/PRD.md, docs/ARCHITECTURE.md, docs/ADR.md, UI 프로젝트면 docs/DESIGN.md)
 → 계획(docs/tasks/에 tasks 머리 plan.md와, task 폴더 NNN-slug/마다 task 머리 plan.md와 phase-N.md를 쓰고 한 커밋으로 tasks/<이름> 브랜치에 넣는다
-       → git 레포이면 기본 브랜치에서는 묻지 않고 쓰기 전에 tasks/<이름>을 만들거나(로컬에 없는 이름을 고른다) 바꾸고, tasks/<이름>에서는 그대로 두고, 그 밖의 브랜치에서는 tasks/<이름>에 커밋할지 묻고 거절하면 쓰지 않고 끝난다. 푸시하지 않는다
+       → git 레포이면 기본 브랜치에서는 묻지 않고 쓰기 전에 tasks/<이름>을 만들거나(로컬에 없는 이름을 고른다) 바꾸고, 더하는 경우 그 tasks의 tasks/<이름>에서는 그대로 두고, 그 밖의 브랜치(새 tasks면 다른 tasks/… 브랜치도 든다)에서는 tasks/<이름>에 커밋할지 묻고 거절하면 쓰지 않고 끝난다. 푸시하지 않는다
        → tasks가 진행 중이면 새 요청을 지금 tasks에 task로 더할지 묻고, 더하면 이미 있는 task 머리를 읽는다
        → docs/tasks/review.md나 eval.md가 있어 tasks 끝의 평가가 시작된 tasks면 더할지 묻지 않고 더하지 않는다고 알리고 끝난다)
 → 실행(첫 에이전트를 띄우기 전에 plan 모드가 켜져 있거나 쓰기가 막힐 권한 모드면 알리고 바꿀지 묻는다(확인할 수 없으면 그렇다고 적고 잇는다)

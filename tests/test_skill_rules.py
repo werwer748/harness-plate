@@ -627,7 +627,13 @@ class PlanRulesTest(unittest.TestCase):
         self.assertIn("기본 브랜치도 `tasks/<이름>`도 아니면 지금 브랜치를 보여 주고, 계획을 `tasks/<이름>` 브랜치에 커밋할지 묻고, 거기서 멈춰 답을 기다린다", first)
         self.assertIn("`<이름>`은 6번의 초안에서 정한다", first)
         self.assertIn("- 거절하면 아무것도 쓰지 않고 끝난다.", first.split("커밋할지 묻고")[1])
+        # 새 tasks는 기본 브랜치에서만 묻지 않고, 다른 tasks의 브랜치에서도 묻는다(002-plan-branch 회고 1).
+        self.assertIn("기본 브랜치이면 묻지 않고 2번으로 간다. 더하는 경우에 지금 브랜치가 그 tasks 머리의 이름의 `tasks/<이름>`이어도 묻지 않고 2번으로 간다.", first)
+        self.assertIn("새 tasks는 다른 tasks의 브랜치(예: 앞 tasks가 끝난 뒤 남은 `tasks/old`)에서도 묻는다", first)
+        self.assertNotIn("기본 브랜치이거나 `tasks/<이름>`(더하는 경우는 그 tasks 머리의 이름)이면 묻지 않고", first)
         write = section(self.text, "7. 쓰고 커밋한다")
+        self.assertIn("더하는 경우에 지금 브랜치가 그 tasks의 `tasks/<이름>`이면 그대로 둔다", write)
+        self.assertNotIn("지금 브랜치가 `tasks/<이름>`이면 그대로 둔다", write)
         self.assertIn("`git switch -c tasks/<이름>`으로 지금 HEAD에서 만들어 바꾸고", write)
         self.assertIn("`git switch tasks/<이름>`으로 바꾼다", write)
         self.assertIn("만들거나 바꾸지 못하면 아무것도 쓰지 않고, 실패한 명령과 오류를 보고하고 끝난다", write)
