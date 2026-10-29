@@ -54,3 +54,4 @@ eval이 하네스 고칠 거리마다 세 기준(피해, 일반성, 고침의 �
 
 ## task 목록
 - `001-issue-criteria`: eval과 run이 세 기준과 "eval에만"을 따르고, ADR-026과 맥락 문서, BACKLOG가 그것과 맞는다
+- `002-plan-branch`: plan이 계획을 기본 브랜치가 아닌 `tasks/<이름>` 브랜치에 커밋하고, run 1번과 맥락 문서, README가 그것과 맞는다
