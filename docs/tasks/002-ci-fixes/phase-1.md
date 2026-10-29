@@ -55,3 +55,36 @@
 
 ## 하네스에서 걸린 것
 없음
+
+## 확인 1
+
+**통과 조건**
+- 읽지 못한 입력에서 `request`와 0이다(완료 조건 1).
+  - `printf 'not json' | python3 plugins/plate/ci/verdict.py; echo "exit=$?"` → `request`, `exit=0`. 통과
+  - `printf '[]' | python3 plugins/plate/ci/verdict.py; echo "exit=$?"` → `request`, `exit=0`. 통과
+  - `printf '{"build":"pass","lint":"none","test":"pass","coverage":"skipped","reliability":"A","security":"A","maintainability":"A"}' | python3 plugins/plate/ci/verdict.py --changed-files /nonexistent; echo "exit=$?"` → `request`, `exit=0`. 통과
+- 문서가 바뀐 동작을 적는다.
+  - `grep -n '읽지 못하면' plugins/plate/ci/verdict.py docs/ARCHITECTURE.md` → `verdict.py:21`, `verdict.py:22`, `ARCHITECTURE.md:57`. 두 파일에 저마다 한 줄 이상. 통과
+- 테스트 묶음이 통과한다.
+  - `python3 -m unittest discover -s tests` → `Ran 226 tests in 19.754s`, 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 226 tests`, `OK`. 통과
+
+**테스트 먼저 기록**
+- 기록 "한 일"의 테스트 먼저 → 실패 출력(`FAILED (failures=7)`, `UnreadableInputTest`)이 먼저, 통과 출력(`Ran 21 tests`, `OK`)이 그 뒤에 있다. 통과
+
+**남은 것**
+- `--changed-files`의 파일을 읽지 못하면 묶음의 판정이 `close`여도 `request`를 낸다 → TODO와 완료 조건의 글대로의 동작이고, 통과 조건은 모두 A 묶음에서 `request`를 보므로 `close` 묶음의 동작에 걸리지 않는다. 하네스에서 걸린 것
+- 묶음이 객체이면 키의 값 꼴은 검사하지 않는다 → 통과 조건은 읽지 못한 입력(깨진 JSON, 객체가 아닌 JSON, 읽지 못하는 목록 파일)만 보므로 걸리지 않는다. 하네스에서 걸린 것
+
+**실패**
+없음
+
+**하네스에서 걸린 것**
+- 남은 것: `--changed-files`의 파일을 읽지 못하면 묶음의 판정이 `close`여도 `request`를 내서, 닫아야 할 PR이 머지 요청으로 남을 수 있다.
+- 남은 것: 묶음이 객체이면 키의 값 꼴(목록, 객체 같은 것)은 검사하지 않고 `verdict`가 `request` 쪽으로 보낸다.
+
+**판정**: 통과
