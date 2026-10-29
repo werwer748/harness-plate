@@ -1,6 +1,6 @@
 ---
 name: setup
-description: 프로젝트에 하네스를 설치한다. `docs/`에 문서 양식(PRD, ARCHITECTURE, ADR, 화면이 있는 프로젝트면 DESIGN)과 tasks 기록 폴더를 만들고, `AGENTS.md`에 문서 지도와 작업 규칙을 넣고, `CLAUDE.md`가 `AGENTS.md`를 불러오게 한다. GitHub 원격이 있고 plate 워크플로가 없으면 PR마다 review로 평가해 판정대로 자동 머지, 머지 요청, 닫기를 하는 CI 워크플로를 둘지 묻고, 승인하면 `.github/workflows/`에 쓰고, `.github/CODEOWNERS`가 없고 GitHub login을 얻었으면 워크플로와 CODEOWNERS의 코드 소유자를 그 login으로 두는 CODEOWNERS를 쓰고, 보고에 시크릿 등록 방법과 ruleset 거는 법을 적는다. 설치만 하고 보고로 끝나며, 끝에 다른 일로 이어 갈지 묻지 않는다. plate를 프로젝트에 처음 쓸 때, 또는 "하네스 셋업해줘", "문서 위치 잡아줘"라고 할 때 쓴다. 문서 내용을 채우는 일에는 쓰지 않는다.
+description: 프로젝트에 하네스를 설치해 `docs/`의 문서 양식과 tasks 기록 폴더, `AGENTS.md`의 문서 지도와 작업 규칙, `AGENTS.md`를 불러오는 `CLAUDE.md`를 두고, GitHub 원격이 있으면 PR마다 review로 평가하는 CI 워크플로를 둘지 묻는다. 설치와 보고로 끝난다. plate를 프로젝트에 처음 쓸 때, 또는 "하네스 셋업해줘", "문서 위치 잡아줘"라고 할 때 쓴다. 문서 내용을 채우는 일에는 쓰지 않는다.
 ---
 
 # 셋업

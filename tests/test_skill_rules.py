@@ -103,8 +103,9 @@ def skill_names():
 
 
 class DescriptionTest(unittest.TestCase):
-    """Agent Skills 규격의 한도를 본다. Codex는 1024자를 넘는 description을 잘라 끝의 부르는 말과
-    쓰지 않을 때를 모델에게 싣지 않는다(release-prep의 코드 평가 1, run이 1142자였다)."""
+    """Agent Skills 규격의 한도와 plate의 description 상한을 본다. Codex는 1024자를 넘는 description을
+    잘라 끝의 부르는 말과 쓰지 않을 때를 모델에게 싣지 않는다. description은 모든 세션과 띄운
+    에이전트마다 실리니, plate는 저마다 400자 이하로 두고 무엇을 내는지, 언제 쓰는지, 쓰지 않을 때만 적는다."""
 
     def test_skills_exist(self):
         self.assertGreaterEqual(len(skill_names()), 10)
@@ -115,6 +116,12 @@ class DescriptionTest(unittest.TestCase):
                 description = front_matter(skill)["description"]
                 self.assertTrue(description.strip(), "description이 비었다")
                 self.assertLessEqual(len(description), 1024)
+
+    def test_description_at_most_400_chars(self):
+        # 절차를 옮겨 적어 다시 불어나면 실패한다.
+        for skill in skill_names():
+            with self.subTest(skill=skill):
+                self.assertLessEqual(len(front_matter(skill)["description"]), 400)
 
     def test_name_matches_folder_and_limit(self):
         for skill in skill_names():

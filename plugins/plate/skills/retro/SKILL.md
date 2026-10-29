@@ -1,6 +1,6 @@
 ---
 name: retro
-description: phase가 모두 통과한 task 하나를 회고한다. task 폴더를 받아 task 머리의 완료 조건 확인과 `docs/ARCHITECTURE.md` 명령 절의 빌드·린트·테스트를 직접 돌리고, task의 커밋이 바꾼 것 전부를 task 머리, tasks 머리, 맥락 문서에 대어 점검하고, 테스트 먼저인 phase는 기록의 순서를 본다. 판정을 task 폴더의 `retro.md`에 회고 절로 더하고, tasks 끝에 볼 것(문제, 멈춤, 스킬로 만들 후보, 경계 밖)을 `docs/tasks/FRICTION.md`에 task 이름과 함께 더하고, 그 두 파일만 커밋한다. 고치지 않고 묻지 않는다. 실행 스킬(`plate:run`)이 task의 phase가 모두 통과한 뒤 띄운 에이전트가 부르고, "task 회고하자", "회고해줘"라고 할 때도 쓴다. phase 하나의 확인이나 tasks 끝의 평가에는 쓰지 않는다.
+description: phase가 모두 통과한 task 하나를 회고해, 판정을 task 폴더의 `retro.md`에, tasks 끝에 볼 것을 `docs/tasks/FRICTION.md`에 더하고 그 두 파일만 커밋한다. 완료 조건의 확인과 빌드·린트·테스트를 직접 돌리고, 고치지 않고 묻지 않는다. 실행 스킬(`plate:run`)이 task의 phase가 모두 통과한 뒤 띄운 에이전트가 부르고, "task 회고하자", "회고해줘"라고 할 때도 쓴다. phase 하나의 확인이나 tasks 끝의 평가에는 쓰지 않는다.
 ---
 
 # 회고

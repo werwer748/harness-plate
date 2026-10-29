@@ -1,6 +1,6 @@
 ---
 name: run
-description: 계획된 tasks를 task 목록의 차례대로, phase 하나씩 실행한다. 첫 에이전트를 띄우기 전에 plan 모드이거나 쓰기가 막힐 권한 모드면 바꿀지 묻고, 실행 방식(task 하나씩, tasks 일괄)을 묻고, `tasks/<이름>` 브랜치에서(로컬 기본 브랜치가 origin보다 앞서 있고 그 커밋이 모두 tasks 브랜치에 있으면 기본 브랜치를 origin의 것으로 되돌릴지 묻는다) phase마다 새 에이전트에게 수행(`plate:phase`)과 확인(`plate:check`)을 맡기고, 통과한 phase는 `done-phase-N.md`로 이름을 바꾼다. task의 phase가 모두 통과하면 새 에이전트에게 task 회고(`plate:retro`)를 맡기고, 회고의 문제는 고칠 phase를 더해 고친다(task 하나씩은 승인받고, tasks 일괄은 묻지 않는다). 막힘, 계획이 틀림(회고의 문제가 목표나 완료 조건을 바꾸거나 좁히게 할 때도), 같은 확인이나 회고의 세 번 실패에서는 멈추고 원인과 해결책을 보여 논의한다. 띄운 에이전트마다, 물은 자리마다 `docs/tasks/RUNLOG.md`에 한 줄을 남기고, 회고·코드 평가·하네스 eval 뒤에는 그 자리에서 커밋한다. 모든 task의 회고가 통과하면 저마다 새 에이전트에게 코드 평가(`plate:review`)와 하네스 eval(`plate:eval`)을 맡기고, 전체 보고와 함께 고칠 안(고침 task, GitHub 이슈, `docs/BACKLOG.md`로 미룰 것)을 한 번에 물어 승인받은 대로 잇고, `docs/tasks/`를 비운 뒤 origin이 GitHub이면 tasks 브랜치를 푸시해 기본 브랜치로 가는 PR을 열지(plate의 CI 워크플로가 없으면 코드 평가를 PR 댓글로 단다), 아니면 기본 브랜치로 합칠지 묻는다. 계획을 쓴 뒤에, 또는 "실행해줘", "phase 진행하자", "이어서 하자", "끝까지 돌려줘"라고 할 때 쓴다. 계획이 없는 요청에는 쓰지 않는다.
+description: 계획된 tasks를 phase 하나씩 새 에이전트에게 수행(`plate:phase`)과 확인(`plate:check`)을 맡겨 실행하고, task마다 회고(`plate:retro`)를, 끝에 코드 평가(`plate:review`)와 하네스 eval(`plate:eval`)을 맡긴 뒤 전체 보고와 고칠 안을 묻고 PR이나 합침으로 잇는다. 막힘, 계획이 틀림, 세 번 실패에서는 멈추고 논의한다. 계획을 쓴 뒤에, 또는 "실행해줘", "phase 진행하자", "이어서 하자", "끝까지 돌려줘"라고 할 때 쓴다. 계획이 없는 요청에는 쓰지 않는다.
 ---
 
 # 실행
