@@ -211,6 +211,16 @@ class RunRulesTest(unittest.TestCase):
         stop = section(self.text, "멈춘다")
         self.assertIn("회고의 문제를 고치려면 계획 파일(tasks 머리, task 머리)의 목표나 완료 조건을 바꾸거나 좁혀야 한다(8번)", stop)
 
+    def test_80_plan_side_problem_stops(self):
+        # 회고가 고칠 쪽을 "계획"으로 적은 문제는 고칠 phase로 고치지 않고 멈춘다(001-name-scope).
+        body = section(self.text, "8. 고칠 phase를 더한다")
+        self.assertIn('회고가 "고칠 쪽: 계획"으로 적은 문제', body)
+        self.assertIn('그런 문제가 하나라도 있으면 고칠 phase를 더하지 않고, 실행 방식과 상관없이 "멈춘다"로 간다', body)
+        stop = section(self.text, "멈춘다")
+        self.assertIn('마지막 회고 절에 고칠 쪽이 "계획"인 문제가 있을 때도 든다(8번)', stop)
+        mode = section(self.text, "2. 실행 방식을 정한다")
+        self.assertIn('회고가 고칠 쪽을 "계획"으로 적은 문제가 있으면 더하지 않고 멈춘다', mode)
+
     def test_40_permission_check_before_first_agent(self):
         body = section(self.text, "1. 시작 조건을 본다")
         self.assertIn("먼저 권한을 본다", body)
