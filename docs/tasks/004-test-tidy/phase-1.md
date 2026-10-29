@@ -73,3 +73,39 @@
 
 ## 하네스에서 걸린 것
 - 통과 조건의 hooks.json 시험 명령(`python3 -m unittest tests.test_edit_guard.HooksJsonCommandTest tests.test_push_guard.HooksJsonTest`)은 계획을 쓸 때 돌려 보지 않은 듯하다. 지금 저장소에서 그대로 돌리면 `test_push_guard`의 import 오류로 실패해, 시험 모듈에 `sys.path` 줄을 더해 돌게 했다.
+
+## 확인 1
+
+**통과 조건**
+- cleanup 시험이 도우미를 불러 쓴다(완료 조건 1).
+  - `grep -n -e '^def section' -e '^def front_matter' tests/test_cleanup_skill.py` → 출력 없음(rc=1). 통과
+  - `grep -n 'from test_skill_rules import' tests/test_cleanup_skill.py` → `15:from test_skill_rules import front_matter, section  # noqa: E402` 한 줄. 통과
+- hooks.json 시험이 차례에 기대지 않고 도우미가 한 곳이다(완료 조건 2).
+  - `grep -n -F '["PreToolUse"][0]' tests/test_edit_guard.py tests/test_push_guard.py` → 출력 없음(rc=1). 통과
+  - `grep -ln 'hook_helpers' tests/test_edit_guard.py tests/test_push_guard.py` → `tests/test_edit_guard.py`, `tests/test_push_guard.py` 두 파일. 통과
+  - `cp -R . "$(mktemp -d)/r"` 사본에서 `PreToolUse` 두 항목을 뒤집어(matcher 차례 `['Bash', 'Edit|Write|MultiEdit|NotebookEdit']`) `python3 -m unittest tests.test_edit_guard.HooksJsonCommandTest tests.test_push_guard.HooksJsonTest` → `Ran 6 tests`, `OK`. 통과
+- docstring이 일반 설명이다(완료 조건 3).
+  - `python3 -c "import ast; print(ast.get_docstring(ast.parse(open('tests/test_skill_rules.py', encoding='utf-8').read())))"` → 스킬 본문의 규칙 글이 제 절에 있는지와 앞머리 한도를 본다는 세 줄. `release-prep`도 `#` 뒤 숫자도 없다. 통과
+- 매니페스트 description을 견준다(완료 조건 4).
+  - `python3 -m unittest tests.test_manifests -v` → `test_descriptions_match (tests.test_manifests.DescriptionTest) ... ok`, `Ran 3 tests`, `OK`. 통과
+  - `cp -R` 사본에서 `plugins/plate/.codex-plugin/plugin.json`의 description 끝에 `x`를 더해 `python3 -m unittest tests.test_manifests` → `FAILED (failures=1)`. 통과
+- ARCHITECTURE가 맞다(완료 조건 6의 앞 두 줄).
+  - `grep -n -e 'hook_helpers.py' -e 'test_manifests.py' docs/ARCHITECTURE.md` → 34행(`hook_helpers.py`), 39행(`test_manifests.py`, 버전과 description). 디렉터리 구조 절(9~43행) 안. 통과
+- 테스트 묶음이 통과한다.
+  - `python3 -m unittest discover -s tests` → `Ran 238 tests`, 마지막 줄 `OK`. 통과
+
+**명령**
+- 빌드: 없음
+- 린트: 없음
+- 테스트: `python3 -m unittest discover -s tests` → `Ran 238 tests`, `OK`. 통과
+
+**남은 것**
+- 없음
+
+**실패**
+- 없음
+
+**하네스에서 걸린 것**
+- 없음
+
+**판정**: 통과
