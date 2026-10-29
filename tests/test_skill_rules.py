@@ -439,6 +439,28 @@ class RunRulesTest(unittest.TestCase):
         self.assertIn("시간 {초}초 | 다시 띄움: {까닭}", runlog)
         self.assertIn("답: 다시 맡긴다", runlog)
 
+    def test_no_result_relaunch_limit(self):
+        # 결과 없이 돌아온 에이전트는 같은 자리를 다시 띄우고, 연달아 세 번째면 멈춘다.
+        # 코드 평가 뒤 review.md가 없으면 하네스 eval로 가지 않는다(cleanup 2026-10-29 신뢰성-3).
+        words = section(self.text, "낱말")
+        self.assertIn("**결과 없이 돌아온 에이전트**", words)
+        for result in ("기록 절(`## 한 일`)", "하나 는 확인 절", "하나 는 회고 절",
+                       "`docs/tasks/review.md`", "`docs/tasks/eval.md`"):
+            self.assertIn(result, words)
+        self.assertIn("마지막 둘(방금 더한 줄도 든다)이 모두 `| 다시 띄움: 결과 없음`을 달았으면 다시 띄우지 않고 \"멈춘다\"로 간다", words)
+        self.assertIn("그 에이전트가 돌아와 더하는 줄 끝에 `| 다시 띄움: 결과 없음`을 덧붙인다", words)
+        for heading in ("4. 수행을 맡긴다", "5. 확인을 맡긴다", "7. task 회고를 맡긴다",
+                        "코드 평가를 맡긴다", "하네스 eval을 맡긴다"):
+            self.assertIn('낱말의 "결과 없이 돌아온 에이전트"대로', subsection(self.text, heading), heading)
+        review = subsection(self.text, "코드 평가를 맡긴다")
+        self.assertIn('`docs/tasks/review.md`가 있을 때만 "하네스 eval을 맡긴다"로 간다', review)
+        self.assertNotIn('그다음 "하네스 eval을 맡긴다"로 간다', review)
+        stop = section(self.text, "멈춘다")
+        self.assertIn("같은 자리에서 연달아 세 번째로 결과 없이 돌아왔다", stop)
+        self.assertIn("`| 다시 띄움: 결과 없음`", stop)
+        runlog = section(self.text, "`RUNLOG.md`")
+        self.assertIn("까닭을 `| 다시 띄움: 결과 없음`으로 적는다", runlog)
+
     def test_branch_question_when_not_default_or_tasks_branch(self):
         # 기본 브랜치도 tasks/<이름>도 아니면 바꿀지 묻고, 거절하면 그 줄만 더하고 끝난다(신뢰성-2).
         body = section(self.text, "1. 시작 조건을 본다")
