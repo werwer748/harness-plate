@@ -1,9 +1,7 @@
-"""release-prep tasks가 고친 스킬 규칙의 글이 본문의 제자리에 남아 있는지 시험한다.
+"""plate 스킬 본문(plugins/plate/skills/*/SKILL.md)의 규칙 글이 제 절에 있는지 시험한다.
 
-이슈마다(run의 #34·#35·#38·#40·#44·#46·#47·#48·#51, plan의 #37·#41·#46·#52·#53·#55·#56·#57·#65·#68, phase의 #42·#51·#69, check의 #51·#69,
-retro의 #49·#50·#51·#69, review의 #51·#70, eval의 #36·#50·#51·#74) 그 규칙을 이루는
-글이 그 본문의 그 절에 있는지 본다. 글이 빠지거나 다른 절로 옮겨지면 실패한다.
-모든 스킬의 앞머리가 Agent Skills 규격의 한도(description 1024자, name 64자) 안에 있는지도 본다.
+스킬마다 규칙을 이루는 글이 그 본문의 그 절에 있는지 본다. 글이 빠지거나 다른 절로 옮겨지면 실패한다.
+모든 스킬의 앞머리가 description과 name의 한도 안에 있는지도 본다.
 """
 
 import json
@@ -105,8 +103,9 @@ def skill_names():
 
 
 class DescriptionTest(unittest.TestCase):
-    """Agent Skills 규격의 한도를 본다. Codex는 1024자를 넘는 description을 잘라 끝의 부르는 말과
-    쓰지 않을 때를 모델에게 싣지 않는다(release-prep의 코드 평가 1, run이 1142자였다)."""
+    """Agent Skills 규격의 한도와 plate의 description 상한을 본다. Codex는 1024자를 넘는 description을
+    잘라 끝의 부르는 말과 쓰지 않을 때를 모델에게 싣지 않는다. description은 모든 세션과 띄운
+    에이전트마다 실리니, plate는 저마다 400자 이하로 두고 무엇을 내는지, 언제 쓰는지, 쓰지 않을 때만 적는다."""
 
     def test_skills_exist(self):
         self.assertGreaterEqual(len(skill_names()), 10)
@@ -117,6 +116,12 @@ class DescriptionTest(unittest.TestCase):
                 description = front_matter(skill)["description"]
                 self.assertTrue(description.strip(), "description이 비었다")
                 self.assertLessEqual(len(description), 1024)
+
+    def test_description_at_most_400_chars(self):
+        # 절차를 옮겨 적어 다시 불어나면 실패한다.
+        for skill in skill_names():
+            with self.subTest(skill=skill):
+                self.assertLessEqual(len(front_matter(skill)["description"]), 400)
 
     def test_name_matches_folder_and_limit(self):
         for skill in skill_names():
@@ -389,6 +394,71 @@ class RunRulesTest(unittest.TestCase):
                     self.assertEqual(done.returncode, 0, done.stderr)
                     self.assertEqual(done.stdout, expected + "\n")
 
+    def test_stop_line_grep_runs_on_fake_runlog(self):
+        # 3번의 `멈춤` 줄 grep 두 개를 본문에서 뽑아 가짜 RUNLOG.md에 돌린다(cleanup 2026-10-29 기존 작업 정합성-7).
+        body = section(self.text, "3. 갈 곳을 정한다")
+        commands = re.findall(r"`(grep '\^- 물음 \| 멈춤 \| `NNN-slug` [^']*' docs/tasks/RUNLOG\.md \| tail -n 1)`", body)
+        self.assertEqual(len(commands), 2, commands)
+        phase = next((c for c in commands if "phase N" in c), None)
+        retro = next((c for c in commands if "회고" in c), None)
+        self.assertIsNotNone(phase, "phase의 grep이 없다")
+        self.assertIsNotNone(retro, "task의 grep이 없다")
+        runlog = "\n".join([
+            "# RUNLOG",
+            "- 물음 | 멈춤 | `003-a` phase 2 확인 3 | 확인이 세 번 실패 | 답: 다시 맡긴다",
+            "- 물음 | 멈춤 | `003-a` 회고 3 | 회고가 세 번 문제 | 답: 다시 맡긴다",
+            "- 에이전트 | 확인 | `003-a` phase 2 | 토큰 1 | 도구 호출 1 | 시간 1초",
+            "- 물음 | 멈춤 | `003-a` phase 2 확인 6 | 확인이 또 실패 | 답: 다시 맡긴다",
+            "- 물음 | 멈춤 | `003-a` phase 12 확인 9 | 다른 phase | 답: 다시 맡긴다",
+            "- 물음 | 멈춤 | `004-b` phase 2 확인 9 | 다른 task | 답: 다시 맡긴다",
+            "- 물음 | 멈춤 | `003-a` 회고 4 | 회고가 또 문제 | 답: 다시 맡긴다",
+            "- 물음 | 멈춤 | `004-b` 회고 9 | 다른 task | 답: 다시 맡긴다",
+            "  - 물음 | 멈춤 | `003-a` phase 2 확인 9 | 줄 머리가 아니다 | 답: 다시 맡긴다",
+            "- 물음 | 멈춤 | `003-a` phase 2 수행 | 다른 자리 | 답: 그만둔다",
+            "- 물음 | 멈춤 | `003-a` | 자리 없는 멈춤 | 답: 그만둔다",
+            "",
+        ])
+        cases = (
+            (phase, "- 물음 | 멈춤 | `003-a` phase 2 확인 6 | 확인이 또 실패 | 답: 다시 맡긴다"),
+            (retro, "- 물음 | 멈춤 | `003-a` 회고 4 | 회고가 또 문제 | 답: 다시 맡긴다"),
+        )
+        with tempfile.TemporaryDirectory() as folder:
+            (Path(folder) / "docs" / "tasks").mkdir(parents=True)
+            (Path(folder) / "docs" / "tasks" / "RUNLOG.md").write_text(runlog, encoding="utf-8")
+            for command, expected in cases:
+                with self.subTest(command=command):
+                    line = command.replace("NNN-slug", "003-a").replace("phase N ", "phase 2 ")
+                    done = subprocess.run(["sh", "-c", line], cwd=folder, capture_output=True, text=True, encoding="utf-8")
+                    self.assertEqual(done.returncode, 0, done.stderr)
+                    self.assertEqual(done.stdout, expected + "\n")
+
+    def test_plan_commit_after_tasks_branch(self):
+        # 1번은 커밋하지 않은 변경, tasks 브랜치, 계획의 커밋 차례이고 계획은 tasks 브랜치에 커밋한다(cleanup 2026-10-29 신뢰성-8).
+        body = section(self.text, "1. 시작 조건을 본다")
+        order = [body.find(item) for item in ("1. **커밋하지 않은 변경.**", "2. **tasks 브랜치.**", "3. **계획의 커밋.**")]
+        self.assertNotIn(-1, order, order)
+        self.assertEqual(order, sorted(order))
+        self.assertIn("한 번도 커밋되지 않은 계획 파일은 세지 않는다", body)
+        self.assertIn("그 파일들만, 2번이 정한 `tasks/<이름>`에서 커밋한다", body)
+
+    def test_issue_already_exists_only_by_login(self):
+        # 이슈의 "이미 있음"은 gh api user의 login이 쓴 본문과 댓글로만 본다(cleanup 2026-10-29 기존 작업 정합성-5).
+        issue = subsection(self.text, "이슈를 올린다")
+        second = re.search(r"^2\. (.*)$", issue, re.M).group(1)
+        for rule in (
+            "plate를 돌린 계정이 쓴 본문이나 댓글에 이 tasks 이름이 이미 있으면 올리지 않고",
+            "`gh api user --jq .login`",
+            "`gh issue view {번호} --repo werwer748/harness-plate --json author,comments`의 `author.login`(본문)과 `comments[].author.login`(댓글)",
+            "다른 사람이 쓴 본문이나 댓글에 tasks 이름이 있어도 이미 있는 것으로 보지 않는다",
+            "login을 얻지 못하면 이미 있지 않은 것으로 본다",
+        ):
+            with self.subTest(rule=rule):
+                self.assertIn(rule, second)
+        self.assertNotIn("같은 이슈의 본문이나 댓글에 이 tasks 이름이 이미 있으면", issue)
+        pr_body = part(section(self.text, "PR을 연다"), "PR 본문의 꼴")
+        self.assertIn("`gh api user --jq .login`의 login이 쓴 본문이나 댓글에 이 tasks 이름이 있는 이슈의 주소만 쓴다", pr_body)
+        self.assertIn("login을 얻지 못하면 없는 것으로 본다", pr_body)
+
     def test_text_passing_rule_survives_fake_gh(self):
         # "글을 넘기는 법"대로 넣은 제목이 가짜 gh에 한 인자로 그대로 닿고 치환이 돌지 않는다(review 평가 1의 소스 문제 1).
         terms = section(self.text, "낱말")
@@ -438,6 +508,28 @@ class RunRulesTest(unittest.TestCase):
         self.assertIn("확인이나 회고를 거치지 않고 같은 phase의 수행(또는 같은 역할)을 다시 띄우면 그 에이전트 줄 끝에 `| 다시 띄움: {까닭}`을 덧붙인다", runlog)
         self.assertIn("시간 {초}초 | 다시 띄움: {까닭}", runlog)
         self.assertIn("답: 다시 맡긴다", runlog)
+
+    def test_no_result_relaunch_limit(self):
+        # 결과 없이 돌아온 에이전트는 같은 자리를 다시 띄우고, 연달아 세 번째면 멈춘다.
+        # 코드 평가 뒤 review.md가 없으면 하네스 eval로 가지 않는다(cleanup 2026-10-29 신뢰성-3).
+        words = section(self.text, "낱말")
+        self.assertIn("**결과 없이 돌아온 에이전트**", words)
+        for result in ("기록 절(`## 한 일`)", "하나 는 확인 절", "하나 는 회고 절",
+                       "`docs/tasks/review.md`", "`docs/tasks/eval.md`"):
+            self.assertIn(result, words)
+        self.assertIn("마지막 둘(방금 더한 줄도 든다)이 모두 `| 다시 띄움: 결과 없음`을 달았으면 다시 띄우지 않고 \"멈춘다\"로 간다", words)
+        self.assertIn("그 에이전트가 돌아와 더하는 줄 끝에 `| 다시 띄움: 결과 없음`을 덧붙인다", words)
+        for heading in ("4. 수행을 맡긴다", "5. 확인을 맡긴다", "7. task 회고를 맡긴다",
+                        "코드 평가를 맡긴다", "하네스 eval을 맡긴다"):
+            self.assertIn('낱말의 "결과 없이 돌아온 에이전트"대로', subsection(self.text, heading), heading)
+        review = subsection(self.text, "코드 평가를 맡긴다")
+        self.assertIn('`docs/tasks/review.md`가 있을 때만 "하네스 eval을 맡긴다"로 간다', review)
+        self.assertNotIn('그다음 "하네스 eval을 맡긴다"로 간다', review)
+        stop = section(self.text, "멈춘다")
+        self.assertIn("같은 자리에서 연달아 세 번째로 결과 없이 돌아왔다", stop)
+        self.assertIn("`| 다시 띄움: 결과 없음`", stop)
+        runlog = section(self.text, "`RUNLOG.md`")
+        self.assertIn("까닭을 `| 다시 띄움: 결과 없음`으로 적는다", runlog)
 
     def test_branch_question_when_not_default_or_tasks_branch(self):
         # 기본 브랜치도 tasks/<이름>도 아니면 바꿀지 묻고, 거절하면 그 줄만 더하고 끝난다(신뢰성-2).

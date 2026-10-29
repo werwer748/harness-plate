@@ -6,26 +6,16 @@ JSON을 훅에 주어 돌린다. 종료 코드 2가 막음, 0이 통과다. 막�
 
 import json
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-PLUGIN_ROOT = Path(__file__).resolve().parent.parent / "plugins" / "plate"
-HOOK = PLUGIN_ROOT / "hooks" / "edit_guard.py"
-HOOKS_JSON = PLUGIN_ROOT / "hooks" / "hooks.json"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from hook_helpers import GIT_ENV, PLUGIN_ROOT, HookTestCase, hook_command, run_hook_command  # noqa: E402
 
-GIT_ENV = dict(
-    os.environ,
-    GIT_CONFIG_GLOBAL=os.devnull,
-    GIT_CONFIG_NOSYSTEM="1",
-    GIT_AUTHOR_NAME="t",
-    GIT_AUTHOR_EMAIL="t@t",
-    GIT_COMMITTER_NAME="t",
-    GIT_COMMITTER_EMAIL="t@t",
-)
+HOOK = PLUGIN_ROOT / "hooks" / "edit_guard.py"
 
 DOCS_MAP = (
     "<!-- plate:docs-map:start -->\n"
@@ -35,6 +25,9 @@ DOCS_MAP = (
     "| `docs/tasks/NNN-slug/` | 작업 하나의 기록 | 그 작업을 이어 갈 때 |\n"
     "<!-- plate:docs-map:end -->\n"
 )
+
+sys.path.insert(0, str(HOOK.parent))
+from edit_guard import STOP_COUNT, TEST_DIRS, TEST_NAMES, ordinal  # noqa: E402
 
 PLAN_FIRST = "계획부터"
 TEST_FIRST = "실패하는 테스트부터"
@@ -114,33 +107,18 @@ class Project:
             "tool_input": {key: path},
         })
 
-    def edit(self, rel, tool="Edit"):
+    def edit(self, rel, tool="Edit", env=None):
         """rel을 고치는 편집 도구의 호출을 훅에 준다. (종료 코드, stderr)를 돌려준다."""
         done = subprocess.run(
-            [sys.executable, str(HOOK)], input=self.payload(rel, tool), env=GIT_ENV,
+            [sys.executable, str(HOOK)], input=self.payload(rel, tool), env=env or GIT_ENV,
             capture_output=True, text=True,
         )
         return done.returncode, done.stderr
 
 
-class GuardTestCase(unittest.TestCase):
-    def setUp(self):
-        self.base = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, self.base)
-
+class GuardTestCase(HookTestCase):
     def project(self, **kwargs):
         return Project(self.base, **kwargs)
-
-    def assertPassed(self, result):
-        code, err = result
-        self.assertEqual(code, 0, "통과해야 하는데 막았다: " + err)
-
-    def assertBlocked(self, result, *phrases):
-        code, err = result
-        self.assertEqual(code, 2, "막아야 하는데 통과시켰다 (종료 코드 %d): %s" % (code, err))
-        for phrase in phrases:
-            self.assertIn(phrase, err)
-        return err
 
 
 class SetupAndCodeFileTest(GuardTestCase):
@@ -164,6 +142,14 @@ class SetupAndCodeFileTest(GuardTestCase):
         p.add_task("001-a", {1: "예"})  # 테스트 먼저인 phase에서도 같다
         self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
         self.assertPassed(p.edit("docs/tasks/001-a/notes.txt", tool="Write"))
+
+    def test_md_file_passes_without_git(self):
+        # `.md`는 git을 부르기 전에 통과시킨다. PATH에 git이 없어도 통과한다
+        p = self.project()
+        p.add_task("001-a", {1: "예"})
+        no_git = dict(GIT_ENV, PATH="/nonexistent")
+        self.assertPassed(p.edit("README.md", env=no_git))
+        self.assertPassed(p.edit("docs/notes.MD", tool="Write", env=no_git))
 
     def test_file_outside_project_passes(self):
         p = self.project()
@@ -335,6 +321,25 @@ class TestFirstTest(GuardTestCase):
         p.commit("앞 phase")
         self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
 
+    def test_deleted_test_file_only_does_not_count(self):
+        p = self.project()
+        p.write("tests/test_other.py", "import unittest\n")
+        p.add_task("001-a", {1: "예"})
+        p.git("rm", "-q", "tests/test_app.py")
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+        p.git("reset", "-q", "--", "tests/test_app.py")  # 작업 트리에서만 지운 것도 같다
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def test_message_names_test_file_rules(self):
+        p = self.project()
+        p.add_task("001-a", {1: "예"})
+        err = self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+        for name in TEST_NAMES + tuple("%s/" % d for d in TEST_DIRS):
+            with self.subTest(name=name):
+                self.assertIn("`%s`" % name, err)
+        # 이름 목록을 손으로 다시 적지 않고 상수에서 만든다
+        self.assertNotIn("`test_*`, `*_test.*`", HOOK.read_text(encoding="utf-8"))
+
     def test_marker_no_passes(self):
         p = self.project()
         p.add_task("001-a", {1: "아니오"})
@@ -425,6 +430,181 @@ class CurrentPhaseTest(GuardTestCase):
         self.assertBlocked(p.edit("src/app.py"), TEST_FIRST, "phase-2.md")
 
 
+RECORD = "\n## 한 일\n- 없음\n"
+CHECK = "\n## 확인 1\n- 판정: 실패\n- 실패: 글을 고친다\n"
+
+
+class RerunTest(GuardTestCase):
+    """고칠 문제를 받은 다시 수행(phase 파일에 `## 확인 N` 절이 있다)."""
+
+    def rerun_project(self, committed, check=CHECK):
+        """앞 수행이 committed의 파일을 바꿔 `001-a: phase 1`로 커밋한 프로젝트."""
+        p = self.project()
+        p.add_task("001-a", {1: "예"})
+        for rel, text in committed.items():
+            p.write(rel, text)
+        p.write("docs/tasks/001-a/phase-1.md", phase_text(1, "예") + RECORD)
+        p.commit("001-a: phase 1")
+        p.write("docs/tasks/001-a/phase-1.md", phase_text(1, "예") + RECORD + check)
+        p.commit("001-a: phase 1 확인")
+        return p
+
+    def test_phase_commit_with_test_change_passes(self):
+        p = self.rerun_project({
+            "tests/test_app.py": "import unittest\n# 바뀜\n",
+            "src/app.py": "print('바뀜')\n",
+        })
+        self.assertPassed(p.edit("src/app.py"))
+
+    def test_phase_commit_without_test_change_blocks(self):
+        p = self.rerun_project({"src/app.py": "print('바뀜')\n"})
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def test_phase_commit_with_only_bytecode_or_md_blocks(self):
+        p = self.rerun_project({
+            "tests/__pycache__/test_app.cpython-313.pyc": "bytecode",
+            "tests/README.md": "# 시험\n",
+        })
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def test_other_phase_commit_does_not_count(self):
+        # 다른 phase나 다른 task의 커밋이 테스트를 바꾼 것은 세지 않는다
+        p = self.project()
+        p.add_task("001-a", {1: "예"})
+        p.write("tests/test_app.py", "import unittest\n# 바뀜\n")
+        p.commit("001-a: phase 10")
+        p.write("tests/test_app.py", "import unittest\n# 또 바뀜\n")
+        p.commit("002-b: phase 1")
+        p.write("docs/tasks/001-a/phase-1.md", phase_text(1, "예") + RECORD + CHECK)
+        p.commit("001-a: phase 1 확인")
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def test_first_run_without_check_section_blocks(self):
+        p = self.rerun_project({"tests/test_app.py": "import unittest\n# 바뀜\n"}, check="")
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def test_check_section_inside_code_block_is_first_run(self):
+        fenced = "\n```markdown\n## 확인 1\n- 판정: 실패\n```\n"
+        p = self.rerun_project({"tests/test_app.py": "import unittest\n# 바뀜\n"}, check=fenced)
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def test_phase_commit_deleting_test_only_blocks(self):
+        # phase 커밋이 테스트 파일을 지우기만 했으면 테스트 변경으로 세지 않는다
+        p = self.project()
+        p.write("tests/test_other.py", "import unittest\n")
+        p.add_task("001-a", {1: "예"})
+        p.git("rm", "-q", "tests/test_app.py")
+        p.write("docs/tasks/001-a/phase-1.md", phase_text(1, "예") + RECORD)
+        p.commit("001-a: phase 1")
+        p.write("docs/tasks/001-a/phase-1.md", phase_text(1, "예") + RECORD + CHECK)
+        p.commit("001-a: phase 1 확인")
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def finish_tasks(self, p, committed):
+        """지난 tasks: `001-a: phase 1`이 committed를 바꿔 커밋하고, 끝나서 `docs/tasks/`를 비웠다."""
+        p.add_task("001-a", {1: "예"})
+        for rel, text in committed.items():
+            p.write(rel, text)
+        p.write("docs/tasks/001-a/phase-1.md", phase_text(1, "예") + RECORD)
+        p.commit("001-a: phase 1")
+        p.git("rm", "-rq", "docs/tasks")
+        p.commit("tasks 비움")
+
+    def rerun_after_previous_tasks(self, previous, current):
+        """지난 tasks의 같은 이름 phase 커밋이 previous를 바꾼 뒤, 이번 tasks의 `001-a: phase 1`이
+        current를 바꾸고 확인 절을 받은 프로젝트."""
+        p = self.project()
+        self.finish_tasks(p, previous)
+        p.add_task("001-a", {1: "예"})
+        for rel, text in current.items():
+            p.write(rel, text)
+        p.write("docs/tasks/001-a/phase-1.md", phase_text(1, "예") + RECORD)
+        p.commit("001-a: phase 1")
+        p.write("docs/tasks/001-a/phase-1.md", phase_text(1, "예") + RECORD + CHECK)
+        p.commit("001-a: phase 1 확인")
+        return p
+
+    def test_previous_tasks_phase_commit_does_not_count(self):
+        # 지난 tasks의 같은 제목 커밋이 테스트를 바꾼 것은 세지 않는다
+        p = self.rerun_after_previous_tasks(
+            {"tests/test_app.py": "import unittest\n# 지난 tasks\n"},
+            {"src/app.py": "print('바뀜')\n"},
+        )
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def test_current_tasks_phase_commit_counts_after_previous_tasks(self):
+        p = self.rerun_after_previous_tasks(
+            {"tests/test_app.py": "import unittest\n# 지난 tasks\n"},
+            {"tests/test_app.py": "import unittest\n# 이번 tasks\n"},
+        )
+        self.assertPassed(p.edit("src/app.py"))
+
+    def test_previous_tasks_commit_does_not_count_before_phase_commit(self):
+        # 이번 tasks의 phase 커밋이 아직 없고 지난 tasks의 같은 제목 커밋만 있다
+        p = self.project()
+        self.finish_tasks(p, {"tests/test_app.py": "import unittest\n# 지난 tasks\n"})
+        p.add_task("001-a", {1: "예"})
+        p.write("docs/tasks/001-a/phase-1.md", phase_text(1, "예") + RECORD + CHECK)
+        p.commit("001-a: phase 1 확인")
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def test_plan_md_change_after_phase_commit_keeps_it(self):
+        # phase 커밋 뒤에 task 머리를 고친 커밋이 있어도 그 phase 커밋은 이번 tasks의 것이다
+        p = self.rerun_project({"tests/test_app.py": "import unittest\n# 바뀜\n"})
+        p.write("docs/tasks/001-a/plan.md", "# 시험 작업\n\n## 결정\n- 더함\n")
+        p.commit("plan: 001-a 결정 더함")
+        self.assertPassed(p.edit("src/app.py"))
+
+
+    def rerun_without_plan_commit(self, committed, previous=None):
+        """task 머리(`plan.md`)를 커밋하지 않은 채, `001-a: phase 1` 커밋이 committed를 바꾸고
+        phase 파일에 확인 절이 있는 프로젝트. previous가 있으면 그 앞에 지난 tasks를 끝내고 비웠다."""
+        p = self.project()
+        if previous is not None:
+            self.finish_tasks(p, previous)
+        for rel, text in committed.items():
+            p.write(rel, text)
+            p.git("add", rel)
+        p.git("commit", "-q", "-m", "001-a: phase 1")
+        p.write("docs/tasks/001-a/plan.md", "# 시험 작업\n")
+        p.write("docs/tasks/001-a/phase-1.md", phase_text(1, "예") + RECORD + CHECK)
+        return p
+
+    def test_phase_commit_counts_without_plan_commit(self):
+        # task 머리를 커밋하지 않았어도 지난 tasks가 없으면 그 phase 커밋을 센다
+        p = self.rerun_without_plan_commit({"tests/test_app.py": "import unittest\n# 바뀜\n"})
+        self.assertPassed(p.edit("src/app.py"))
+
+    def test_phase_commit_without_test_change_blocks_without_plan_commit(self):
+        p = self.rerun_without_plan_commit({"src/app.py": "print('바뀜')\n"})
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def test_previous_tasks_does_not_count_without_plan_commit(self):
+        # task 머리를 커밋하지 않았으면 지난 tasks가 그 task 폴더를 비운 커밋 뒤만 본다
+        p = self.rerun_without_plan_commit(
+            {"src/app.py": "print('바뀜')\n"},
+            previous={"tests/test_app.py": "import unittest\n# 지난 tasks\n"},
+        )
+        self.assertBlocked(p.edit("src/app.py"), TEST_FIRST)
+
+    def test_current_tasks_counts_without_plan_commit_after_previous_tasks(self):
+        p = self.rerun_without_plan_commit(
+            {"tests/test_app.py": "import unittest\n# 이번 tasks\n"},
+            previous={"tests/test_app.py": "import unittest\n# 지난 tasks\n"},
+        )
+        self.assertPassed(p.edit("src/app.py"))
+
+    def test_done_phase_rename_does_not_hide_phase_commit(self):
+        # task 머리를 커밋하지 않았을 때, 다른 phase 파일의 이름 바꿈(`done-phase-N.md`)은 비움이 아니다
+        p = self.rerun_without_plan_commit({"tests/test_app.py": "import unittest\n# 바뀜\n"})
+        p.write("docs/tasks/001-a/phase-2.md", phase_text(2, "예"))
+        p.git("add", "docs/tasks/001-a/phase-2.md")
+        p.git("commit", "-q", "-m", "001-a: phase 2 더함")
+        p.git("mv", "docs/tasks/001-a/phase-2.md", "docs/tasks/001-a/done-phase-2.md")
+        p.git("commit", "-q", "-m", "001-a: phase 2 통과")
+        self.assertPassed(p.edit("src/app.py"))
+
+
 class ThirdBlockTest(GuardTestCase):
     def setUp(self):
         super().setUp()
@@ -470,22 +650,79 @@ class ThirdBlockTest(GuardTestCase):
         self.p.write("docs/tasks/001-a/phase-1.md", checked)
         self.assertBlocked(self.p.edit("src/app.py"), STOP)
 
+    def test_unwritable_count_file_says_stop(self):
+        # 세는 파일 자리가 폴더라 쓰지 못한다. 셈을 잃는 대신 세 번째 막음의 글로 간다
+        (self.p.root / ".git" / "plate-test-first.json").mkdir()
+        self.assertBlocked(self.p.edit("src/app.py"), STOP, ordinal(STOP_COUNT) + " 막았다")
 
-class HooksJsonCommandTest(GuardTestCase):
-    """hooks.json의 명령 글을 Claude Code처럼 `sh -c`로 돌린다.
+    def test_stop_message_follows_stop_count(self):
+        # 글의 횟수를 손으로 적지 않고 STOP_COUNT에서 만든다. 상수를 바꾼 사본에서 글이 그 수를 따른다
+        self.assertEqual(ordinal(3), "세 번째")
+        self.assertNotIn("세 번째 막았다", HOOK.read_text(encoding="utf-8"))
+        copy = Path(tempfile.mkdtemp(dir=self.base)) / "edit_guard.py"
+        source = HOOK.read_text(encoding="utf-8")
+        self.assertIn("STOP_COUNT = %d " % STOP_COUNT, source)
+        copy.write_text(source.replace("STOP_COUNT = %d " % STOP_COUNT, "STOP_COUNT = 4 ", 1), encoding="utf-8")
 
-    `${CLAUDE_PLUGIN_ROOT}`는 명령 글에 그대로 바뀌어 들어가고 같은 이름의 환경 변수로도 넘어간다.
-    """
+        def edit():
+            done = subprocess.run(
+                [sys.executable, str(copy)], input=self.p.payload("src/app.py"), env=GIT_ENV,
+                capture_output=True, text=True,
+            )
+            return done.returncode, done.stderr
 
-    def run_command(self, plugin_root, stdin):
-        with open(HOOKS_JSON, encoding="utf-8") as f:
-            command = json.load(f)["hooks"]["PreToolUse"][0]["hooks"][0]["command"]
+        for _ in range(3):
+            err = self.assertBlocked(edit(), TEST_FIRST)
+            self.assertNotIn(STOP, err)
+        err = self.assertBlocked(edit(), STOP, "네 번째 막았다")
+        self.assertNotIn("세 번째", err)
+
+    def test_count_file_is_replaced_not_rewritten(self):
+        # 세는 파일을 그 자리에서 고쳐 쓰지 않고 임시 파일을 바꿔 넣으므로, 읽기 전용인 세는 파일도 셈이 이어진다
+        self.p.edit("src/app.py")
+        store = self.p.root / ".git" / "plate-test-first.json"
+        store.chmod(0o444)
+        err = self.assertBlocked(self.p.edit("src/app.py"), TEST_FIRST)
+        self.assertNotIn(STOP, err)
+        self.assertBlocked(self.p.edit("src/app.py"), STOP)
+        counts = json.loads(store.read_text(encoding="utf-8"))
+        self.assertEqual(counts["docs/tasks/001-a/phase-1.md"]["files"]["src/app.py"], 3)
+        leftovers = [f for f in os.listdir(self.p.root / ".git") if f.startswith("plate-test-first") and f != store.name]
+        self.assertEqual(leftovers, [])
+
+
+class ExceptionTest(GuardTestCase):
+    """훅 안에서 예외가 나면 까닭을 stderr에 내고 종료 2로 막는다."""
+
+    def run_stdin(self, stdin, env=None):
         done = subprocess.run(
-            ["sh", "-c", command.replace("${CLAUDE_PLUGIN_ROOT}", str(plugin_root))],
-            input=stdin, env=dict(GIT_ENV, CLAUDE_PLUGIN_ROOT=str(plugin_root)),
+            [sys.executable, str(HOOK)], input=stdin, env=env or GIT_ENV,
             capture_output=True, text=True,
         )
         return done.returncode, done.stderr
+
+    def test_broken_stdin_blocks(self):
+        err = self.assertBlocked(self.run_stdin("{"))
+        self.assertTrue(err.startswith("plate:"), err)
+
+    def test_non_utf8_phase_file_blocks(self):
+        p = self.project()
+        p.add_task("001-a", {1: "예"})
+        with open(p.root / "docs/tasks/001-a/phase-1.md", "ab") as f:
+            f.write(b"\xff")
+        err = self.assertBlocked(p.edit("src/app.py"))
+        self.assertIn("plate:", err)
+        self.assertNotIn("Traceback", err)
+
+
+class HooksJsonCommandTest(GuardTestCase):
+    """hooks.json에서 Edit에 건 명령 글을 Claude Code처럼 `sh -c`로 돌린다. 항목은 차례가 아니라 matcher로 고른다."""
+
+    def run_command(self, plugin_root, stdin):
+        return run_hook_command("Edit", plugin_root, stdin)
+
+    def test_command_runs_edit_guard(self):
+        self.assertIn("edit_guard.py", hook_command("Edit"))
 
     def test_missing_script_exits_zero(self):
         p = self.project()  # 남은 phase가 없다: 스크립트가 있으면 막는 호출이다

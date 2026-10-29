@@ -13,6 +13,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 
 DOCS_MAP_START = "<!-- plate:docs-map:start -->"
 TASKS_DIR = "docs/tasks"
@@ -20,10 +21,13 @@ TEST_DIRS = {"tests", "test", "__tests__"}
 TEST_NAMES = ("test_*", "*_test.*", "*.test.*", "*.spec.*")
 MARKER = re.compile(r"^\*\*테스트 먼저\*\*:\s*(.*)$")
 PHASE_FILE = re.compile(r"^phase-(\d+)\.md$")
+CHECK_SECTION = re.compile(r"^## 확인 \d+\s*$")  # 확인하는 쪽이 phase 파일 끝에 더하는 절
+FENCE = re.compile(r"^\s*(```|~~~)")
 CI_WORKFLOW = ".github/workflows/plate-review.yml"  # setup이 쓰는 CI 워크플로
 CODEOWNERS = ".github/CODEOWNERS"  # setup이 쓰는 코드 소유자 파일
 SETUP_FILES = (CI_WORKFLOW, CODEOWNERS)  # setup이 처음 쓸 때 막지 않는 파일
 COUNT_FILE = "plate-test-first.json"  # git 폴더 안에 둔다. 작업 트리에 변경을 만들지 않는다
+STOP_COUNT = 3  # 같은 파일을 테스트 먼저 때문에 이만큼 막으면 STOP의 글을 낸다
 
 PLAN_FIRST = (
     "plate: 남은 phase가 있는 task가 없어서 코드 파일을 고치지 않는다: `{rel}`\n"
@@ -34,11 +38,19 @@ TEST_FIRST = (
     "plate: 지금 phase(`{phase}`)는 테스트 먼저다. 커밋되지 않은 변경에 테스트 파일이 없어서 "
     "테스트 파일이 아닌 코드 파일을 고치지 않는다: `{rel}`\n"
     "실패하는 테스트부터 쓴다. 테스트를 돌려 실패 출력을 기록에 남기고, 그 뒤에 구현한다.\n"
-    "테스트 파일은 `tests/`, `test/`, `__tests__/` 아래이거나 이름이 "
-    "`test_*`, `*_test.*`, `*.test.*`, `*.spec.*` 꼴인 파일이다.\n"
+    "테스트 파일은 " + ", ".join("`%s/`" % d for d in sorted(TEST_DIRS)) + " 아래이거나 이름이 "
+    + ", ".join("`%s`" % n for n in TEST_NAMES) + " 꼴인 파일이다.\n"
 )
+ORDINALS = ("첫", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉", "열")
+
+
+def ordinal(n):
+    """`n`번째를 글로 적는다(3 → `세 번째`). 열을 넘으면 숫자로 적는다."""
+    return "%s 번째" % (ORDINALS[n - 1] if 1 <= n <= len(ORDINALS) else n)
+
+
 STOP = (
-    "plate: 테스트 먼저 때문에 같은 파일을 세 번째 막았다: `{rel}` (지금 phase: `{phase}`)\n"
+    "plate: 테스트 먼저 때문에 같은 파일을 " + ordinal(STOP_COUNT) + " 막았다: `{rel}` (지금 phase: `{phase}`)\n"
     "더 시도하지 않는다. 상태를 막힘으로 하고 멈춘다. 막힌 까닭과 원하는 해결책을 "
     "`{phase}`의 \"남은 것\"과 \"하네스에서 걸린 것\"에 적는다.\n"
 )
@@ -127,6 +139,41 @@ def is_test_first(lines):
     return False
 
 
+def has_check_section(text):
+    """phase 파일에 코드 블록 밖의 확인 절(`## 확인 N`)이 있으면 고칠 문제를 받은 다시 수행이다."""
+    fenced = False
+    for line in text.splitlines():
+        if FENCE.match(line):
+            fenced = not fenced
+        elif not fenced and CHECK_SECTION.match(line):
+            return True
+    return False
+
+
+def phase_commit_has_test_change(root, task, number):
+    """이번 tasks에서 제목이 `NNN-slug: phase N`인 커밋이 테스트 파일을 더하거나 바꿨는가.
+    지우기만 한 것은 세지 않는다.
+
+    tasks가 끝나면 `docs/tasks/`를 비우고 다음 tasks가 같은 task 이름을 다시 쓰므로, 그 task 머리
+    (`plan.md`)를 마지막으로 더하거나 지운 커밋 뒤의 커밋만 본다. 더한 커밋이면 이번 tasks의 계획
+    커밋이고, 지운 커밋이면 task 머리를 커밋하지 않은 이번 tasks 앞에서 지난 tasks를 비운 커밋이다.
+    둘 다 없으면 지난 tasks가 없으니 역사 전체를 본다."""
+    subject = "%s: phase %d" % (task, number)
+    plan = "/".join([TASKS_DIR, task, "plan.md"])
+    since = (git(root, "log", "-1", "--diff-filter=AD", "--format=%H", "--", plan) or "").strip()
+    log = git(root, "log", "--format=%H %s", since + "..HEAD" if since else "HEAD") or ""
+    for line in log.splitlines():
+        sha, _, title = line.partition(" ")
+        if title != subject:
+            continue
+        files = git(root, "diff-tree", "--root", "--no-commit-id", "-r", "-z", "--name-only",
+                    "--diff-filter=d", sha) or ""
+        if any(is_code_file(f) and is_test_file(f) and not is_bytecode(f)
+               for f in files.split("\0") if f):
+            return True
+    return False
+
+
 def has_tests(root):
     files = git(root, "ls-files", "-z", "--cached", "--others", "--exclude-standard") or ""
     if any(is_code_file(f) and is_test_file(f) for f in files.split("\0") if f):
@@ -161,7 +208,8 @@ def has_uncommitted_test_change(root):
         i += 1
         if len(item) < 4:
             continue
-        paths.append(item[3:])
+        if item[:2].strip() != "D":  # 지우기만 한 항목은 테스트 변경으로 세지 않는다
+            paths.append(item[3:])
         if "R" in item[:2] or "C" in item[:2]:  # 이름을 바꾼 항목은 다음 칸이 옛 경로다
             paths.append(items[i])
             i += 1
@@ -189,12 +237,28 @@ def count_block(root, phase, lines, rel):
         entry = {"plan": digest, "files": {}}
     entry["files"][rel] = entry["files"].get(rel, 0) + 1
     counts[phase] = entry
-    try:
-        with open(store, "w", encoding="utf-8") as f:
-            json.dump(counts, f, ensure_ascii=False)
-    except OSError:
-        pass
+    if not write_counts(store, counts):
+        # 셈을 남기지 못하면 세 번째 막음에 닿지 못한다. 셈을 잃는 대신 STOP으로 보낸다
+        return STOP_COUNT
     return entry["files"][rel]
+
+
+def write_counts(store, counts):
+    """세는 파일을 같은 폴더의 임시 파일에 쓰고 바꿔 넣는다. 쓰지 못하면 False를 돌려준다."""
+    tmp = None
+    try:
+        fd, tmp = tempfile.mkstemp(dir=os.path.dirname(store), prefix=COUNT_FILE + ".")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(counts, f, ensure_ascii=False)
+        os.replace(tmp, store)
+        return True
+    except OSError:
+        if tmp:
+            try:
+                os.remove(tmp)
+            except OSError:
+                pass
+        return False
 
 
 def check(data):
@@ -202,6 +266,9 @@ def check(data):
     tool_input = data.get("tool_input") or {}
     path = tool_input.get("file_path") or tool_input.get("notebook_path")
     if not path:
+        return None
+    if str(path).lower().endswith(".md"):
+        # 코드 파일이 아니다. git을 부르기 전에 통과시킨다
         return None
     cwd = data.get("cwd") or os.getcwd()
     top = git(cwd, "rev-parse", "--show-toplevel")
@@ -223,18 +290,38 @@ def check(data):
     if not top or is_test_file(rel):
         return None
     name = current_task(tasks)
-    phase = "/".join(["docs", "tasks", name, "phase-%d.md" % tasks[name][0]])
+    number = tasks[name][0]
+    phase = "/".join(["docs", "tasks", name, "phase-%d.md" % number])
     with open(os.path.join(root, phase), encoding="utf-8") as f:
-        lines = plan_lines(f.read())
-    if not is_test_first(lines) or not has_tests(root) or has_uncommitted_test_change(root):
+        text = f.read()
+    lines = plan_lines(text)
+    if not is_test_first(lines):
         return None
-    if count_block(root, phase, lines, rel) >= 3:
+    # 싼 `git status`를 먼저 보고, 저장소 전체를 훑는 `git ls-files`는 그 뒤에 본다
+    if has_uncommitted_test_change(root):
+        return None
+    # 다시 수행에서는 첫 수행이 그 phase 커밋에 남긴 테스트 변경도 센다
+    if has_check_section(text) and phase_commit_has_test_change(root, name, number):
+        return None
+    if not has_tests(root):
+        return None
+    if count_block(root, phase, lines, rel) >= STOP_COUNT:
         return STOP.format(rel=rel, phase=phase)
     return TEST_FIRST.format(rel=rel, phase=phase)
 
 
+ERROR = (
+    "plate: 편집 훅 안에서 예외가 나서 이 편집을 막는다: {error}\n"
+    "막아야 할 편집을 조용히 통과시키지 않으려고 막는다. 까닭(깨진 입력, UTF-8이 아닌 phase 파일, "
+    "git의 오류)을 찾아 고친 뒤 다시 시도하고, 풀 수 없으면 막힘으로 멈춰 보고한다.\n"
+)
+
+
 def main():
-    message = check(json.load(sys.stdin))
+    try:
+        message = check(json.load(sys.stdin))
+    except Exception as e:  # 예외로 종료 1이 되면 도구는 막지 않는다(fail-open). 정한 대로 막는다
+        message = ERROR.format(error="%s: %s" % (type(e).__name__, e))
     if message:
         sys.stderr.write(message)
         return 2

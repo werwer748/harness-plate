@@ -7,18 +7,17 @@ JSON을 훅에 주어 돌린다. 종료 코드 2가 막음, 0이 통과다. 막�
 
 import ast
 import json
-import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-from test_edit_guard import GIT_ENV, Project
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from hook_helpers import GIT_ENV, PLUGIN_ROOT, HookTestCase, hook_command, run_hook_command  # noqa: E402
+from test_edit_guard import Project  # noqa: E402
 
-PLUGIN_ROOT = Path(__file__).resolve().parent.parent / "plugins" / "plate"
 HOOK = PLUGIN_ROOT / "hooks" / "push_guard.py"
-HOOKS_JSON = PLUGIN_ROOT / "hooks" / "hooks.json"
 
 BLOCKED = "기본 브랜치"
 
@@ -99,24 +98,11 @@ def if_complexity(node, nesting):
     return score + (1 + complexity(rest, nesting + 1) if rest else 0)
 
 
-class PushGuardTestCase(unittest.TestCase):
-    def setUp(self):
-        self.base = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, self.base)
+class PushGuardTestCase(HookTestCase):
+    BLOCK_PHRASES = (BLOCKED,)
 
     def project(self, head="main", **kwargs):
         return with_origin(Project(self.base, **kwargs), head)
-
-    def assertPassed(self, result):
-        code, err = result
-        self.assertEqual(code, 0, "통과해야 하는데 막았다: " + err)
-
-    def assertBlocked(self, result, *phrases):
-        code, err = result
-        self.assertEqual(code, 2, "막아야 하는데 통과시켰다 (종료 코드 %d): %s" % (code, err))
-        for phrase in (BLOCKED,) + phrases:
-            self.assertIn(phrase, err)
-        return err
 
 
 class BlockTest(PushGuardTestCase):
@@ -525,26 +511,35 @@ class PassTest(PushGuardTestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
 
 
-class HooksJsonTest(PushGuardTestCase):
-    """hooks.json에서 Bash에 건 명령 글을 Claude Code처럼 `sh -c`로 돌린다."""
+class ExceptionTest(unittest.TestCase):
+    """훅 안에서 예외가 나면 까닭을 stderr에 내고, stdin의 글에 `push`가 있을 때만 막는다."""
 
-    def bash_command(self):
-        with open(HOOKS_JSON, encoding="utf-8") as f:
-            entries = json.load(f)["hooks"]["PreToolUse"]
-        matched = [e for e in entries if "Bash" in e["matcher"].split("|")]
-        self.assertEqual(len(matched), 1, "Bash의 PreToolUse에 건 훅이 하나여야 한다")
-        return matched[0]["hooks"][0]["command"]
-
-    def run_command(self, plugin_root, stdin):
+    def run_stdin(self, stdin):
         done = subprocess.run(
-            ["sh", "-c", self.bash_command().replace("${CLAUDE_PLUGIN_ROOT}", str(plugin_root))],
-            input=stdin, env=dict(GIT_ENV, CLAUDE_PLUGIN_ROOT=str(plugin_root)),
+            [sys.executable, str(HOOK)], input=stdin, env=GIT_ENV,
             capture_output=True, text=True,
         )
         return done.returncode, done.stderr
 
+    def test_broken_stdin_with_push_blocks(self):
+        code, err = self.run_stdin('{"git push')
+        self.assertEqual(code, 2, err)
+        self.assertTrue(err.startswith("plate:"), err)
+
+    def test_broken_stdin_without_push_passes(self):
+        code, err = self.run_stdin('{"ls')
+        self.assertEqual(code, 0, err)
+        self.assertTrue(err.startswith("plate:"), err)
+
+
+class HooksJsonTest(PushGuardTestCase):
+    """hooks.json에서 Bash에 건 명령 글을 Claude Code처럼 `sh -c`로 돌린다. 항목은 차례가 아니라 matcher로 고른다."""
+
+    def run_command(self, plugin_root, stdin):
+        return run_hook_command("Bash", plugin_root, stdin)
+
     def test_command_runs_push_guard(self):
-        self.assertIn("push_guard.py", self.bash_command())
+        self.assertIn("push_guard.py", hook_command("Bash"))
 
     def test_missing_script_exits_zero(self):
         p = self.project()

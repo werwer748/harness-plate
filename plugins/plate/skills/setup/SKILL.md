@@ -1,6 +1,6 @@
 ---
 name: setup
-description: 프로젝트에 하네스를 설치한다. `docs/`에 문서 양식(PRD, ARCHITECTURE, ADR, 화면이 있는 프로젝트면 DESIGN)과 tasks 기록 폴더를 만들고, `AGENTS.md`에 문서 지도와 작업 규칙을 넣고, `CLAUDE.md`가 `AGENTS.md`를 불러오게 한다. GitHub 원격이 있고 plate 워크플로가 없으면 PR마다 review로 평가해 판정대로 자동 머지, 머지 요청, 닫기를 하는 CI 워크플로를 둘지 묻고, 승인하면 `.github/workflows/`에 쓰고, `.github/CODEOWNERS`가 없고 GitHub login을 얻었으면 워크플로와 CODEOWNERS의 코드 소유자를 그 login으로 두는 CODEOWNERS를 쓰고, 보고에 시크릿 등록 방법과 ruleset 거는 법을 적는다. 설치만 하고 보고로 끝나며, 끝에 다른 일로 이어 갈지 묻지 않는다. plate를 프로젝트에 처음 쓸 때, 또는 "하네스 셋업해줘", "문서 위치 잡아줘"라고 할 때 쓴다. 문서 내용을 채우는 일에는 쓰지 않는다.
+description: 프로젝트에 하네스를 설치해 `docs/`의 문서 양식과 tasks 기록 폴더, `AGENTS.md`의 문서 지도와 작업 규칙, `AGENTS.md`를 불러오는 `CLAUDE.md`를 두고, GitHub 원격이 있으면 PR마다 review로 평가하는 CI 워크플로를 둘지 묻는다. 설치와 보고로 끝난다. plate를 프로젝트에 처음 쓸 때, 또는 "하네스 셋업해줘", "문서 위치 잡아줘"라고 할 때 쓴다. 문서 내용을 채우는 일에는 쓰지 않는다.
 ---
 
 # 셋업
@@ -349,7 +349,7 @@ jobs:
     outputs:
       bundle: ${{ steps.review.outputs.structured_output }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
       - name: AGENTS.md를 기준 브랜치의 것으로 되돌린다
@@ -362,7 +362,7 @@ jobs:
             rm -f AGENTS.md
           fi
       - id: review
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@d70510b174a1244958df0b03166a54912811f3e6 # v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
@@ -396,7 +396,7 @@ jobs:
                       line["result"] = m.get("result")
                   print(json.dumps(line, ensure_ascii=False))
           PY
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: plate-review
           path: ${{ runner.temp }}/plate-review.md
@@ -408,11 +408,11 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: werwer748/harness-plate
           path: harness-plate
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: plate-review
       - name: 판정대로 댓글을 달고 머지하거나 닫는다
